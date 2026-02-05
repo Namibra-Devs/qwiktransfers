@@ -5,15 +5,27 @@ import api from '../services/api';
 const AdminDashboard = () => {
     const { logout } = useAuth();
     const [transactions, setTransactions] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [tab, setTab] = useState('transactions');
 
     useEffect(() => {
         fetchTransactions();
+        fetchUsers();
     }, []);
 
     const fetchTransactions = async () => {
         try {
-            const res = await api.get('/transactions'); // Admin should see all, controller logic handles filtering
+            const res = await api.get('/transactions');
             setTransactions(res.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const res = await api.get('/auth/users');
+            setUsers(res.data);
         } catch (error) {
             console.error(error);
         }
@@ -28,60 +40,100 @@ const AdminDashboard = () => {
         }
     };
 
+    const updateKYC = async (userId, status) => {
+        try {
+            await api.patch('/auth/kyc/status', { userId, status });
+            fetchUsers();
+        } catch (error) {
+            alert('Failed to update KYC');
+        }
+    };
+
     return (
-        <div style={{ padding: '2rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1>Admin Portal</h1>
-                <button onClick={logout} className="btn-primary">Logout</button>
+        <div className="dashboard-container">
+            <header>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#818cf8' }}>QWIK<span style={{ color: '#fff' }}>ADMIN</span></h1>
+                    <nav style={{ display: 'flex', gap: '1rem' }}>
+                        <button onClick={() => setTab('transactions')} style={{ background: tab === 'transactions' ? 'var(--primary)' : 'transparent', padding: '0.4rem 1rem' }}>Transactions</button>
+                        <button onClick={() => setTab('kyc')} style={{ background: tab === 'kyc' ? 'var(--primary)' : 'transparent', padding: '0.4rem 1rem' }}>KYC Review</button>
+                    </nav>
+                </div>
+                <button onClick={logout} className="btn-primary" style={{ width: 'auto', padding: '0.6rem 1.2rem' }}>Logout</button>
             </header>
 
-            <main style={{ marginTop: '2rem' }}>
-                <div className="card">
-                    <h3>All Transactions</h3>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ textAlign: 'left' }}>
-                                <th>ID</th>
-                                <th>User</th>
-                                <th>Sent (GHS)</th>
-                                <th>Received (CAD)</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map((tx) => (
-                                <tr key={tx.id} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={{ padding: '1rem 0' }}>{tx.id}</td>
-                                    <td>{tx.user?.email}</td>
-                                    <td>{tx.amount_sent}</td>
-                                    <td>{tx.amount_received}</td>
-                                    <td>{tx.status}</td>
-                                    <td>
-                                        {tx.status === 'pending' && (
-                                            <button
-                                                onClick={() => updateStatus(tx.id, 'processing')}
-                                                style={{ marginRight: '0.5rem', backgroundColor: '#ffc107', color: 'black' }}
-                                            >
-                                                Mark as Processing
-                                            </button>
-                                        )}
-                                        {tx.status === 'processing' && (
-                                            <button
-                                                onClick={() => updateStatus(tx.id, 'sent')}
-                                                className="btn-primary"
-                                                style={{ backgroundColor: '#28a745' }}
-                                            >
-                                                Mark as Sent
-                                            </button>
-                                        )}
-                                        {tx.status === 'sent' && <span>Completed</span>}
-                                    </td>
+            <main>
+                {tab === 'transactions' && (
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Global Transaction Pool</h2>
+                        <table style={{ minWidth: '100%' }}>
+                            <thead>
+                                <tr>
+                                    <th>User / Recipient</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Proof</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {transactions.map((tx) => (
+                                    <tr key={tx.id}>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{tx.user?.email}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>→ {tx.recipient_details?.name}</div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontWeight: 600, color: 'var(--success)' }}>{tx.amount_received} CAD</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.amount_sent} GHS</div>
+                                        </td>
+                                        <td><span className={`badge badge-${tx.status}`}>{tx.status}</span></td>
+                                        <td>
+                                            {tx.proof_url ? <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: '#818cf8' }}>View</a> : 'No Proof'}
+                                        </td>
+                                        <td>
+                                            {tx.status === 'pending' && <button onClick={() => updateStatus(tx.id, 'processing')} style={{ fontSize: '0.75rem', padding: '0.4rem', background: 'var(--warning)', color: '#000' }}>Process</button>}
+                                            {tx.status === 'processing' && <button onClick={() => updateStatus(tx.id, 'sent')} style={{ fontSize: '0.75rem', padding: '0.4rem', background: 'var(--success)', color: '#fff' }}>Confirm</button>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {tab === 'kyc' && (
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Pending KYC Verifications</h2>
+                        <table style={{ minWidth: '100%' }}>
+                            <thead>
+                                <tr>
+                                    <th>User Email</th>
+                                    <th>Document</th>
+                                    <th>Current Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.filter(u => u.role !== 'admin' && u.kyc_status !== 'verified').map((u) => (
+                                    <tr key={u.id}>
+                                        <td>{u.email}</td>
+                                        <td>
+                                            {u.kyc_document ? <a href={`http://localhost:5000${u.kyc_document}`} target="_blank" rel="noreferrer" style={{ color: '#818cf8' }}>View ID</a> : 'Not Uploaded'}
+                                        </td>
+                                        <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button onClick={() => updateKYC(u.id, 'verified')} style={{ fontSize: '0.7rem', padding: '0.4rem', background: 'var(--success)', color: '#fff' }}>Approve</button>
+                                                <button onClick={() => updateKYC(u.id, 'rejected')} style={{ fontSize: '0.7rem', padding: '0.4rem', background: 'var(--danger)', color: '#fff' }}>Reject</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </main>
         </div>
     );

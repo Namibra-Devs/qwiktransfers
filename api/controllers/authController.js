@@ -35,13 +35,26 @@ const login = async (req, res) => {
     }
 };
 
-const getProfile = async (req, res) => {
+const getAllUsers = async (req, res) => {
     try {
-        const user = await User.findByPk(req.user.id);
-        res.json(user);
+        const users = await User.findAll({ attributes: { exclude: ['password'] } });
+        res.json(users);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};
 
-module.exports = { register, login, getProfile };
+const updateKYC = async (req, res) => {
+    try {
+        const { userId, status } = req.body;
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        user.kyc_status = status;
+        await user.save();
+        res.json({ message: 'KYC status updated', kyc_status: status });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { register, login, getProfile, getAllUsers, updateKYC };

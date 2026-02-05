@@ -7,23 +7,26 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (token) {
-                    const response = await api.get('/auth/profile');
-                    setUser(response.data);
-                }
-            } catch (error) {
-                console.error('Failed to strict fetch profile', error);
-                localStorage.removeItem('token');
-            } finally {
-                setLoading(false);
+    const fetchProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const response = await api.get('/auth/profile');
+                setUser(response.data);
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch profile', error);
+            // Don't auto-logout on simple refresh error if we want but for now keep it
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchProfile();
+    useEffect(() => {
+        const init = async () => {
+            await fetchProfile();
+        };
+        init();
     }, []);
 
     const login = async (email, password) => {
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, loading, refreshProfile: fetchProfile }}>
             {!loading && children}
         </AuthContext.Provider>
     );

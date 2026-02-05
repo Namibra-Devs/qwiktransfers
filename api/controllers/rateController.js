@@ -3,15 +3,15 @@ const axios = require('axios'); // Needed for external API, ensure it's installe
 
 const getRates = async (req, res) => {
     try {
-        // 1. Try to get rate from DB (cached)
-        // 2. If old or missing, fetch from external API (simulated for now)
-        // 3. Apply spread
-        // 4. Return rate
+        // Fetch real market rate (GHS to CAD)
+        // Public API: 1 GHS to others
+        const response = await axios.get('https://api.exchangerate-api.com/v4/latest/GHS');
+        const marketRate = response.data.rates.CAD;
 
-        // For MVP, we will return a fixed rate or mock update
-        const mockRate = 0.10; // 1 GHS = 0.10 CAD
-        const spread = 0.005; // Our margin
-        const finalRate = mockRate - spread; // Buying GHS, giving less CAD
+        if (!marketRate) throw new Error('Could not fetch market rate');
+
+        const spread = marketRate * 0.05; // 5% spread for fees and profit
+        const finalRate = (marketRate - spread).toFixed(4);
 
         // Update or create in DB
         const [rateRecord, created] = await Rate.findOrCreate({
@@ -20,14 +20,25 @@ const getRates = async (req, res) => {
         });
 
         if (!created) {
-            // Here we would check timestamp and update if needed
             rateRecord.rate = finalRate;
             await rateRecord.save();
         }
 
-        res.json({ pair: 'GHS-CAD', rate: finalRate, fee_percentage: 1.0 });
+        res.json({
+            pair: 'GHS-CAD',
+            rate: parseFloat(finalRate),
+            market_rate: marketRate,
+            fee_percentage: 5.0,
+            updatedAt: new Date()
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Rate fetch error:', error);
+        // Fallback to DB if API fails
+        const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
+        if (rateRecord) {
+            return res.json({ pair: 'GHS-CAD', rate: rateRecord.rate, note: 'Using cached rate' });
+        }
+        res.status(500).json({ error: 'Failed to fetch rates' });
     }
 };
 

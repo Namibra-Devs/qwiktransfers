@@ -1,86 +1,134 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const { login } = useAuth();
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please enter email and password');
+            return;
+        }
+        setLoading(true);
         try {
             await login(email, password);
         } catch (error) {
             Alert.alert('Error', 'Invalid email or password');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>QwikTransfers</Text>
-            <Text style={styles.subtitle}>Login to your account</Text>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+        >
+            <View style={styles.content}>
+                <Text style={styles.title}>QWIK<Text style={{ color: '#fff' }}>TRANSFERS</Text></Text>
+                <Text style={styles.subtitle}>Welcome back! Please login.</Text>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-            />
+                <View style={styles.form}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Email Address</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="name@example.com"
+                            placeholderTextColor="#64748b"
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                        />
+                    </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Password</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="••••••••"
+                            placeholderTextColor="#64748b"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+                    </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Login</Text>
-            </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, loading && { opacity: 0.7 }]}
+                        onPress={handleLogin}
+                        disabled={loading}
+                    >
+                        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+                    </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.link}>Don't have an account? Register</Text>
-            </TouchableOpacity>
-        </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                    <Text style={styles.link}>Don't have an account? <Text style={styles.linkBold}>Create one</Text></Text>
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#0f172a',
+    },
+    content: {
+        flex: 1,
         justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#f8f9fa',
+        padding: 30,
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 10,
-        color: '#007bff',
+        color: '#818cf8',
+        marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
         textAlign: 'center',
-        marginBottom: 30,
-        color: '#6c757d',
+        color: '#94a3b8',
+        marginBottom: 40,
+    },
+    form: {
+        backgroundColor: '#1e293b',
+        padding: 24,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    label: {
+        color: '#94a3b8',
+        fontSize: 14,
+        marginBottom: 8,
+        fontWeight: '500',
     },
     input: {
-        backgroundColor: 'white',
-        padding: 15,
-        borderRadius: 8,
-        marginBottom: 15,
+        backgroundColor: '#0f172a',
+        padding: 14,
+        borderRadius: 10,
+        color: '#f8fafc',
         fontSize: 16,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#334155',
     },
     button: {
-        backgroundColor: '#007bff',
-        padding: 15,
-        borderRadius: 8,
+        backgroundColor: '#6366f1',
+        padding: 16,
+        borderRadius: 10,
         alignItems: 'center',
         marginTop: 10,
     },
@@ -90,10 +138,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     link: {
-        color: '#007bff',
+        color: '#94a3b8',
         textAlign: 'center',
-        marginTop: 20,
+        marginTop: 30,
         fontSize: 14,
+    },
+    linkBold: {
+        color: '#818cf8',
+        fontWeight: 'bold',
     },
 });
 
