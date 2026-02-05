@@ -1,15 +1,16 @@
 const { Transaction, User, Rate } = require('../models');
+const { sendSMS } = require('../services/smsService');
 
 const createTransaction = async (req, res) => {
     try {
         const { amount_sent, recipient_details, type } = req.body;
         const userId = req.user.id;
+        const user = await User.findByPk(userId);
 
-        // Fetch latest rate (mocked for now or fetched from Rate model)
         const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
-        const exchange_rate = rateRecord ? rateRecord.rate : 0.10; // Default fallback
+        const exchange_rate = rateRecord ? rateRecord.rate : 0.10;
 
-        const amount_received = amount_sent * exchange_rate; // Simplified calculation
+        const amount_received = amount_sent * exchange_rate;
 
         const transaction = await Transaction.create({
             userId,
@@ -19,8 +20,13 @@ const createTransaction = async (req, res) => {
             amount_received,
             recipient_details,
             status: 'pending',
-            proof_url: '' // To be updated via separate upload endpoint
+            proof_url: ''
         });
+
+        // Send SMS Notification
+        if (user && user.phone) {
+            await sendSMS(user.phone, `Your transfer request of ${amount_sent} ${type.split('-')[0]} to ${recipient_details.name} has been initiated. Status: Pending.`);
+        }
 
         res.status(201).json(transaction);
     } catch (error) {
@@ -45,14 +51,17 @@ const updateStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const transaction = await Transaction.findByPk(id);
+        const transaction = await Transaction.findByPk(id, { include: ['user'] });
 
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
         transaction.status = status;
         await transaction.save();
 
-        // specific logic for status changes (e.g. notify user) can go here
+        // Notify user about status change
+        if (transaction.user && transaction.user.phone) {
+            await sendSMS(transaction.user.phone, `Update: Your transaction to ${transaction.recipient_details.name} is now ${status.toUpperCase()}.`);
+        }
 
         res.json(transaction);
     } catch (error) {
@@ -60,4 +69,24 @@ const updateStatus = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, updateStatus };
+const uploadProof = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const transaction = await Transaction.findByPk(id, { include: ['user'] });
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+        transaction.proof_url = `/uploads/${req.file.filename}`;
+        await transaction.save();
+
+        // Notify user
+        if (transaction.user && transaction.user.phone) {
+            await sendSMS(transaction.user.phone, `Proof of payment uploaded for transaction #${transaction.id}. We will verify it shortly.`);
+        }
+
+        res.json({ message: 'Proof uploaded successfully', proof_url: transaction.proof_url });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createTransaction, getTransactions, updateStatus, uploadProof };

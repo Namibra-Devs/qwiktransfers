@@ -26,7 +26,14 @@ module.exports = (sequelize, DataTypes) => {
     country: DataTypes.STRING,
     transaction_pin: DataTypes.STRING, // 4-digit PIN (hashed)
     balance_ghs: DataTypes.DECIMAL,
-    balance_cad: DataTypes.DECIMAL
+    balance_cad: DataTypes.DECIMAL,
+    is_email_verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    verification_token: DataTypes.STRING,
+    reset_password_token: DataTypes.STRING,
+    reset_password_expires: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'User',

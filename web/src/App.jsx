@@ -4,6 +4,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RegisterSuccess from './pages/RegisterSuccess';
+import EmailVerified from './pages/EmailVerified';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
@@ -11,7 +15,7 @@ import Profile from './pages/Profile';
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) return <Navigate to="/" />; // Or unauthorized page
+  if (role && user.role !== role) return <Navigate to="/" />;
   return children;
 };
 
@@ -22,6 +26,10 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register-success" element={<RegisterSuccess />} />
+          <Route path="/verify-email" element={<EmailVerified />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route
             path="/admin"

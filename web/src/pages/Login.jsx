@@ -8,14 +8,19 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
         try {
             await login(email, password);
             navigate('/');
         } catch (err) {
             setError('Invalid email or password');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -38,7 +43,7 @@ const Login = () => {
                             required
                         />
                     </div>
-                    <div className="form-group" style={{ marginBottom: '32px' }}>
+                    <div className="form-group" style={{ marginBottom: '8px' }}>
                         <label>Password</label>
                         <input
                             type="password"
@@ -48,7 +53,12 @@ const Login = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="btn-primary">Sign In</button>
+                    <div style={{ textAlign: 'right', marginBottom: '32px' }}>
+                        <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Forgot password?</Link>
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={loading}>
+                        {loading ? 'Signing in...' : 'Sign In'}
+                    </button>
                 </form>
 
                 <p style={{ marginTop: '32px', color: 'var(--text-muted)' }}>

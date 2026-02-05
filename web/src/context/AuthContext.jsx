@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (error) {
             console.error('Failed to fetch profile', error);
-            // Don't auto-logout on simple refresh error if we want but for now keep it
         } finally {
             setLoading(false);
         }
@@ -35,8 +34,8 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data.user);
     };
 
-    const register = async (email, password, country, role) => {
-        const response = await api.post('/auth/register', { email, password, country, role });
+    const register = async (userData) => {
+        const response = await api.post('/auth/register', userData);
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
     };
