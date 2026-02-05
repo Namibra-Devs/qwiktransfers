@@ -11,6 +11,10 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
         try {
             await register(email, password);
             navigate('/');
@@ -20,27 +24,39 @@ const Register = () => {
     };
 
     return (
-        <div className="auth-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'radial-gradient(circle at bottom left, #1e1b4b, #0f172a)' }}>
-            <div className="card" style={{ maxWidth: '400px', width: '90%' }}>
-                <h1 style={{ textAlign: 'center', color: '#818cf8', marginBottom: '0.5rem' }}>QWIK<span style={{ color: '#fff' }}>TRANSFERS</span></h1>
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '2rem' }}>Get started with your first transfer.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+            <div className="card" style={{ maxWidth: '440px', width: '90%', textAlign: 'center' }}>
+                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>QWIK</h1>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>Create your Qwiktransfers account</p>
 
-                {error && <p style={{ color: 'var(--danger)', textAlign: 'center', marginBottom: '1rem' }}>{error}</p>}
+                {error && <p style={{ color: 'var(--danger)', marginBottom: '16px', fontWeight: 600 }}>{error}</p>}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
                     <div className="form-group">
                         <label>Email Address</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Email"
+                            required
+                        />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: '32px' }}>
                         <label>Password</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 6 characters" required />
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Minimum 6 characters"
+                            required
+                        />
                     </div>
-                    <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>Create Account</button>
+                    <button type="submit" className="btn-primary">Create Account</button>
                 </form>
 
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Already have an account? <Link to="/login" style={{ color: '#818cf8', fontWeight: 600, textDecoration: 'none' }}>Login instead</Link>
+                <p style={{ marginTop: '32px', color: 'var(--text-muted)' }}>
+                    Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Sign in</Link>
                 </p>
             </div>
         </div>

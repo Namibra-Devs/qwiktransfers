@@ -3,10 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Users', 'kyc_status', {
-      type: Sequelize.ENUM('pending', 'verified', 'rejected'),
-      defaultValue: 'pending'
-    });
+    // kyc_status already exists from initial migration
     await queryInterface.addColumn('Users', 'kyc_document', {
       type: Sequelize.STRING,
       allowNull: true
@@ -14,7 +11,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('Users', 'kyc_status');
+    // No need to remove kyc_status as it belongs to the base table
     await queryInterface.removeColumn('Users', 'kyc_document');
   }
 };

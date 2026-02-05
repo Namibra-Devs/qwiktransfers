@@ -35,6 +35,15 @@ const login = async (req, res) => {
     }
 };
 
+const getProfile = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({ attributes: { exclude: ['password'] } });

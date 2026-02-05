@@ -1,147 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --bg-dark: #0f172a;
-  --card-bg: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --glass: rgba(30, 41, 59, 0.7);
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Color Palette from Image */
+  --bg-peach: #f5c4a7;
+  --text-deep-brown: #4a1d17;
+  --accent-peach: #f9d8c4;
+
+  /* Brand Colors */
+  --primary: #4a1d17;
+  --secondary: #8b4513;
+  --success: #2d6a4f;
+  --warning: #cc8e35;
+  --danger: #9d0208;
+
+  /* Functional Colors */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(74, 29, 23, 0.1);
+  --text-muted: rgba(74, 29, 23, 0.6);
+  --input-bg: #fff;
+
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  font-family: var(--font-family);
-  background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
-  color: var(--text-main);
-  min-height: 100vh;
-}
-
-.dashboard-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-  padding: 1.5rem;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.card {
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  padding: 2rem;
-  border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-peach);
+  color: var(--text-deep-brown);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
 h2,
-h3 {
-  margin-top: 0;
-  color: #fff;
+h3,
+h4 {
   font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  height: 72px;
+  background-color: transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+main {
+  padding: 24px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 32px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 8px;
   font-size: 0.9rem;
 }
 
-.form-group input,
-.form-group select {
+input,
+select {
   width: 100%;
-  padding: 0.8rem 1rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-radius: 0.75rem;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 1rem;
-  transition: all 0.2s;
+  background: var(--input-bg);
+  color: var(--text-deep-brown);
+  transition: all 0.2s ease;
 }
 
-.form-group input:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-button {
-  padding: 0.8rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
+  box-shadow: 0 0 0 4px rgba(74, 29, 23, 0.1);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), #818cf8);
-  color: #fff;
   width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  background: #3a1612;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1rem;
 }
 
 th {
   text-align: left;
+  padding: 16px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
   color: var(--text-muted);
   font-weight: 600;
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 td {
-  padding: 1.2rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+}
+
+tr:last-child td {
+  border-bottom: none;
 }
 
 .badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 2rem;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .badge-pending {
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--warning);
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .badge-processing {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .badge-sent {
-  background: rgba(34, 197, 94, 0.2);
-  color: var(--success);
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Coinbase Style Navigation for Admin */
+nav button {
+  border: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+nav button:hover {
+  color: var(--text-deep-brown);
+}
+
+nav button.active {
+  background: rgba(74, 29, 23, 0.1);
+  color: var(--text-deep-brown);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-peach);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
 }

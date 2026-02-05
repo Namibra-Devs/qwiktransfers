@@ -52,7 +52,7 @@ const UserDashboard = () => {
             setRecipientName('');
             setRecipientAccount('');
             fetchTransactions();
-            alert('Transaction Initiated! Please wait for admin verification.');
+            alert('Transfer Initiated!');
         } catch (error) {
             alert('Failed to send request');
         } finally {
@@ -70,7 +70,7 @@ const UserDashboard = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchTransactions();
-            alert('Proof uploaded successfully!');
+            alert('Proof uploaded!');
         } catch (error) {
             alert('Failed to upload proof');
         } finally {
@@ -87,7 +87,7 @@ const UserDashboard = () => {
             await api.post('/auth/kyc', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('KYC Document uploaded! Admin will verify soon.');
+            alert('KYC Document uploaded!');
             if (refreshProfile) refreshProfile();
         } catch (error) {
             alert('KYC Upload failed');
@@ -99,96 +99,163 @@ const UserDashboard = () => {
     return (
         <div className="dashboard-container">
             <header>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#818cf8' }}>QWIK<span style={{ color: '#fff' }}>TRANSFERS</span></h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user?.email}</div>
-                        <div style={{ fontSize: '0.75rem', color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)' }}>
-                            Status: {user?.kyc_status?.toUpperCase() || 'NOT VERIFIED'}
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.email}</div>
+                        <div style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
+                            textTransform: 'uppercase'
+                        }}>
+                            {user?.kyc_status || 'Unverified'}
                         </div>
                     </div>
-                    <button onClick={logout} className="btn-primary" style={{ width: 'auto', padding: '0.6rem 1.2rem' }}>Logout</button>
+                    <button
+                        onClick={logout}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid var(--border-color)',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            color: 'var(--text-deep-brown)'
+                        }}
+                    >
+                        Sign Out
+                    </button>
                 </div>
             </header>
 
-            <main style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem' }}>
-                <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <main style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 440px) 1fr', gap: '48px', alignItems: 'start' }}>
+                <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <section className="card">
-                        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Send Money</h2>
+                        <h2 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Send Money</h2>
                         <form onSubmit={handleSend}>
                             <div className="form-group">
-                                <label>Amount (GHS)</label>
-                                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+                                <label>You send</label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        style={{ paddingRight: '60px', fontSize: '1.25rem', fontWeight: 600 }}
+                                        required
+                                    />
+                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>GHS</span>
+                                </div>
                             </div>
+
                             <div className="form-group">
-                                <label>Method</label>
+                                <label>Recipient gets</label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        value={amount ? (amount * rate).toFixed(2) : '0.00'}
+                                        readOnly
+                                        style={{ paddingRight: '60px', background: '#f9f9f9', fontSize: '1.25rem', fontWeight: 600 }}
+                                    />
+                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>CAD</span>
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>
+                                    Exchange Rate: 1 GHS = {rate} CAD
+                                </p>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Recipient Method</label>
                                 <select value={recipientType} onChange={(e) => setRecipientType(e.target.value)}>
-                                    <option value="momo">Momo</option>
-                                    <option value="bank">Bank</option>
+                                    <option value="momo">Mobile Money (Momo)</option>
+                                    <option value="bank">Bank Transfer</option>
                                     <option value="paypal">PayPal</option>
                                 </select>
                             </div>
+
                             <div className="form-group">
-                                <label>Name</label>
-                                <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
+                                <label>Recipient Full Name</label>
+                                <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Full Name" required />
                             </div>
-                            <div className="form-group">
-                                <label>Account</label>
-                                <input type="text" value={recipientAccount} onChange={(e) => setRecipientAccount(e.target.value)} required />
+
+                            <div className="form-group" style={{ marginBottom: '32px' }}>
+                                <label>Account / Wallet ID</label>
+                                <input type="text" value={recipientAccount} onChange={(e) => setRecipientAccount(e.target.value)} placeholder="Account Info" required />
                             </div>
-                            <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#818cf8' }}>Rate: 1 GHS = {rate} CAD</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>Total: {(amount * rate).toFixed(2)} CAD</div>
-                            </div>
-                            <button type="submit" className="btn-primary" disabled={loading}>Send</button>
+
+                            <button type="submit" className="btn-primary" disabled={loading}>
+                                {loading ? 'Processing...' : 'Send Now'}
+                            </button>
                         </form>
                     </section>
 
                     {user?.kyc_status !== 'verified' && (
-                        <section className="card" style={{ border: '1px solid var(--warning)' }}>
-                            <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Complete KYC</h3>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Upload GH Card or Passport to unlock higher limits.</p>
+                        <div className="card" style={{ border: '2px solid var(--warning)', padding: '24px' }}>
+                            <h3 style={{ fontSize: '0.95rem', marginBottom: '8px' }}>Identity Verification</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Verify your identity to increase limits and speed up transfers.</p>
                             <div style={{ position: 'relative' }}>
-                                <input type="file" onChange={(e) => handleKYCUpload(e.target.files[0])} style={{ position: 'absolute', opacity: 0, width: '100%', cursor: 'pointer' }} />
-                                <button className="btn-primary" style={{ backgroundColor: 'var(--warning)', color: '#000' }}>Upload ID</button>
+                                <input type="file" onChange={(e) => handleKYCUpload(e.target.files[0])} style={{ position: 'absolute', opacity: 0, width: '100%', cursor: 'pointer', height: '100%' }} />
+                                <button className="btn-primary" style={{ background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '10px' }}>Upload ID Document</button>
                             </div>
-                        </section>
+                        </div>
                     )}
                 </aside>
 
-                <section className="card">
-                    <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>History</h2>
-                    <table style={{ minWidth: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr>
-                                <th>Recipient</th>
-                                <th>Status</th>
-                                <th>Amount</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map(tx => (
-                                <tr key={tx.id}>
-                                    <td>
-                                        <div style={{ fontWeight: 600 }}>{tx.recipient_details?.name}</div>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{tx.recipient_details?.account}</div>
-                                    </td>
-                                    <td><span className={`badge badge-${tx.status}`}>{tx.status}</span></td>
-                                    <td><b>{tx.amount_received} CAD</b></td>
-                                    <td>
-                                        {!tx.proof_url && tx.status === 'pending' && (
-                                            <div style={{ position: 'relative' }}>
-                                                <input type="file" onChange={(e) => handleUploadProof(tx.id, e.target.files[0])} style={{ position: 'absolute', opacity: 0, width: '100%', cursor: 'pointer' }} />
-                                                <button style={{ fontSize: '0.7rem', padding: '0.4rem', border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', borderRadius: '4px' }}>Upload Proof</button>
-                                            </div>
-                                        )}
-                                        {tx.proof_url && <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.7rem', color: '#818cf8' }}>View Proof</a>}
-                                    </td>
+                <section className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                    <div style={{ padding: '32px' }}>
+                        <h2 style={{ fontSize: '1.1rem' }}>Transaction History</h2>
+                    </div>
+                    {transactions.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '48px' }}>No transactions found.</p>
+                    ) : (
+                        <table style={{ marginTop: '0' }}>
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {transactions.map((tx) => (
+                                    <tr key={tx.id}>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{tx.recipient_details?.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.recipient_details?.account}</div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontWeight: 700 }}>{tx.amount_received} CAD</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.amount_sent} GHS</div>
+                                        </td>
+                                        <td>
+                                            <span className={`badge badge-${tx.status}`}>
+                                                {tx.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'right' }}>
+                                            {tx.status === 'pending' && !tx.proof_url && (
+                                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) => handleUploadProof(tx.id, e.target.files[0])}
+                                                        style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>Upload Proof</span>
+                                                </div>
+                                            )}
+                                            {tx.proof_url && (
+                                                <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>
+                                                    View Proof
+                                                </a>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </section>
             </main>
         </div>
