@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.STRING,
     kyc_status: DataTypes.STRING, // 'pending', 'verified', 'rejected'
     kyc_document: DataTypes.STRING,
+    full_name: DataTypes.STRING,
+    phone: DataTypes.STRING,
+    profile_picture: DataTypes.STRING,
+    country: DataTypes.STRING,
+    transaction_pin: DataTypes.STRING, // 4-digit PIN (hashed)
     balance_ghs: DataTypes.DECIMAL,
     balance_cad: DataTypes.DECIMAL
   }, {

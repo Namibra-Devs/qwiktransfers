@@ -1,14 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getProfile, getAllUsers, updateKYC } = require('../controllers/authController');
+const { register, login, getProfile, getAllUsers, updateKYC, updateProfile, changePassword } = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
 router.get('/profile', verifyToken, getProfile);
+router.patch('/profile', verifyToken, updateProfile);
+router.post('/change-password', verifyToken, changePassword);
+router.post('/set-pin', verifyToken, setPin);
+router.post('/verify-pin', verifyToken, verifyPin);
 router.get('/users', verifyAdmin, getAllUsers);
 router.patch('/kyc/status', verifyAdmin, updateKYC);
+
+router.post('/avatar', verifyToken, upload.single('avatar'), async (req, res) => {
+    try {
+        const user = await require('../models').User.findByPk(req.user.id);
+        user.profile_picture = `/uploads/${req.file.filename}`;
+        await user.save();
+        res.json({ message: 'Avatar updated', profile_picture: user.profile_picture });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 router.post('/kyc', verifyToken, upload.single('document'), async (req, res) => {
     try {
         const user = await require('../models').User.findByPk(req.user.id);

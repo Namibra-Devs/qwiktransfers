@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -27,6 +28,15 @@ function App() {
             element={
               <PrivateRoute role="admin">
                 <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
               </PrivateRoute>
             }
           />

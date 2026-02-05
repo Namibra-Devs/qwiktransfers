@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { Link } from 'react-router-dom';
 
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -9,8 +10,15 @@ const UserDashboard = () => {
     const [recipientType, setRecipientType] = useState('momo');
     const [recipientName, setRecipientName] = useState('');
     const [recipientAccount, setRecipientAccount] = useState('');
+    const [fromCurrency, setFromCurrency] = useState('GHS');
+    const [toCurrency, setToCurrency] = useState('CAD');
     const [rate, setRate] = useState(0.09);
     const [loading, setLoading] = useState(false);
+
+    // PIN Modal States
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [pin, setPin] = useState('');
+    const [pinAction, setPinAction] = useState(null); // { type: 'send' | 'upload', data: any }
 
     useEffect(() => {
         fetchTransactions();
@@ -35,13 +43,45 @@ const UserDashboard = () => {
         }
     };
 
-    const handleSend = async (e) => {
+    const handleCurrencySwitch = () => {
+        const temp = fromCurrency;
+        setFromCurrency(toCurrency);
+        setToCurrency(temp);
+        setRate(1 / rate);
+    };
+
+    const handlePinSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        try {
+            await api.post('/auth/verify-pin', { pin });
+            setShowPinModal(false);
+            setPin('');
+
+            if (pinAction.type === 'send') {
+                await executeSend();
+            } else if (pinAction.type === 'upload') {
+                await executeUpload(pinAction.data.txId, pinAction.data.file);
+            }
+        } catch (error) {
+            alert(error.response?.data?.error || 'PIN Verification Failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSend = (e) => {
+        e.preventDefault();
+        setPinAction({ type: 'send' });
+        setShowPinModal(true);
+    };
+
+    const executeSend = async () => {
         setLoading(true);
         try {
             await api.post('/transactions', {
                 amount_sent: amount,
-                type: 'GHS-CAD',
+                type: `${fromCurrency}-${toCurrency}`,
                 recipient_details: {
                     type: recipientType,
                     name: recipientName,
@@ -60,8 +100,13 @@ const UserDashboard = () => {
         }
     };
 
-    const handleUploadProof = async (txId, file) => {
+    const handleUploadProof = (txId, file) => {
         if (!file) return;
+        setPinAction({ type: 'upload', data: { txId, file } });
+        setShowPinModal(true);
+    };
+
+    const executeUpload = async (txId, file) => {
         const formData = new FormData();
         formData.append('proof', file);
         setLoading(true);
@@ -101,16 +146,25 @@ const UserDashboard = () => {
             <header>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK</h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.email}</div>
-                        <div style={{
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
-                            textTransform: 'uppercase'
-                        }}>
-                            {user?.kyc_status || 'Unverified'}
-                        </div>
+                    <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {user?.profile_picture && (
+                            <img
+                                src={`http://localhost:5000${user.profile_picture}`}
+                                alt="Avatar"
+                                style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)' }}
+                            />
+                        )}
+                        <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
+                                textTransform: 'uppercase'
+                            }}>
+                                {user?.kyc_status || 'Unverified'}
+                            </div>
+                        </Link>
                     </div>
                     <button
                         onClick={logout}
@@ -145,8 +199,14 @@ const UserDashboard = () => {
                                         style={{ paddingRight: '60px', fontSize: '1.25rem', fontWeight: 600 }}
                                         required
                                     />
-                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>GHS</span>
+                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>{fromCurrency}</span>
                                 </div>
+                            </div>
+
+                            <div style={{ textAlign: 'center', margin: '-10px 0 10px 0' }}>
+                                <button type="button" onClick={handleCurrencySwitch} style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    ⇅
+                                </button>
                             </div>
 
                             <div className="form-group">
@@ -158,10 +218,10 @@ const UserDashboard = () => {
                                         readOnly
                                         style={{ paddingRight: '60px', background: '#f9f9f9', fontSize: '1.25rem', fontWeight: 600 }}
                                     />
-                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>CAD</span>
+                                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>{toCurrency}</span>
                                 </div>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>
-                                    Exchange Rate: 1 GHS = {rate} CAD
+                                    Exchange Rate: 1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
                                 </p>
                             </div>
 
@@ -226,8 +286,8 @@ const UserDashboard = () => {
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.recipient_details?.account}</div>
                                         </td>
                                         <td>
-                                            <div style={{ fontWeight: 700 }}>{tx.amount_received} CAD</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.amount_sent} GHS</div>
+                                            <div style={{ fontWeight: 700 }}>{tx.amount_received} {tx.type.split('-')[1]}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.amount_sent} {tx.type.split('-')[0]}</div>
                                         </td>
                                         <td>
                                             <span className={`badge badge-${tx.status}`}>
@@ -258,6 +318,31 @@ const UserDashboard = () => {
                     )}
                 </section>
             </main>
+
+            {showPinModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="card" style={{ maxWidth: '360px', width: '90%', textAlign: 'center' }}>
+                        <h3 style={{ marginBottom: '16px' }}>Verify Transaction</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>Enter your 4-digit security PIN to proceed.</p>
+                        <form onSubmit={handlePinSubmit}>
+                            <input
+                                type="password"
+                                maxLength="4"
+                                value={pin}
+                                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                style={{ textAlign: 'center', fontSize: '2rem', letterSpacing: '12px', marginBottom: '24px' }}
+                                placeholder="••••"
+                                autoFocus
+                                required
+                            />
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button type="button" onClick={() => setShowPinModal(false)} className="btn-primary" style={{ background: 'transparent', color: 'var(--text-deep-brown)', border: '1px solid var(--border-color)' }}>Cancel</button>
+                                <button type="submit" className="btn-primary">Verify</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

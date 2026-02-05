@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [country, setCountry] = useState('Ghana');
     const { register } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
@@ -16,7 +17,7 @@ const Register = () => {
             return;
         }
         try {
-            await register(email, password);
+            await register(email, password, country);
             navigate('/');
         } catch (err) {
             setError('Registration failed. Try a different email.');
@@ -41,6 +42,16 @@ const Register = () => {
                             placeholder="Email"
                             required
                         />
+                    </div>
+                    <div className="form-group">
+                        <label>Your Country</label>
+                        <select value={country} onChange={(e) => setCountry(e.target.value)}>
+                            <option value="Ghana">Ghana</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Nigeria">Nigeria</option>
+                            <option value="USA">USA</option>
+                            <option value="UK">United Kingdom</option>
+                        </select>
                     </div>
                     <div className="form-group" style={{ marginBottom: '32px' }}>
                         <label>Password</label>
