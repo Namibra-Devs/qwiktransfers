@@ -8,7 +8,7 @@ const { sendSMS } = require('../services/smsService');
 
 const register = async (req, res) => {
     try {
-        const { email, password, full_name, phone, country, role } = req.body;
+        const { email, password, full_name, phone, country, role, pin } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ where: { email } });
@@ -17,16 +17,18 @@ const register = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
         const user = await User.create({
             email,
             password: hashedPassword,
+            transaction_pin: hashedPin,
             full_name,
             phone,
             country: country || 'Ghana',
             role: role || 'user',
-            kyc_status: 'pending',
+            kyc_status: 'unverified',
             balance_ghs: 0.0,
             balance_cad: 0.0,
             verification_token: verificationToken,
@@ -166,7 +168,24 @@ const resetPassword = async (req, res) => {
 const getProfile = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id);
-        res.json(user);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Calculate Limits
+        let dailyLimit = 50; // Level 1: Unverified Email
+        if (user.is_email_verified) {
+            dailyLimit = 500; // Level 2: Verified Email
+        }
+        if (user.kyc_status === 'verified') {
+            dailyLimit = 5000; // Level 3: Verified KYC
+        }
+
+        res.json({
+            ...user.toJSON(),
+            limits: {
+                daily: dailyLimit,
+                currency: 'USD' // Using USD as a reference base
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -181,7 +200,7 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-const updateKYC = async (req, res) => {
+const updateKYCStatus = async (req, res) => {
     try {
         const { userId, status } = req.body;
         const user = await User.findByPk(userId);
@@ -189,6 +208,33 @@ const updateKYC = async (req, res) => {
         user.kyc_status = status;
         await user.save();
         res.json({ message: 'KYC status updated', kyc_status: status });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const submitKYC = async (req, res) => {
+    try {
+        const { documentType, documentId } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!req.files || !req.files['front']) {
+            return res.status(400).json({ error: 'Front of document is required' });
+        }
+
+        user.kyc_document_type = documentType;
+        user.kyc_document_id = documentId;
+        user.kyc_front_url = `/uploads/${req.files['front'][0].filename}`;
+
+        if (req.files['back']) {
+            user.kyc_back_url = `/uploads/${req.files['back'][0].filename}`;
+        }
+
+        user.kyc_status = 'pending';
+        await user.save();
+
+        res.json({ message: 'KYC documents submitted successfully', kyc_status: 'pending' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -271,7 +317,8 @@ module.exports = {
     resetPassword,
     getProfile,
     getAllUsers,
-    updateKYC,
+    updateKYCStatus,
+    submitKYC,
     updateProfile,
     changePassword,
     setPin,

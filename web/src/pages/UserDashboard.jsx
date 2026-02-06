@@ -263,6 +263,11 @@ const UserDashboard = () => {
             <header>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK</h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                    <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                        <Link to="/kyc" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none' }}>
+                            {user?.kyc_status === 'verified' ? '✓ Verified' : 'Verify ID'}
+                        </Link>
+                    </nav>
                     <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {user?.profile_picture && (
                             <img
@@ -302,6 +307,45 @@ const UserDashboard = () => {
 
             <main style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 460px) 1fr', gap: '48px', alignItems: 'start' }}>
                 <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Verification & Limits Section */}
+                    <section className="card" style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Verification Status</h3>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {user?.is_email_verified ? (
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', background: '#d1fae5', padding: '2px 8px', borderRadius: '4px' }}>EMAIL ✓</span>
+                                ) : (
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#dc2626', background: '#fee2e2', padding: '2px 8px', borderRadius: '4px' }}>EMAIL ⚠</span>
+                                )}
+                                {user?.kyc_status === 'verified' ? (
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', background: '#d1fae5', padding: '2px 8px', borderRadius: '4px' }}>ID ✓</span>
+                                ) : (
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#d97706', background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>ID {user?.kyc_status?.toUpperCase()}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>${user?.limits?.daily || 50} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Daily Limit</span></span>
+                                <Link to="/kyc" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>Increase Limit</Link>
+                            </div>
+                            <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: user?.limits ? '10%' : '0%', // This would ideally be calculated from current usage
+                                    background: 'var(--primary)',
+                                    borderRadius: '4px'
+                                }}></div>
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                {!user?.is_email_verified && "Verify your email to increase limit to $500."}
+                                {user?.is_email_verified && user?.kyc_status !== 'verified' && "Complete KYC to increase limit to $5,000."}
+                                {user?.kyc_status === 'verified' && "You have the maximum daily limit."}
+                            </p>
+                        </div>
+                    </section>
+
                     <section className="card" style={{ position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h2 style={{ fontSize: '1.1rem' }}>Send Money</h2>

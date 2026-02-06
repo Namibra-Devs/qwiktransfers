@@ -24,6 +24,10 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.STRING,
     kyc_status: DataTypes.STRING, // 'pending', 'verified', 'rejected'
     kyc_document: DataTypes.STRING,
+    kyc_document_type: DataTypes.STRING,
+    kyc_document_id: DataTypes.STRING,
+    kyc_front_url: DataTypes.STRING,
+    kyc_back_url: DataTypes.STRING,
     full_name: DataTypes.STRING,
     phone: DataTypes.STRING,
     profile_picture: DataTypes.STRING,

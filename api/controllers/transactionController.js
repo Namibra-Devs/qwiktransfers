@@ -8,6 +8,45 @@ const createTransaction = async (req, res) => {
         const userId = req.user.id;
         const user = await User.findByPk(userId);
 
+        // Daily Limit Enforcement
+        let dailyLimit = 50; // Level 1 (Unverified Email)
+        if (user.is_email_verified) dailyLimit = 500; // Level 2 (Verified Email)
+        if (user.kyc_status === 'verified') dailyLimit = 5000; // Level 3 (Verified KYC)
+
+        // Calculate sum of today's transactions
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const todayTransactions = await Transaction.findAll({
+            where: {
+                userId,
+                createdAt: { [require('sequelize').Op.gte]: startOfDay }
+            }
+        });
+
+        // Convert current today sum and prospective amount to reference USD/CAD equivalent
+        // Simple conversion for limit check: 1 CAD/USD ≈ 15 GHS
+        const getReferenceAmount = (amount, t) => {
+            const currency = t.split('-')[0];
+            return currency === 'GHS' ? amount / 15 : amount;
+        };
+
+        const currentSpent = todayTransactions.reduce((sum, tx) => sum + getReferenceAmount(tx.amount_sent, tx.type), 0);
+        const prospectiveSent = getReferenceAmount(amount_sent, type || 'GHS-CAD');
+
+        if (currentSpent + prospectiveSent > dailyLimit) {
+            let reason = "Verify your email to increase your limit to $500.";
+            if (user.is_email_verified && user.kyc_status !== 'verified') {
+                reason = "Complete KYC verification to increase your limit to $5,000.";
+            } else if (user.is_email_verified && user.kyc_status === 'verified') {
+                reason = "You have reached your maximum daily limit of $5,000.";
+            }
+
+            return res.status(403).json({
+                error: `Daily limit exceeded. You have already spent $${currentSpent.toFixed(2)}. Your current limit is $${dailyLimit}. ${reason}`
+            });
+        }
+
         const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
         const exchange_rate = rateRecord ? rateRecord.rate : 0.10;
 

@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
+import KycVerification from './pages/KycVerification';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -50,6 +51,15 @@ function App() {
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/kyc"
+            element={
+              <PrivateRoute>
+                <KycVerification />
               </PrivateRoute>
             }
           />

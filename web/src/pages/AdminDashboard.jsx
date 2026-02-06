@@ -144,7 +144,8 @@ const AdminDashboard = () => {
                             <thead>
                                 <tr>
                                     <th>User</th>
-                                    <th>Identity Document</th>
+                                    <th>Document Info</th>
+                                    <th>Verification Files</th>
                                     <th>Status</th>
                                     <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
@@ -152,13 +153,33 @@ const AdminDashboard = () => {
                             <tbody>
                                 {users.filter(u => u.role !== 'admin').map((u) => (
                                     <tr key={u.id}>
-                                        <td style={{ fontWeight: 600 }}>{u.email}</td>
+                                        <td style={{ fontWeight: 600 }}>
+                                            {u.full_name}<br />
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>{u.email}</span>
+                                        </td>
                                         <td>
-                                            {u.kyc_document ? (
-                                                <a href={`http://localhost:5000${u.kyc_document}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>Review Document</a>
+                                            {u.kyc_document_type ? (
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    <strong>{u.kyc_document_type.replace('_', ' ').toUpperCase()}</strong><br />
+                                                    ID: {u.kyc_document_id}
+                                                </div>
                                             ) : (
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Not Uploaded</span>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No Details</span>
                                             )}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                {u.kyc_front_url && (
+                                                    <a href={`http://localhost:5000${u.kyc_front_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Front</a>
+                                                )}
+                                                {u.kyc_back_url && (
+                                                    <a href={`http://localhost:5000${u.kyc_back_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Back</a>
+                                                )}
+                                                {u.kyc_document && !u.kyc_front_url && (
+                                                    <a href={`http://localhost:5000${u.kyc_document}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Old Format ID</a>
+                                                )}
+                                                {!u.kyc_front_url && !u.kyc_document && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>None</span>}
+                                            </div>
                                         </td>
                                         <td><span className={`badge badge-pending`}>{u.kyc_status}</span></td>
                                         <td style={{ textAlign: 'right' }}>
