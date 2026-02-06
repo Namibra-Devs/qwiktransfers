@@ -1,5 +1,6 @@
 const { Transaction, User, Rate } = require('../models');
 const { sendSMS } = require('../services/smsService');
+const { sendTransactionInitiatedEmail } = require('../services/emailService');
 
 const createTransaction = async (req, res) => {
     try {
@@ -23,10 +24,17 @@ const createTransaction = async (req, res) => {
             proof_url: ''
         });
 
-        // Send SMS Notification
+        // Send Email Notification
+        if (user) {
+            await sendTransactionInitiatedEmail(user, transaction);
+        }
+
+        // Send SMS Notification (Short & Concise)
         if (user && user.phone) {
-            const refMsg = recipient_details.admin_reference ? ` Ref: ${recipient_details.admin_reference}.` : '';
-            await sendSMS(user.phone, `Your transfer request of ${amount_sent} ${type.split('-')[0]} to ${recipient_details.name} has been initiated.${refMsg} Status: Pending.`);
+            const fromCurr = type.split('-')[0];
+            const toCurr = type.split('-')[1];
+            const refMsg = recipient_details.admin_reference ? `Ref: ${recipient_details.admin_reference}` : '';
+            await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`);
         }
 
         res.status(201).json(transaction);
@@ -41,7 +49,11 @@ const getTransactions = async (req, res) => {
         if (req.user.role !== 'admin') {
             where.userId = req.user.id;
         }
-        const transactions = await Transaction.findAll({ where, include: ['user'] });
+        const transactions = await Transaction.findAll({
+            where,
+            include: ['user'],
+            order: [['createdAt', 'DESC']]
+        });
         res.json(transactions);
     } catch (error) {
         res.status(500).json({ error: error.message });

@@ -27,6 +27,12 @@ const Register = () => {
         e.preventDefault();
         setError('');
 
+        const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!isValidEmail(email)) {
+            setError('Please enter a valid email address');
+            return;
+        }
+
         // Simple phone validation
         const code = countryCodes[country];
         if (!phone.startsWith(code)) {

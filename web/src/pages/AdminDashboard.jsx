@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -35,8 +36,9 @@ const AdminDashboard = () => {
         try {
             await api.patch(`/transactions/${id}/status`, { status });
             fetchTransactions();
+            toast.success('Status updated!');
         } catch (error) {
-            alert('Failed to update status');
+            toast.error('Failed to update status');
         }
     };
 
@@ -44,8 +46,9 @@ const AdminDashboard = () => {
         try {
             await api.patch('/auth/kyc/status', { userId, status });
             fetchUsers();
+            toast.success('KYC status updated!');
         } catch (error) {
-            alert('Failed to update KYC');
+            toast.error('Failed to update KYC');
         }
     };
 

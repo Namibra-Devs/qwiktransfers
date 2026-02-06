@@ -93,4 +93,71 @@ const sendResetPasswordEmail = async (email, token) => {
     );
 };
 
-module.exports = { sendVerificationEmail, sendVerificationSuccessEmail, sendResetPasswordEmail, sendEmail };
+const sendTransactionInitiatedEmail = async (user, transaction) => {
+    const { amount_sent, amount_received, type, recipient_details, exchange_rate, createdAt } = transaction;
+    const [fromCurrency, toCurrency] = type.split('-');
+
+    const formattedDate = new Date(createdAt).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    });
+
+    await sendEmail(
+        user.email,
+        `Transfer Initiated: ${amount_sent} ${fromCurrency}`,
+        `
+            <div style="background-color: #f8f9fa; padding: 24px; border-radius: 12px; border: 1px solid #e0e0e0;">
+                <h2 style="color: ${DEEP_BROWN}; margin-top: 0;">Transfer Details</h2>
+                <p>Hello ${user.full_name}, your transfer request has been received and is currently pending.</p>
+                <div style="font-size: 0.8rem; color: #888; margin-bottom: 20px;">Initiated on ${formattedDate}</div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Amount Sent:</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">${amount_sent} ${fromCurrency}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Exchange Rate:</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold; font-size: 0.85rem;">1 ${fromCurrency} = ${Number(exchange_rate).toFixed(4)} ${toCurrency}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Recipient Gets:</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold; color: ${DEEP_BROWN}; font-size: 1.1rem;">${amount_received} ${toCurrency}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666; border-top: 1px solid #eee;">Recipient:</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold; border-top: 1px solid #eee;">${recipient_details.name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Method:</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold; text-transform: capitalize;">${recipient_details.type.replace('_', ' ')}</td>
+                    </tr>
+                    ${recipient_details.admin_reference ? `
+                    <tr style="background-color: ${PEACH};">
+                        <td style="padding: 12px; color: ${DEEP_BROWN}; font-weight: bold;">Payment Ref:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 800; font-size: 1.2rem; color: ${DEEP_BROWN};">${recipient_details.admin_reference}</td>
+                    </tr>
+                    ` : ''}
+                </table>
+
+                <p style="font-size: 0.9rem; color: #666;">Please ensure you have made the payment to the admin account with the reference code above for faster processing.</p>
+                
+                <div style="text-align: center; margin-top: 32px;">
+                    <a href="${APP_URL}/dashboard" style="background-color: ${DEEP_BROWN}; color: ${PEACH}; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Status</a>
+                </div>
+            </div>
+        `
+    );
+};
+
+module.exports = {
+    sendVerificationEmail,
+    sendVerificationSuccessEmail,
+    sendResetPasswordEmail,
+    sendEmail,
+    sendTransactionInitiatedEmail
+};

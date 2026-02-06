@@ -9,6 +9,13 @@ const ForgotPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!isValidEmail(email)) {
+            setMsg({ type: 'error', text: 'Please enter a valid email address' });
+            return;
+        }
+
         setLoading(true);
         setMsg({ type: '', text: '' });
         try {

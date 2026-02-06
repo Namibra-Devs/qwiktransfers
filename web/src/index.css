@@ -109,6 +109,10 @@ select:focus {
   box-shadow: 0 0 0 4px rgba(74, 29, 23, 0.1);
 }
 
+button {
+  font-family: inherit;
+}
+
 .btn-primary {
   width: 100%;
   padding: 16px;

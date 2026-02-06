@@ -20,9 +20,12 @@ const PrivateRoute = ({ children, role }) => {
   return children;
 };
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
     <Router>
+      <Toaster position="top-center" reverseOrder={false} />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -15,6 +16,7 @@ const UserDashboard = () => {
     const [rate, setRate] = useState(0.09);
     const [loading, setLoading] = useState(false);
     const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
     // New Multi-step States
     const [formStep, setFormStep] = useState(1);
@@ -36,6 +38,14 @@ const UserDashboard = () => {
     // Details Modal States
     const [selectedTx, setSelectedTx] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+    // Proof Preview Modal States
+    const [previewImage, setPreviewImage] = useState(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+    const isValidEmail = (email) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
 
     const momoProviders = [
         { id: 'mtn', name: 'MTN Momo', color: '#FFCC00', textColor: '#000' },
@@ -71,11 +81,14 @@ const UserDashboard = () => {
     };
 
     const fetchTransactions = async () => {
+        setIsHistoryLoading(true);
         try {
             const res = await api.get('/transactions');
             setTransactions(res.data);
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsHistoryLoading(false);
         }
     };
 
@@ -99,24 +112,27 @@ const UserDashboard = () => {
 
     const nextStep = () => {
         if (formStep === 1) {
-            if (!amount || amount <= 0) return alert('Please enter a valid amount');
+            if (!amount || amount <= 0) return toast.error('Please enter a valid amount');
             setFormStep(2);
         } else if (formStep === 2) {
-            if (!recipientName) return alert('Please enter recipient name');
+            if (!recipientName) return toast.error('Please enter recipient name');
 
             if (toCurrency === 'CAD') {
                 if (recipientType === 'bank' && (!recipientAccount || !transitNumber || !institutionNumber)) {
-                    return alert('Please fill in all bank details');
+                    return toast.error('Please fill in all bank details');
                 }
                 if (recipientType === 'interac' && !interacEmail) {
-                    return alert('Please enter Interac email');
+                    return toast.error('Please enter Interac email');
+                }
+                if (recipientType === 'interac' && !isValidEmail(interacEmail)) {
+                    return toast.error('Please enter a valid Interac email');
                 }
             } else { // GHS
                 if (recipientType === 'momo' && (!recipientAccount || !momoProvider)) {
-                    return alert('Please fill in Momo details');
+                    return toast.error('Please fill in Momo details');
                 }
                 if (recipientType === 'bank' && (!recipientAccount || !bankName)) {
-                    return alert('Please fill in bank details');
+                    return toast.error('Please fill in bank details');
                 }
             }
 
@@ -142,7 +158,7 @@ const UserDashboard = () => {
                 await executeUpload(pinAction.data.txId, pinAction.data.file);
             }
         } catch (error) {
-            alert(error.response?.data?.error || 'PIN Verification Failed');
+            toast.error(error.response?.data?.error || 'PIN Verification Failed');
         } finally {
             setLoading(false);
             setIsGlobalLoading(false); // Stop processing loader
@@ -185,9 +201,9 @@ const UserDashboard = () => {
             setNote('');
             setFormStep(1);
             fetchTransactions();
-            alert('Transfer Initiated!');
+            toast.success('Transfer Initiated!');
         } catch (error) {
-            alert('Failed to send request');
+            toast.error('Failed to send request');
         }
     };
 
@@ -205,9 +221,9 @@ const UserDashboard = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchTransactions();
-            alert('Proof uploaded!');
+            toast.success('Proof uploaded!');
         } catch (error) {
-            alert('Failed to upload proof');
+            toast.error('Failed to upload proof');
         }
     };
 
@@ -220,10 +236,10 @@ const UserDashboard = () => {
             await api.post('/auth/kyc', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('KYC Document uploaded!');
+            toast.success('KYC Document uploaded!');
             if (refreshProfile) refreshProfile();
         } catch (error) {
-            alert('KYC Upload failed');
+            toast.error('KYC Upload failed');
         } finally {
             setLoading(false);
         }
@@ -560,11 +576,16 @@ const UserDashboard = () => {
                     )}
                 </aside>
 
-                <section className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
                     <div style={{ padding: '32px' }}>
                         <h2 style={{ fontSize: '1.1rem' }}>Transaction History</h2>
                     </div>
-                    {transactions.length === 0 ? (
+                    {isHistoryLoading ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 0' }}>
+                            <div className="spinner"></div>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '16px' }}>Loading transactions...</p>
+                        </div>
+                    ) : transactions.length === 0 ? (
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '48px' }}>No transactions found.</p>
                     ) : (
                         <table style={{ marginTop: '0' }}>
@@ -606,9 +627,16 @@ const UserDashboard = () => {
                                                 </div>
                                             )}
                                             {tx.proof_url && (
-                                                <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                        setShowPreviewModal(true);
+                                                    }}
+                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                >
                                                     View Proof
-                                                </a>
+                                                </span>
                                             )}
                                         </td>
                                     </tr>
@@ -656,7 +684,7 @@ const UserDashboard = () => {
 
                         <div style={{ padding: '32px' }}>
                             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>
+                                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-deep-brown)', wordBreak: 'break-all' }}>
                                     {selectedTx.amount_received} {selectedTx.type.split('-')[1]}
                                 </div>
                                 <div style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{selectedTx.amount_sent} {selectedTx.type.split('-')[0]} Sent</div>
@@ -694,6 +722,23 @@ const UserDashboard = () => {
                                         <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.note}</span>
                                     </div>
                                 )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Date & Time</span>
+                                    <span style={{ fontWeight: 700 }}>
+                                        {new Date(selectedTx.createdAt).toLocaleString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                            hour: 'numeric',
+                                            minute: 'numeric',
+                                            hour12: true
+                                        })}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Rate</span>
+                                    <span style={{ fontWeight: 700 }}>1 {selectedTx.type.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type.split('-')[1]}</span>
+                                </div>
                                 <div style={{ marginTop: '16px', padding: '16px', background: 'var(--accent-peach)', borderRadius: '8px', textAlign: 'center' }}>
                                     <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-deep-brown)', opacity: 0.7, marginBottom: '4px' }}>Admin Payment Reference</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-deep-brown)', letterSpacing: '1px' }}>
@@ -706,6 +751,23 @@ const UserDashboard = () => {
                                 <button onClick={() => setShowDetailsModal(false)} className="btn-primary">Close</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {showPreviewModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
+                        <button
+                            onClick={() => setShowPreviewModal(false)}
+                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
+                        >
+                            &times;
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Payment Proof"
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                        />
                     </div>
                 </div>
             )}
