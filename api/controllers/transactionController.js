@@ -94,11 +94,12 @@ const getTransactions = async (req, res) => {
 
         if (search) {
             const { Op } = require('sequelize');
+            const sequelize = Transaction.sequelize;
             where[Op.or] = [
-                { id: { [Op.like]: `%${search}%` } },
-                { amount_sent: { [Op.like]: `%${search}%` } },
+                sequelize.where(sequelize.cast(sequelize.col('Transaction.id'), 'TEXT'), { [Op.like]: `%${search}%` }),
+                sequelize.where(sequelize.cast(sequelize.col('amount_sent'), 'TEXT'), { [Op.like]: `%${search}%` }),
                 { '$user.full_name$': { [Op.like]: `%${search}%` } },
-                { recipient_details: { [Op.contains]: { name: search } } } // Specific for JSONB
+                { recipient_details: { [Op.contains]: { name: search } } }
             ];
         }
 

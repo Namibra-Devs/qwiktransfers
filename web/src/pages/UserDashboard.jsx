@@ -38,8 +38,8 @@ const UserDashboard = () => {
     // Details Modal States
     const [selectedTx, setSelectedTx] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-
-    const [previewImage, setPreviewImage] = useState(null);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewDate, setPreviewDate] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
 
     // Pagination & Search States
@@ -104,9 +104,12 @@ const UserDashboard = () => {
         }
     };
 
-    const handleCancelTransaction = async (id) => {
-        if (!window.confirm('Are you sure you want to cancel this transaction?')) return;
+    const handleCancelTransaction = (id) => {
+        setPinAction({ type: 'cancel', data: id });
+        setShowPinModal(true);
+    };
 
+    const executeCancel = async (id) => {
         try {
             await api.patch(`/transactions/${id}/cancel`);
             toast.success('Transaction cancelled successfully');
@@ -203,6 +206,8 @@ const UserDashboard = () => {
                 await executeSend();
             } else if (pinAction.type === 'upload') {
                 await executeUpload(pinAction.data.txId, pinAction.data.file);
+            } else if (pinAction.type === 'cancel') {
+                await executeCancel(pinAction.data);
             }
         } catch (error) {
             toast.error(error.response?.data?.error || 'PIN Verification Failed');
@@ -730,6 +735,7 @@ const UserDashboard = () => {
                                                 <div style={{ position: 'relative', display: 'inline-block' }}>
                                                     <input
                                                         type="file"
+                                                        accept="image/*,.pdf"
                                                         onChange={(e) => handleUploadProof(tx.id, e.target.files[0])}
                                                         style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
                                                     />
@@ -741,6 +747,7 @@ const UserDashboard = () => {
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                        setPreviewDate(tx.proof_uploaded_at);
                                                         setShowPreviewModal(true);
                                                     }}
                                                     style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
@@ -908,11 +915,27 @@ const UserDashboard = () => {
                         >
                             &times;
                         </button>
-                        <img
-                            src={previewImage}
-                            alt="Payment Proof"
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-                        />
+                        {previewImage.endsWith('.pdf') ? (
+                            <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
+                        ) : (
+                            <img
+                                src={previewImage}
+                                alt="Payment Proof"
+                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                            />
+                        )}
+                        {previewDate && (
+                            <div style={{ position: 'absolute', bottom: '-40px', left: 0, width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>
+                                Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
