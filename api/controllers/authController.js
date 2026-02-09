@@ -16,6 +16,12 @@ const register = async (req, res) => {
             return res.status(400).json({ error: 'Email is already registered' });
         }
 
+        // Check if user phone number already exists
+        const existingUserPhone = await User.findOne({ where: { phone } });
+        if (existingUserPhone) {
+            return res.status(400).json({ error: 'Phone number is already registered' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
         const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -45,6 +51,9 @@ const register = async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
         res.status(201).json({ user, token });
     } catch (error) {
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ error: 'This phone number is already registered' });
+        }
         res.status(500).json({ error: error.message });
     }
 };
@@ -252,6 +261,9 @@ const updateProfile = async (req, res) => {
 
         res.json({ message: 'Profile updated successfully', user });
     } catch (error) {
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ error: 'This phone number is already registered' });
+        }
         res.status(500).json({ error: error.message });
     }
 };

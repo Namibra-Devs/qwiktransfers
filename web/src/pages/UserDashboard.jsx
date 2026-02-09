@@ -400,7 +400,10 @@ const UserDashboard = () => {
 
                     <section className="card" style={{ position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '1.1rem' }}>Send Money</h2>
+                            <div>
+                                <h2 style={{ fontSize: '1.1rem', marginBottom: '2px' }}>Send Money</h2>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sending {fromCurrency} to {toCurrency}</p>
+                            </div>
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--accent-peach)', padding: '4px 10px', borderRadius: '20px' }}>
                                 Step {formStep} of 3
                             </span>

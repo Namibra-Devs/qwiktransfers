@@ -29,7 +29,10 @@ module.exports = (sequelize, DataTypes) => {
     kyc_front_url: DataTypes.STRING,
     kyc_back_url: DataTypes.STRING,
     full_name: DataTypes.STRING,
-    phone: DataTypes.STRING,
+    phone: {
+      type: DataTypes.STRING,
+      unique: true
+    },
     profile_picture: DataTypes.STRING,
     country: DataTypes.STRING,
     transaction_pin: DataTypes.STRING, // 4-digit PIN (hashed)
