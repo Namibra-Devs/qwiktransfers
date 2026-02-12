@@ -319,7 +319,7 @@ const changePassword = async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) return res.status(401).json({ error: 'Current password incorrect' });
+        if (!isMatch) return res.status(400).json({ error: 'Current password incorrect' });
 
         user.password = await bcrypt.hash(newPassword, 10);
         await user.save();
@@ -356,7 +356,7 @@ const verifyPin = async (req, res) => {
         if (!user.transaction_pin) return res.status(400).json({ error: 'Transaction PIN not set' });
 
         const isMatch = await bcrypt.compare(pin, user.transaction_pin);
-        if (!isMatch) return res.status(401).json({ error: 'Invalid PIN' });
+        if (!isMatch) return res.status(400).json({ error: 'Invalid PIN' });
 
         res.json({ message: 'PIN verified' });
     } catch (error) {
@@ -422,6 +422,26 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
+const updateAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Please upload an image file' });
+        }
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.profile_picture = `/uploads/${req.file.filename}`;
+        await user.save();
+
+        res.json({
+            message: 'Avatar updated successfully',
+            profile_picture: user.profile_picture
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -439,5 +459,6 @@ module.exports = {
     verifyPin,
     updateUserRole,
     createVendor,
-    toggleUserStatus
+    toggleUserStatus,
+    updateAvatar
 };

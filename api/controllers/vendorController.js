@@ -23,7 +23,7 @@ const getAvailablePool = async (req, res) => {
                 vendorId: null
             },
             include: [{ model: User, as: 'user', attributes: ['full_name', 'email'] }],
-            order: [['createdAt', 'ASC']]
+            order: [['createdAt', 'DESC']]
         });
         res.json(pool);
     } catch (error) {

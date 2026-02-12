@@ -29,6 +29,18 @@ app.get('/', (req, res) => {
   res.send('Qwiktransfers API is running');
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  if (err instanceof require('multer').MulterError) {
+    // A Multer error occurred when uploading.
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  } else if (err) {
+    // An unknown error occurred when uploading or elsewhere.
+    return res.status(500).json({ error: err.message });
+  }
+  next();
+});
+
 const startServer = async () => {
   try {
     await db.sequelize.authenticate();
