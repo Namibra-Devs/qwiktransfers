@@ -8,6 +8,23 @@ const { sendSMS } = require('../services/smsService');
 const fs = require('fs');
 const path = require('path');
 
+const generateAccountNumber = async (role) => {
+    let isUnique = false;
+    let accountNumber = '';
+    while (!isUnique) {
+        if (role === 'vendor') {
+            const random = Math.floor(1000 + Math.random() * 9000); // 4 digits
+            accountNumber = `QT-V-${random}`;
+        } else {
+            const random = Math.floor(100000 + Math.random() * 900000); // 6 digits
+            accountNumber = `QT-${random}`;
+        }
+        const existing = await User.findOne({ where: { account_number: accountNumber } });
+        if (!existing) isUnique = true;
+    }
+    return accountNumber;
+};
+
 const register = async (req, res) => {
     try {
         const { email, password, full_name, phone, country, role, pin } = req.body;
@@ -27,6 +44,7 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
         const verificationToken = crypto.randomBytes(32).toString('hex');
+        const accountNumber = await generateAccountNumber(role || 'user');
 
         const user = await User.create({
             email,
@@ -36,6 +54,7 @@ const register = async (req, res) => {
             phone,
             country: country || 'Ghana',
             role: role || 'user',
+            account_number: accountNumber,
             kyc_status: 'unverified',
             balance_ghs: 0.0,
             balance_cad: 0.0,
@@ -417,6 +436,7 @@ const createVendor = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        const accountNumber = await generateAccountNumber('vendor');
 
         const vendor = await User.create({
             email,
@@ -425,6 +445,7 @@ const createVendor = async (req, res) => {
             phone,
             country: country || 'All',
             role: 'vendor',
+            account_number: accountNumber,
             is_active: true,
             is_email_verified: true, // Admin-created vendors are pre-verified
             kyc_status: 'verified' // Admin assumes responsibility for vendor identity

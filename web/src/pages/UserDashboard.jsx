@@ -375,6 +375,7 @@ const UserDashboard = () => {
                             {/* Mobile profile link - icon only or simpler */}
                             <Link to="/profile" className="desktop-only" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right' }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{user?.account_number || 'N/A'}</div>
                                 <div style={{
                                     fontSize: '0.7rem',
                                     fontWeight: 700,

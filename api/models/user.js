@@ -47,6 +47,10 @@ module.exports = (sequelize, DataTypes) => {
     verification_token_expires: DataTypes.DATE,
     reset_password_token: DataTypes.STRING,
     reset_password_expires: DataTypes.DATE,
+    account_number: {
+      type: DataTypes.STRING,
+      unique: true
+    },
     is_online: {
       type: DataTypes.BOOLEAN,
       defaultValue: false

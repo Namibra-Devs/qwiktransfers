@@ -268,6 +268,7 @@ const VendorDashboard = () => {
                         )}
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{user?.account_number || 'N/A'}</div>
                             <div style={{
                                 fontSize: '0.7rem',
                                 fontWeight: 700,

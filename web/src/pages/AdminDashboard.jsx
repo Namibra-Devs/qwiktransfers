@@ -470,6 +470,7 @@ const AdminDashboard = () => {
                                                 <tr key={u.id}>
                                                     <td style={{ fontWeight: 600 }}>
                                                         {u.full_name}<br />
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{u.account_number || 'No Account #'}</div>
                                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>Joined: {new Date(u.createdAt).toLocaleDateString()}</span>
                                                     </td>
                                                     <td>
@@ -511,6 +512,7 @@ const AdminDashboard = () => {
                                                 <tr key={v.id}>
                                                     <td style={{ fontWeight: 600 }}>
                                                         {v.full_name}<br />
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{v.account_number || 'No Account #'}</div>
                                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{v.email}</span>
                                                     </td>
                                                     <td>
@@ -772,6 +774,7 @@ const AdminDashboard = () => {
                                     </div>
                                     <div>
                                         <h4 style={{ margin: 0, fontSize: '1.2rem' }}>{selectedUser.full_name}</h4>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, margin: '4px 0' }}>{selectedUser.account_number || 'N/A'}</div>
                                         <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{selectedUser.email}</div>
                                         <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedUser.kyc_status}`}>{selectedUser.kyc_status.toUpperCase()}</span></div>
                                     </div>
