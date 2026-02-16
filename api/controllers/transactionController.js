@@ -1,6 +1,6 @@
 const { Transaction, User, Rate } = require('../models');
 const { sendSMS } = require('../services/smsService');
-const { sendTransactionInitiatedEmail } = require('../services/emailService');
+const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
 const fs = require('fs');
 const path = require('path');
 
@@ -51,16 +51,21 @@ const createTransaction = async (req, res) => {
         }
 
         const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
-        const exchange_rate = rateRecord ? rateRecord.rate : 0.10;
+        let exchange_rate = rateRecord ? rateRecord.rate : 0.10;
 
-        const amount_received = amount_sent * exchange_rate;
+        // If transaction is CAD to GHS, we need the inverse rate (1 / (GHS to CAD))
+        if (type === 'CAD-GHS') {
+            exchange_rate = (1 / exchange_rate).toFixed(6);
+        }
+
+        const amount_received = (amount_sent * exchange_rate).toFixed(2);
 
         const transaction = await Transaction.create({
             userId,
             type: type || 'GHS-CAD',
             amount_sent,
-            exchange_rate,
-            amount_received,
+            exchange_rate: parseFloat(exchange_rate),
+            amount_received: parseFloat(amount_received),
             recipient_details,
             status: 'pending',
             proof_url: ''
@@ -140,11 +145,17 @@ const updateStatus = async (req, res) => {
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
         transaction.status = status;
+        if (status === 'sent') {
+            transaction.sent_at = new Date();
+            // Async email notification
+            sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
+        }
         await transaction.save();
 
-        // Notify user about status change
+        // Notify user about status change via SMS
         if (transaction.user && transaction.user.phone) {
-            await sendSMS(transaction.user.phone, `Update: Your transaction to ${transaction.recipient_details.name} is now ${status.toUpperCase()}.`);
+            const toCurr = transaction.type?.split('-')[1] || 'CAD';
+            await sendSMS(transaction.user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`);
         }
 
         res.json(transaction);

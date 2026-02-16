@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     status: DataTypes.STRING,
     proof_url: DataTypes.STRING,
     proof_uploaded_at: DataTypes.DATE,
+    sent_at: DataTypes.DATE,
     vendorId: DataTypes.INTEGER
   }, {
     sequelize,

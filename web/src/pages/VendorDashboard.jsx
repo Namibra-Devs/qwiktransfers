@@ -356,12 +356,22 @@ const VendorDashboard = () => {
                                                 <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{tx.user?.email}</div>
                                             </td>
                                             <td>
-                                                <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{tx.amount_sent} GHS</div>
-                                                <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>Wait: {tx.amount_received} CAD</div>
+                                                <div style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                                                    {tx.amount_sent} {tx.type?.split('-')[0] || 'GHS'}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                                                    {tx.type} | Rate: {tx.exchange_rate}
+                                                </div>
                                             </td>
                                             <td>
-                                                <div style={{ fontSize: '0.85rem' }}>{tx.recipient_details?.bank_name}</div>
-                                                <div style={{ fontWeight: 600 }}>{tx.recipient_details?.phone}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>
+                                                    {tx.recipient_details?.type === 'momo' ? (tx.recipient_details?.momo_provider || 'Momo') :
+                                                        tx.recipient_details?.type === 'bank' ? (tx.recipient_details?.bank_name || 'Bank') :
+                                                            tx.recipient_details?.type === 'interac' ? 'Interac' : 'Recipient'}
+                                                </div>
+                                                <div style={{ fontWeight: 700 }}>
+                                                    {tx.recipient_details?.account || tx.recipient_details?.interac_email || tx.recipient_details?.phone}
+                                                </div>
                                             </td>
                                             <td>
                                                 {tx.proof_url ? (
@@ -416,7 +426,14 @@ const VendorDashboard = () => {
                                             <div style={{ fontWeight: 700 }}>{tx.user?.full_name}</div>
                                             <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(tx.createdAt).toLocaleString()}</div>
                                         </td>
-                                        <td>{tx.amount_sent} GHS</td>
+                                        <td>
+                                            <div style={{ fontWeight: 700 }}>
+                                                {tx.amount_sent} {tx.type?.split('-')[0] || 'GHS'}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                                                {tx.amount_received} {tx.type?.split('-')[1] || 'CAD'}
+                                            </div>
+                                        </td>
                                         <td><span className={`badge badge-${tx.status}`}>{tx.status.toUpperCase()}</span></td>
                                         <td>
                                             {tx.proof_url ? (
@@ -643,25 +660,98 @@ const VendorDashboard = () => {
                                         <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Status</label>
                                         <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedTx.status}`}>{selectedTx.status.toUpperCase()}</span></div>
                                     </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Initiated At</label>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{new Date(selectedTx.createdAt).toLocaleString()}</div>
+                                    </div>
+                                    {selectedTx.sent_at && (
+                                        <div>
+                                            <label style={{ fontSize: '0.7rem', color: 'var(--success)', textTransform: 'uppercase', fontWeight: 800 }}>Sent Date</label>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--success)' }}>{new Date(selectedTx.sent_at).toLocaleString()}</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Financial Summary</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Currency Pair</div>
+                                            <div style={{ fontWeight: 700 }}>{selectedTx.type?.replace('-', ' ➔ ') || 'GHS ➔ CAD'}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Exchange Rate</div>
+                                            <div style={{ fontWeight: 700 }}>1 {selectedTx.type?.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type?.split('-')[1]}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Amount Sent</div>
+                                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-deep-brown)' }}>{selectedTx.amount_sent} {selectedTx.type?.split('-')[0]}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To Recipient</div>
+                                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)' }}>{selectedTx.amount_received} {selectedTx.type?.split('-')[1]}</div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Recipient Details</label>
-                                    <div style={{ marginTop: '8px', display: 'grid', gap: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Recipient Details</label>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, background: 'var(--text-deep-brown)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                                            {selectedTx.recipient_details?.type || 'Transfer'}
+                                        </span>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gap: '8px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '0.85rem' }}>Name:</span>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Full Name:</span>
                                             <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name}</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '0.85rem' }}>Number:</span>
-                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.phone}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '0.85rem' }}>Bank/Provider:</span>
-                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.bank_name}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{selectedTx.recipient_details?.payment_reference}</span>
+
+                                        {selectedTx.recipient_details?.type === 'momo' && (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Provider:</span>
+                                                    <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>{selectedTx.recipient_details?.momo_provider}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Number:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.phone || selectedTx.recipient_details?.account}</span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {selectedTx.recipient_details?.type === 'bank' && (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bank Name:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.bank_name}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Account Number:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.account}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Transit Number:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.transit_number}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Institution:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.institution_number}</span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {selectedTx.recipient_details?.type === 'interac' && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Interac Email:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.interac_email}</span>
+                                            </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #eee' }}>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reference:</span>
+                                            <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedTx.recipient_details?.admin_reference || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -669,7 +759,9 @@ const VendorDashboard = () => {
                                 {selectedTx.recipient_details?.note && (
                                     <div style={{ marginBottom: '24px' }}>
                                         <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>User Note</label>
-                                        <div style={{ fontSize: '0.9rem', fontStyle: 'italic', marginTop: '4px' }}>"{selectedTx.recipient_details?.note}"</div>
+                                        <div style={{ fontSize: '0.9rem', fontStyle: 'italic', marginTop: '4px', background: '#fff', padding: '8px', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                                            "{selectedTx.recipient_details?.note}"
+                                        </div>
                                     </div>
                                 )}
 

@@ -154,10 +154,66 @@ const sendTransactionInitiatedEmail = async (user, transaction) => {
     );
 };
 
+const sendTransactionCompletedEmail = async (user, transaction) => {
+    const { amount_received, type, recipient_details, sent_at } = transaction;
+    const [, toCurrency] = type.split('-');
+
+    const formattedDate = new Date(sent_at || new Date()).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    });
+
+    await sendEmail(
+        user.email,
+        `Transfer Completed: ${amount_received} ${toCurrency} Delivered`,
+        `
+            <div style="background-color: #f8f9fa; padding: 24px; border-radius: 12px; border: 1px solid #e0e0e0;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 50%; display: inline-block; width: 40px; height: 40px; line-height: 40px; font-size: 24px;">✓</div>
+                    <h2 style="color: ${DEEP_BROWN}; margin-top: 16px;">Transfer Completed!</h2>
+                    <p>Hello ${user.full_name}, your transfer to <b>${recipient_details.name}</b> has been successfully processed and sent.</p>
+                </div>
+                
+                <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 10px 0; color: #666;">Amount Delivered:</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #28a745; font-size: 1.2rem;">${amount_received} ${toCurrency}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 0; color: #666;">Recipient:</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: bold;">${recipient_details.name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 0; color: #666;">Payment Method:</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: bold; text-transform: capitalize;">${recipient_details.type.replace('_', ' ')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 0; color: #666;">Completed On:</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: bold;">${formattedDate}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p style="margin-top: 24px; font-size: 0.9rem; color: #666; text-align: center;">Thank you for choosing Qwiktransfers! We look forward to serving you again soon.</p>
+                
+                <div style="text-align: center; margin-top: 32px;">
+                    <a href="${APP_URL}/dashboard" style="background-color: ${DEEP_BROWN}; color: ${PEACH}; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View My Transactions</a>
+                </div>
+            </div>
+        `
+    );
+};
+
 module.exports = {
     sendVerificationEmail,
     sendVerificationSuccessEmail,
     sendResetPasswordEmail,
     sendEmail,
-    sendTransactionInitiatedEmail
+    sendTransactionInitiatedEmail,
+    sendTransactionCompletedEmail
 };

@@ -21,9 +21,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        if (error.response && error.response.status === 401) {
             localStorage.removeItem('token');
-            // Optional: redirect to login if not already there
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }

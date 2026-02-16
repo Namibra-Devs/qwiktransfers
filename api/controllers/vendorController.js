@@ -1,5 +1,7 @@
 const { Transaction, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const { sendSMS } = require('../services/smsService');
+const { sendTransactionCompletedEmail } = require('../services/emailService');
 
 const toggleStatus = async (req, res) => {
     try {
@@ -95,7 +97,23 @@ const completeTransaction = async (req, res) => {
         }
 
         transaction.status = 'sent';
+        transaction.sent_at = new Date();
         await transaction.save();
+
+        // Fetch user for notifications
+        const user = await User.findByPk(transaction.userId);
+
+        // Async Notifications
+        if (user) {
+            // Email
+            sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
+
+            // SMS
+            if (user.phone) {
+                const toCurr = transaction.type?.split('-')[1] || 'CAD';
+                await sendSMS(user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`);
+            }
+        }
 
         res.json({ message: 'Transaction marked as sent', transaction });
     } catch (error) {

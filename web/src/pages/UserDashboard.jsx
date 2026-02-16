@@ -285,7 +285,7 @@ const UserDashboard = () => {
             fetchTransactions();
             toast.success('Transfer Initiated!');
         } catch (error) {
-            toast.error('Failed to send request');
+            toast.error(error.response?.data?.error || 'Failed to send request');
         }
     };
 
@@ -887,10 +887,24 @@ const UserDashboard = () => {
                                     </div>
                                 )}
                                 {selectedTx.recipient_details?.bank_name && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Bank</span>
-                                        <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.bank_name}</span>
-                                    </div>
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Bank</span>
+                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.bank_name}</span>
+                                        </div>
+                                        {selectedTx.recipient_details.transit_number && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Transit #</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.transit_number}</span>
+                                            </div>
+                                        )}
+                                        {selectedTx.recipient_details.institution_number && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Institution #</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.institution_number}</span>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {selectedTx.recipient_details?.note && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
@@ -899,7 +913,7 @@ const UserDashboard = () => {
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Date & Time</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>Initiated At</span>
                                     <span style={{ fontWeight: 700 }}>
                                         {new Date(selectedTx.createdAt).toLocaleString('en-US', {
                                             month: 'short',
@@ -911,6 +925,21 @@ const UserDashboard = () => {
                                         })}
                                     </span>
                                 </div>
+                                {selectedTx.sent_at && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Sent Date</span>
+                                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>
+                                            {new Date(selectedTx.sent_at).toLocaleString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                                hour: 'numeric',
+                                                minute: 'numeric',
+                                                hour12: true
+                                            })}
+                                        </span>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Rate</span>
                                     <span style={{ fontWeight: 700 }}>1 {selectedTx.type.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type.split('-')[1]}</span>
