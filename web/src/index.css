@@ -104,13 +104,20 @@ main {
   font-size: 0.9rem;
 }
 
+button,
 input,
-select {
+select,
+textarea {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
   width: 100%;
   padding: 14px 16px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  font-family: inherit;
   font-size: 1rem;
   background: var(--input-bg);
   color: var(--text-deep-brown);

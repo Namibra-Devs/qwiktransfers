@@ -19,11 +19,23 @@ const toggleStatus = async (req, res) => {
 
 const getAvailablePool = async (req, res) => {
     try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const where = {
+            status: 'pending',
+            vendorId: null
+        };
+
+        // Filter by region if not 'All'
+        if (user.country === 'Canada') {
+            where.type = { [Op.like]: 'CAD-%' };
+        } else if (user.country === 'Ghana') {
+            where.type = { [Op.like]: 'GHS-%' };
+        }
+
         const pool = await Transaction.findAll({
-            where: {
-                status: 'pending',
-                vendorId: null
-            },
+            where,
             include: [{ model: User, as: 'user', attributes: ['full_name', 'email'] }],
             order: [['createdAt', 'DESC']]
         });

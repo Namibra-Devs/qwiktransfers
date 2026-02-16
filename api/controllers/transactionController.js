@@ -1,4 +1,4 @@
-const { Transaction, User, Rate } = require('../models');
+const { Transaction, User, Rate, SystemConfig } = require('../models');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
 const fs = require('fs');
@@ -10,10 +10,13 @@ const createTransaction = async (req, res) => {
         const userId = req.user.id;
         const user = await User.findByPk(userId);
 
-        // Daily Limit Enforcement
-        let dailyLimit = 50; // Level 1 (Unverified Email)
-        if (user.is_email_verified) dailyLimit = 500; // Level 2 (Verified Email)
-        if (user.kyc_status === 'verified') dailyLimit = 5000; // Level 3 (Verified KYC)
+        // Daily Limit Enforcement (Dynamic from SystemConfig)
+        const configRecord = await SystemConfig.findOne({ where: { key: 'tiered_limits' } });
+        const limits = configRecord ? configRecord.value : { level1: 50, level2: 500, level3: 5000 };
+
+        let dailyLimit = limits.level1;
+        if (user.is_email_verified) dailyLimit = limits.level2;
+        if (user.kyc_status === 'verified') dailyLimit = limits.level3;
 
         // Calculate sum of today's transactions
         const startOfDay = new Date();
@@ -26,8 +29,6 @@ const createTransaction = async (req, res) => {
             }
         });
 
-        // Convert current today sum and prospective amount to reference USD/CAD equivalent
-        // Simple conversion for limit check: 1 CAD/USD ≈ 15 GHS
         const getReferenceAmount = (amount, t) => {
             const currency = t.split('-')[0];
             const numAmount = parseFloat(amount) || 0;
@@ -38,11 +39,11 @@ const createTransaction = async (req, res) => {
         const prospectiveSent = getReferenceAmount(amount_sent, type || 'GHS-CAD');
 
         if (currentSpent + prospectiveSent > dailyLimit) {
-            let reason = "Verify your email to increase your limit to $500.";
+            let reason = `Verify your email to increase your limit to $${limits.level2}.`;
             if (user.is_email_verified && user.kyc_status !== 'verified') {
-                reason = "Complete KYC verification to increase your limit to $5,000.";
+                reason = `Complete KYC verification to increase your limit to $${limits.level3}.`;
             } else if (user.is_email_verified && user.kyc_status === 'verified') {
-                reason = "You have reached your maximum daily limit of $5,000.";
+                reason = `You have reached your maximum daily limit of $${limits.level3}.`;
             }
 
             return res.status(403).json({
@@ -96,11 +97,16 @@ const getTransactions = async (req, res) => {
         const offset = (page - 1) * limit;
 
         const where = {};
+        const { status, userId, vendorId } = req.query;
+
         if (req.user.role !== 'admin') {
             where.userId = req.user.id;
+        } else {
+            // Admin can filter by specific user or vendor
+            if (userId) where.userId = userId;
+            if (vendorId) where.vendorId = vendorId;
         }
 
-        const { status } = req.query;
         if (status && status !== 'all') {
             where.status = status;
         }

@@ -437,8 +437,8 @@ const UserDashboard = () => {
                                 }}></div>
                             </div>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                                {!user?.is_email_verified && "Verify your email to increase limit to $500."}
-                                {user?.is_email_verified && user?.kyc_status !== 'verified' && "Complete KYC to increase limit to $5,000."}
+                                {!user?.is_email_verified && `Verify your email to increase limit to $${user?.limits?.tiers?.level2 || 500}.`}
+                                {user?.is_email_verified && user?.kyc_status !== 'verified' && `Complete KYC to increase limit to $${user?.limits?.tiers?.level3 || 5000}.`}
                                 {user?.kyc_status === 'verified' && "You have the maximum daily limit."}
                             </p>
                         </div>

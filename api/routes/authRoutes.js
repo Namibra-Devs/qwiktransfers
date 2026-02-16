@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole, createVendor, toggleUserStatus, updateAvatar } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole, createVendor, updateUserRegion, toggleUserStatus, updateAvatar } = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -19,6 +19,7 @@ router.get('/users', verifyAdmin, getAllUsers);
 router.patch('/kyc/status', verifyAdmin, updateKYCStatus);
 router.patch('/update-role', verifyAdmin, updateUserRole);
 router.post('/create-vendor', verifyAdmin, createVendor);
+router.patch('/update-region', verifyAdmin, updateUserRegion);
 router.patch('/toggle-status', verifyAdmin, toggleUserStatus);
 
 router.post('/avatar', verifyToken, upload.single('avatar'), updateAvatar);

@@ -1,4 +1,4 @@
-const { User, sequelize } = require('../models');
+const { User, sequelize, SystemConfig } = require('../models');
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -189,20 +189,24 @@ const getProfile = async (req, res) => {
         const user = await User.findByPk(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        // Calculate Limits
-        let dailyLimit = 50; // Level 1: Unverified Email
+        // Calculate Limits (Dynamic)
+        const configRecord = await SystemConfig.findOne({ where: { key: 'tiered_limits' } });
+        const limits = configRecord ? configRecord.value : { level1: 50, level2: 500, level3: 5000 };
+
+        let dailyLimit = limits.level1;
         if (user.is_email_verified) {
-            dailyLimit = 500; // Level 2: Verified Email
+            dailyLimit = limits.level2;
         }
         if (user.kyc_status === 'verified') {
-            dailyLimit = 5000; // Level 3: Verified KYC
+            dailyLimit = limits.level3;
         }
 
         res.json({
             ...user.toJSON(),
             limits: {
                 daily: dailyLimit,
-                currency: 'USD' // Using USD as a reference base
+                currency: 'USD',
+                tiers: limits
             }
         });
     } catch (error) {
@@ -405,7 +409,7 @@ const updateUserRole = async (req, res) => {
 
 const createVendor = async (req, res) => {
     try {
-        const { email, password, full_name, phone } = req.body;
+        const { email, password, full_name, phone, country } = req.body;
 
         const existingUser = await User.findOne({ where: { [Op.or]: [{ email }, { phone }] } });
         if (existingUser) {
@@ -419,6 +423,7 @@ const createVendor = async (req, res) => {
             password: hashedPassword,
             full_name,
             phone,
+            country: country || 'All',
             role: 'vendor',
             is_active: true,
             is_email_verified: true, // Admin-created vendors are pre-verified
@@ -426,6 +431,21 @@ const createVendor = async (req, res) => {
         });
 
         res.status(201).json({ message: 'Vendor created successfully', vendor });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const updateUserRegion = async (req, res) => {
+    try {
+        const { userId, country } = req.body;
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.country = country;
+        await user.save();
+
+        res.json({ message: 'User region updated successfully', country });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -495,6 +515,7 @@ module.exports = {
     verifyPin,
     updateUserRole,
     createVendor,
+    updateUserRegion,
     toggleUserStatus,
     updateAvatar
 };

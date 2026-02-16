@@ -35,12 +35,17 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
-    const [newVendor, setNewVendor] = useState({ email: '', full_name: '', phone: '', password: '' });
+    const [newVendor, setNewVendor] = useState({ email: '', full_name: '', phone: '', password: '', country: 'All' });
 
     // Preview Modal States
     const [previewImage, setPreviewImage] = useState('');
     const [previewDate, setPreviewDate] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+    // Individual User/Vendor Transaction History & Stats
+    const [userTransactions, setUserTransactions] = useState([]);
+    const [userTransactionsLoading, setUserTransactionsLoading] = useState(false);
+    const [vendorStats, setVendorStats] = useState({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
 
     useEffect(() => {
         fetchStats();
@@ -54,6 +59,15 @@ const AdminDashboard = () => {
             fetchVendors();
         }
     }, [page, search, statusFilter, userPage, userSearch, tab]);
+
+    useEffect(() => {
+        if (selectedUser && showUserModal) {
+            fetchUserTransactions(selectedUser.id, selectedUser.role);
+        } else {
+            setUserTransactions([]);
+            setVendorStats({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
+        }
+    }, [selectedUser, showUserModal]);
 
     const fetchStats = async () => {
         try {
@@ -133,7 +147,7 @@ const AdminDashboard = () => {
             toast.success('Vendor created successfully');
             fetchVendors();
             setShowAddVendorModal(false);
-            setNewVendor({ email: '', full_name: '', phone: '', password: '' });
+            setNewVendor({ email: '', full_name: '', phone: '', password: '', country: 'All' });
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to create vendor');
         }
@@ -164,6 +178,51 @@ const AdminDashboard = () => {
         } catch (error) {
             toast.error('Failed to update role');
         }
+    };
+
+    const updateRegion = async (userId, country) => {
+        try {
+            await api.patch('/auth/update-region', { userId, country });
+            toast.success(`Vendor region updated to ${country}`);
+            if (tab === 'vendors') fetchVendors();
+            if (selectedUser && selectedUser.id === userId) {
+                setSelectedUser({ ...selectedUser, country });
+            }
+        } catch (error) {
+            toast.error('Failed to update region');
+        }
+    };
+
+    const fetchUserTransactions = async (userId, role) => {
+        setUserTransactionsLoading(true);
+        try {
+            const params = role === 'vendor' ? { vendorId: userId, limit: 100 } : { userId: userId, limit: 100 };
+            const res = await api.get('/transactions', { params });
+            const txs = res.data.transactions;
+            setUserTransactions(txs);
+            if (role === 'vendor') {
+                calculateVendorStats(txs);
+            }
+        } catch (error) {
+            console.error('Fetch user transactions error:', error);
+        } finally {
+            setUserTransactionsLoading(false);
+        }
+    };
+
+    const calculateVendorStats = (txs) => {
+        const totalCount = txs.length;
+        if (totalCount === 0) {
+            setVendorStats({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
+            return;
+        }
+
+        const successful = txs.filter(t => t.status === 'sent');
+        const totalVolumeCAD = successful.reduce((sum, t) => t.type.startsWith('CAD') ? sum + parseFloat(t.amount_sent) : sum, 0);
+        const totalVolumeGHS = successful.reduce((sum, t) => t.type.startsWith('GHS') ? sum + parseFloat(t.amount_sent) : sum, 0);
+        const successRate = ((successful.length / totalCount) * 100).toFixed(1);
+
+        setVendorStats({ totalCount, totalVolumeCAD, totalVolumeGHS, successRate });
     };
 
     return (
@@ -442,7 +501,8 @@ const AdminDashboard = () => {
                                             <tr>
                                                 <th>Vendor</th>
                                                 <th>Status</th>
-                                                <th>Role</th>
+                                                <th>Region</th>
+                                                <th>Account</th>
                                                 <th style={{ textAlign: 'right' }}>Actions</th>
                                             </tr>
                                         </thead>
@@ -458,6 +518,11 @@ const AdminDashboard = () => {
                                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: v.is_online ? 'var(--success)' : '#ccc' }}></div>
                                                             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{v.is_online ? 'Online' : 'Offline'}</span>
                                                         </div>
+                                                    </td>
+                                                    <td>
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, background: 'var(--accent-peach)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase' }}>
+                                                            {v.country || 'All'}
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <span className={`badge ${v.is_active ? 'badge-verified' : 'badge-rejected'}`} style={{ fontSize: '0.7rem' }}>
@@ -695,12 +760,12 @@ const AdminDashboard = () => {
                 {/* Admin User Management Modal */}
                 {showUserModal && selectedUser && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                        <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                        <div className="card scale-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 style={{ margin: 0 }}>User Management</h3>
                                 <button onClick={() => setShowUserModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
                             </div>
-                            <div style={{ padding: '24px' }}>
+                            <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
                                     <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--accent-peach)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>
                                         {selectedUser.full_name?.charAt(0)}
@@ -758,7 +823,87 @@ const AdminDashboard = () => {
                                     </p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px' }}>
+                                {selectedUser.role === 'vendor' && (
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Assigned Region</label>
+                                        <select
+                                            value={selectedUser.country || 'All'}
+                                            onChange={(e) => updateRegion(selectedUser.id, e.target.value)}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff' }}
+                                        >
+                                            <option value="Canada">Canada</option>
+                                            <option value="Ghana">Ghana</option>
+                                            <option value="All">All Countries</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                {selectedUser.role === 'vendor' && (
+                                    <div style={{ marginBottom: '32px' }}>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '16px' }}>Performance Overview</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Handled</div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.totalCount}</div>
+                                            </div>
+                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>CAD Volume</div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 800 }}>${vendorStats.totalVolumeCAD.toLocaleString()}</div>
+                                            </div>
+                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>GHS Volume</div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 800 }}>{vendorStats.totalVolumeGHS.toLocaleString()}₵</div>
+                                            </div>
+                                            <div style={{ padding: '12px', background: 'var(--success)', color: '#fff', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.65rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Success Rate</div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.successRate}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
+                                        {selectedUser.role === 'vendor' ? 'Service History' : 'Transaction History'}
+                                    </label>
+                                    <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                        <table style={{ margin: 0, fontSize: '0.8rem' }}>
+                                            <thead style={{ background: '#f9f9f9' }}>
+                                                <tr>
+                                                    <th style={{ padding: '10px' }}>ID/Type</th>
+                                                    <th style={{ padding: '10px' }}>Amount</th>
+                                                    <th style={{ padding: '10px' }}>Status</th>
+                                                    <th style={{ padding: '10px' }}>Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {userTransactionsLoading ? (
+                                                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading history...</td></tr>
+                                                ) : userTransactions.length === 0 ? (
+                                                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No transactions found.</td></tr>
+                                                ) : userTransactions.map(tx => (
+                                                    <tr key={tx.id}>
+                                                        <td style={{ padding: '10px' }}>
+                                                            <div style={{ fontWeight: 700 }}>#{tx.id}</div>
+                                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{tx.type}</div>
+                                                        </td>
+                                                        <td style={{ padding: '10px', fontWeight: 700 }}>
+                                                            {parseFloat(tx.amount_sent).toLocaleString()} {tx.type?.split('-')[0]}
+                                                        </td>
+                                                        <td style={{ padding: '10px' }}>
+                                                            <span className={`badge badge-${tx.status}`} style={{ fontSize: '0.65rem' }}>{tx.status}</span>
+                                                        </td>
+                                                        <td style={{ padding: '10px', color: 'var(--text-muted)' }}>
+                                                            {new Date(tx.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '24px' }}>
                                     <button
                                         onClick={() => setShowUserModal(false)}
                                         style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
@@ -770,6 +915,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
+
                 {/* Add Vendor Modal (Registration Form) */}
                 {showAddVendorModal && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
@@ -828,6 +974,22 @@ const AdminDashboard = () => {
                                                     placeholder="••••••••"
                                                 />
                                             </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Assigned Region (Country)</label>
+                                            <select
+                                                required
+                                                value={newVendor.country}
+                                                onChange={(e) => setNewVendor({ ...newVendor, country: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                            >
+                                                <option value="Canada">Canada (CAD Transactions)</option>
+                                                <option value="Ghana">Ghana (GHS Transactions)</option>
+                                                <option value="All">All Countries (Global)</option>
+                                            </select>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                                Vendors assigned to a country can only claim transactions originating from that country.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

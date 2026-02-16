@@ -22,9 +22,17 @@ const PaymentSettings = () => {
         market_rate_cad_ghs: null
     });
 
+    // Tiered Limits State
+    const [limits, setLimits] = useState({
+        level1: 50,
+        level2: 500,
+        level3: 5000
+    });
+
     useEffect(() => {
         fetchPaymentMethods();
         fetchRateSettings();
+        fetchSystemConfig();
     }, []);
 
     const fetchPaymentMethods = async () => {
@@ -64,6 +72,17 @@ const PaymentSettings = () => {
             });
         } catch (error) {
             console.error('Failed to fetch rate settings');
+        }
+    };
+
+    const fetchSystemConfig = async () => {
+        try {
+            const res = await api.get('/system/config');
+            if (res.data.tiered_limits) {
+                setLimits(res.data.tiered_limits);
+            }
+        } catch (error) {
+            console.error('Failed to fetch system config');
         }
     };
 
@@ -117,6 +136,22 @@ const PaymentSettings = () => {
             fetchRateSettings();
         } catch (error) {
             toast.error('Failed to update rate settings');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveLimits = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await api.post('/system/config', {
+                key: 'tiered_limits',
+                value: limits
+            });
+            toast.success('Tiered Limits Updated');
+        } catch (error) {
+            toast.error('Failed to update tiered limits');
         } finally {
             setSaving(false);
         }
@@ -267,6 +302,48 @@ const PaymentSettings = () => {
 
                         <button type="submit" className="btn-primary" disabled={saving} style={{ width: 'auto', padding: '12px 32px', marginTop: '16px' }}>
                             Update Rate Configuration
+                        </button>
+                    </form>
+                </div>
+
+                {/* Tiered Limits Section */}
+                <div className="card" style={{ borderLeft: '4px solid #6366f1' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>User Tiered Limits (Daily)</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                        Set the daily transaction limits for users based on their verification level. All values are in reference CAD/USD.
+                    </p>
+                    <form onSubmit={handleSaveLimits}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                            <div className="form-group">
+                                <label>Level 1 (Unverified Email)</label>
+                                <input
+                                    type="number"
+                                    value={limits.level1}
+                                    onChange={(e) => setLimits({ ...limits, level1: parseInt(e.target.value) })}
+                                    placeholder="$50"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Level 2 (Verified Email)</label>
+                                <input
+                                    type="number"
+                                    value={limits.level2}
+                                    onChange={(e) => setLimits({ ...limits, level2: parseInt(e.target.value) })}
+                                    placeholder="$500"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Level 3 (Verified KYC)</label>
+                                <input
+                                    type="number"
+                                    value={limits.level3}
+                                    onChange={(e) => setLimits({ ...limits, level3: parseInt(e.target.value) })}
+                                    placeholder="$5000"
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn-primary" disabled={saving} style={{ width: 'auto', padding: '12px 32px', marginTop: '16px', background: '#6366f1' }}>
+                            Save Tiered Limits
                         </button>
                     </form>
                 </div>
