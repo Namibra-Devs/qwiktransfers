@@ -382,3 +382,94 @@ nav button.active {
   background: var(--primary);
   color: #fff;
 }
+
+/* Admin Dashboard Top Navigation */
+.admin-header {
+  height: 80px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.admin-top-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.admin-profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px 6px 6px;
+  background: var(--accent-peach);
+  border: 1px solid var(--border-color);
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-profile-chip:hover {
+  border-color: var(--primary);
+  background: rgba(183, 71, 42, 0.05);
+}
+
+.admin-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+.admin-profile-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-profile-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-deep-brown);
+  line-height: 1.2;
+}
+
+.admin-profile-role {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.admin-utility-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-right: 1px solid var(--border-color);
+  padding-right: 16px;
+}
+
+@media (min-width: 769px) {
+  .admin-main-container {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    display: none;
+    /* Mobile header handles things */
+  }
+
+  .admin-main-container {
+    margin-left: 0;
+    width: 100%;
+  }
+}

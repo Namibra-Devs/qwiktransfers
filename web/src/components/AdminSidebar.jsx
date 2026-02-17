@@ -17,10 +17,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{ background: 'var(--card-bg)' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>QWIK Admin</h1>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <NotificationPanel />
-                    <ThemeSwitcher />
-                </div>
             </div>
 
             <nav style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

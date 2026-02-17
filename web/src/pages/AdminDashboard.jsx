@@ -6,9 +6,10 @@ import AdminSidebar from '../components/AdminSidebar';
 import PaymentSettings from '../components/PaymentSettings';
 import AdminProfile from '../components/AdminProfile';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import NotificationPanel from '../components/NotificationPanel';
 
 const AdminDashboard = () => {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const [transactions, setTransactions] = useState([]);
     const [users, setUsers] = useState([]);
     const [vendors, setVendors] = useState([]);
@@ -253,7 +254,10 @@ const AdminDashboard = () => {
                     {sidebarOpen ? '✕' : '☰'}
                 </button>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--primary)' }}>QWIK Admin</h1>
-                <div style={{ width: '40px' }}></div> {/* Spacer */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <NotificationPanel />
+                    <ThemeSwitcher />
+                </div>
             </div>
 
             <AdminSidebar
@@ -264,906 +268,927 @@ const AdminDashboard = () => {
                 toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             />
 
-            <main className="admin-main" style={{ flex: 1, padding: '40px', maxWidth: '1200px' }}>
-                {tab === 'transactions' && (
-                    <section className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
-                        <div className="card" style={{ padding: '24px', background: 'var(--text-deep-brown)', color: '#fff' }}>
-                            <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending Transactions</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 800 }}>{adminStats.pendingTransactions}</div>
+            <div className="admin-main-container">
+                <header className="admin-header desktop-only">
+                    <div className="admin-top-nav-actions">
+                        <div className="admin-utility-icons">
+                            <NotificationPanel />
+                            <ThemeSwitcher />
                         </div>
-                        <div className="card" style={{ padding: '24px', background: '#fff' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending KYC Reviews</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{adminStats.pendingKYC}</div>
+                        <div className="admin-profile-chip" onClick={() => setTab('profile')}>
+                            <img
+                                src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://via.placeholder.com/40'}
+                                alt="Admin Avatar"
+                                className="admin-profile-avatar"
+                            />
+                            <div className="admin-profile-info">
+                                <span className="admin-profile-name">{user?.full_name || 'Administrator'}</span>
+                                <span className="admin-profile-role">Master Admin</span>
+                            </div>
                         </div>
-                        <div className="card" style={{ padding: '24px', background: '#fff' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Total Success Volume</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669' }}>{adminStats.successVolume.toLocaleString()} <span style={{ fontSize: '1rem' }}>CAD</span></div>
-                        </div>
-                    </section>
-                )}
+                    </div>
+                </header>
 
-                <div className="fade-in">
-                    {['transactions', 'kyc', 'users', 'vendors', 'audit'].includes(tab) && (
-                        <>
-                            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                                <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                        {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : 'Manage Users'}
-                                    </h2>
-                                    {tab === 'transactions' ? (
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <select
-                                                value={statusFilter}
-                                                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                                                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', fontWeight: 600, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                            >
-                                                <option value="all">All Status</option>
-                                                <option value="pending">Pending</option>
-                                                <option value="processing">Processing</option>
-                                                <option value="sent">Sent</option>
-                                                <option value="cancelled">Cancelled</option>
-                                            </select>
-                                            <div style={{ position: 'relative' }}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Search..."
-                                                    value={search}
-                                                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                />
-                                                <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                                {totalTransactions} total
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Search Users..."
-                                                    value={userSearch}
-                                                    onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
-                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                />
-                                                <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
-                                            </div>
-                                            {tab === 'vendors' && (
-                                                <button
-                                                    onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
-                                                    style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                <main className="admin-main" style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+                    {tab === 'transactions' && (
+                        <section className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+                            <div className="card" style={{ padding: '24px', background: 'var(--text-deep-brown)', color: '#fff' }}>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending Transactions</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{adminStats.pendingTransactions}</div>
+                            </div>
+                            <div className="card" style={{ padding: '24px', background: '#fff' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending KYC Reviews</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{adminStats.pendingKYC}</div>
+                            </div>
+                            <div className="card" style={{ padding: '24px', background: '#fff' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Total Success Volume</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669' }}>{adminStats.successVolume.toLocaleString()} <span style={{ fontSize: '1rem' }}>CAD</span></div>
+                            </div>
+                        </section>
+                    )}
+
+                    <div className="fade-in">
+                        {['transactions', 'kyc', 'users', 'vendors', 'audit'].includes(tab) && (
+                            <>
+                                <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                                    <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
+                                            {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : 'Manage Users'}
+                                        </h2>
+                                        {tab === 'transactions' ? (
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <select
+                                                    value={statusFilter}
+                                                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                                                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', fontWeight: 600, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 >
-                                                    <span style={{ fontSize: '1.2rem' }}>+</span> Add Vendor
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {tab === 'transactions' && (
-                                    <table style={{ marginTop: '0' }}>
-                                        <thead>
-                                            <tr>
-                                                <th>User / Recipient</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Proof</th>
-                                                <th style={{ textAlign: 'right' }}>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {transactions.map((tx) => (
-                                                <tr key={tx.id} onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
-                                                    <td>
-                                                        <div style={{ fontWeight: 600 }}>{tx.user?.email}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                            → {tx.recipient_details?.name} | <span style={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>
-                                                                {tx.recipient_details?.type === 'momo' ? (tx.recipient_details?.momo_provider || 'Momo') :
-                                                                    tx.recipient_details?.type === 'bank' ? (tx.recipient_details?.bank_name || 'Bank') :
-                                                                        tx.recipient_details?.type === 'interac' ? 'Interac' : 'Recipient'}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 700 }}>{tx.amount_received} {tx.type?.split('-')[1] || 'CAD'}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tx.amount_sent} {tx.type?.split('-')[0] || 'GHS'}</div>
-                                                    </td>
-                                                    <td><span className={`badge badge-${tx.status}`}>{tx.status}</span></td>
-                                                    <td>
-                                                        {tx.proof_url ? (
-                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                <span
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setPreviewImage(`http://localhost:5000${tx.proof_url}`);
-                                                                        setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
-                                                                        setShowPreviewModal(true);
-                                                                    }}
-                                                                    style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
-                                                                >
-                                                                    View Proof
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</span>
-                                                        )}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                            {tx.status === 'pending' && <button onClick={() => updateStatus(tx.id, 'processing')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--warning)', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Process</button>}
-                                                            {tx.status === 'processing' && <button onClick={() => updateStatus(tx.id, 'sent')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Confirm</button>}
-                                                            {tx.status === 'sent' && <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>Complete</span>}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {tab === 'kyc' && (
-                                    <table style={{ marginTop: '0' }}>
-                                        <thead>
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Document Info</th>
-                                                <th>Verification Files</th>
-                                                <th>Status</th>
-                                                <th style={{ textAlign: 'right' }}>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {users.map((u) => (
-                                                <tr key={u.id}>
-                                                    <td style={{ fontWeight: 600 }}>
-                                                        {u.full_name}<br />
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>{u.email}</span>
-                                                    </td>
-                                                    <td>
-                                                        {u.kyc_document_type ? (
-                                                            <div style={{ fontSize: '0.85rem' }}>
-                                                                <strong>{u.kyc_document_type.replace('_', ' ').toUpperCase()}</strong><br />
-                                                                ID: {u.kyc_document_id}
-                                                            </div>
-                                                        ) : (
-                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No Details</span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ display: 'flex', gap: '12px' }}>
-                                                            {u.kyc_front_url && (
-                                                                <span
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setPreviewImage(`http://localhost:5000${u.kyc_front_url}`);
-                                                                        setPreviewDate(u.updatedAt);
-                                                                        setShowPreviewModal(true);
-                                                                    }}
-                                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
-                                                                >
-                                                                    Front
-                                                                </span>
-                                                            )}
-                                                            {u.kyc_back_url && (
-                                                                <span
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setPreviewImage(`http://localhost:5000${u.kyc_back_url}`);
-                                                                        setPreviewDate(u.updatedAt);
-                                                                        setShowPreviewModal(true);
-                                                                    }}
-                                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
-                                                                >
-                                                                    Back
-                                                                </span>
-                                                            )}
-                                                            {!u.kyc_front_url && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>None</span>}
-                                                        </div>
-                                                    </td>
-                                                    <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                            <button onClick={() => updateKYC(u.id, 'verified')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Verify</button>
-                                                            <button onClick={() => updateKYC(u.id, 'rejected')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Reject</button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {tab === 'users' && (
-                                    <table style={{ marginTop: '0' }}>
-                                        <thead>
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Contact</th>
-                                                <th>ID Level</th>
-                                                <th>Balances</th>
-                                                <th style={{ textAlign: 'right' }}>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {users.map((u) => (
-                                                <tr key={u.id}>
-                                                    <td style={{ fontWeight: 600 }}>
-                                                        {u.full_name}<br />
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{u.account_number || 'No Account #'}</div>
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>Joined: {new Date(u.createdAt).toLocaleDateString()}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontSize: '0.85rem' }}>{u.email}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.phone}</div>
-                                                    </td>
-                                                    <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_ghs).toFixed(2)} GHS</div>
-                                                        <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_cad).toFixed(2)} CAD</div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <button
-                                                            onClick={() => { setSelectedUser(u); setShowUserModal(true); }}
-                                                            style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                                                        >
-                                                            Manage
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {tab === 'vendors' && (
-                                    <table style={{ marginTop: '0' }}>
-                                        <thead>
-                                            <tr>
-                                                <th>Vendor</th>
-                                                <th>Status</th>
-                                                <th>Region</th>
-                                                <th>Account</th>
-                                                <th style={{ textAlign: 'right' }}>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {vendors.map((v) => (
-                                                <tr key={v.id}>
-                                                    <td style={{ fontWeight: 600 }}>
-                                                        {v.full_name}<br />
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{v.account_number || 'No Account #'}</div>
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{v.email}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: v.is_online ? 'var(--success)' : '#ccc' }}></div>
-                                                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{v.is_online ? 'Online' : 'Offline'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, background: 'var(--accent-peach)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase' }}>
-                                                            {v.country || 'All'}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span className={`badge ${v.is_active ? 'badge-verified' : 'badge-rejected'}`} style={{ fontSize: '0.7rem' }}>
-                                                            {v.is_active ? 'ACTIVE' : 'DISABLED'}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                            <button
-                                                                onClick={() => toggleStatus(v.id)}
-                                                                style={{ fontSize: '0.75rem', padding: '6px 12px', background: v.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                                                            >
-                                                                {v.is_active ? 'Disable' : 'Enable'}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => { setSelectedUser(v); setShowUserModal(true); }}
-                                                                style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                                                            >
-                                                                View
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {vendors.length === 0 && (
-                                                <tr>
-                                                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No vendors found on the platform.</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                )}
-
-                                {tab === 'audit' && (
-                                    <div className="fade-in">
-                                        <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: '#fcfcfc', borderBottom: '1px solid #eee' }}>
-                                            <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-                                                <div style={{ position: 'relative', flex: 0.7 }}>
+                                                    <option value="all">All Status</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="processing">Processing</option>
+                                                    <option value="sent">Sent</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                </select>
+                                                <div style={{ position: 'relative' }}>
                                                     <input
                                                         type="text"
-                                                        placeholder="Search logs..."
-                                                        value={auditSearch}
-                                                        onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
-                                                        style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                        placeholder="Search..."
+                                                        value={search}
+                                                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                                                        style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                     />
-                                                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
                                                 </div>
-                                                <select
-                                                    value={auditAction}
-                                                    onChange={(e) => { setAuditAction(e.target.value); setAuditPage(1); }}
-                                                    style={{ flex: 0.3, padding: '10px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
-                                                >
-                                                    <option value="">All Actions</option>
-                                                    <option value="LOGIN">Login</option>
-                                                    <option value="REGISTER">Register</option>
-                                                    <option value="TRANSACTION_CREATE">TX Create</option>
-                                                    <option value="TRANSACTION_STATUS_CHANGE">TX Status Change</option>
-                                                    <option value="VENDOR_ACCEPT_TRANSACTION">Vendor Accept</option>
-                                                    <option value="VENDOR_COMPLETE_TRANSACTION">Vendor Complete</option>
-                                                    <option value="CREATE_VENDOR">Create Vendor</option>
-                                                </select>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                    {totalTransactions} total
+                                                </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search Users..."
+                                                        value={userSearch}
+                                                        onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                                                        style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                                    />
+                                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
+                                                </div>
+                                                {tab === 'vendors' && (
+                                                    <button
+                                                        onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
+                                                        style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                    >
+                                                        <span style={{ fontSize: '1.2rem' }}>+</span> Add Vendor
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
 
+                                    {tab === 'transactions' && (
                                         <table style={{ marginTop: '0' }}>
                                             <thead>
                                                 <tr>
-                                                    <th>Timestamp</th>
-                                                    <th>User & Action</th>
-                                                    <th>Details</th>
-                                                    <th>IP Address</th>
+                                                    <th>User / Recipient</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                    <th>Proof</th>
+                                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {auditLogs.map(log => (
-                                                    <tr key={log.id}>
-                                                        <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                                                            {new Date(log.createdAt).toLocaleString()}
+                                                {transactions.map((tx) => (
+                                                    <tr key={tx.id} onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
+                                                        <td>
+                                                            <div style={{ fontWeight: 600 }}>{tx.user?.email}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                                → {tx.recipient_details?.name} | <span style={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>
+                                                                    {tx.recipient_details?.type === 'momo' ? (tx.recipient_details?.momo_provider || 'Momo') :
+                                                                        tx.recipient_details?.type === 'bank' ? (tx.recipient_details?.bank_name || 'Bank') :
+                                                                            tx.recipient_details?.type === 'interac' ? 'Interac' : 'Recipient'}
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td>
-                                                            <div style={{ fontWeight: 700 }}>{log.user?.full_name || 'System'}</div>
-                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.user?.email}</div>
-                                                            <div className={`badge badge-${log.action.toLowerCase().replace(/_/g, '-')}`} style={{ marginTop: '4px', fontSize: '0.6rem' }}>{log.action}</div>
+                                                            <div style={{ fontWeight: 700 }}>{tx.amount_received} {tx.type?.split('-')[1] || 'CAD'}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tx.amount_sent} {tx.type?.split('-')[0] || 'GHS'}</div>
                                                         </td>
-                                                        <td style={{ fontSize: '0.8rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {log.details}
+                                                        <td><span className={`badge badge-${tx.status}`}>{tx.status}</span></td>
+                                                        <td>
+                                                            {tx.proof_url ? (
+                                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                                            setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
+                                                                            setShowPreviewModal(true);
+                                                                        }}
+                                                                        style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                    >
+                                                                        View Proof
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</span>
+                                                            )}
                                                         </td>
-                                                        <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                                                            {log.ipAddress}
+                                                        <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                {tx.status === 'pending' && <button onClick={() => updateStatus(tx.id, 'processing')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--warning)', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Process</button>}
+                                                                {tx.status === 'processing' && <button onClick={() => updateStatus(tx.id, 'sent')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Confirm</button>}
+                                                                {tx.status === 'sent' && <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>Complete</span>}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+
+                                    {tab === 'kyc' && (
+                                        <table style={{ marginTop: '0' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Document Info</th>
+                                                    <th>Verification Files</th>
+                                                    <th>Status</th>
+                                                    <th style={{ textAlign: 'right' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {users.map((u) => (
+                                                    <tr key={u.id}>
+                                                        <td style={{ fontWeight: 600 }}>
+                                                            {u.full_name}<br />
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>{u.email}</span>
+                                                        </td>
+                                                        <td>
+                                                            {u.kyc_document_type ? (
+                                                                <div style={{ fontSize: '0.85rem' }}>
+                                                                    <strong>{u.kyc_document_type.replace('_', ' ').toUpperCase()}</strong><br />
+                                                                    ID: {u.kyc_document_id}
+                                                                </div>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No Details</span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                                {u.kyc_front_url && (
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setPreviewImage(`http://localhost:5000${u.kyc_front_url}`);
+                                                                            setPreviewDate(u.updatedAt);
+                                                                            setShowPreviewModal(true);
+                                                                        }}
+                                                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                    >
+                                                                        Front
+                                                                    </span>
+                                                                )}
+                                                                {u.kyc_back_url && (
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setPreviewImage(`http://localhost:5000${u.kyc_back_url}`);
+                                                                            setPreviewDate(u.updatedAt);
+                                                                            setShowPreviewModal(true);
+                                                                        }}
+                                                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                    >
+                                                                        Back
+                                                                    </span>
+                                                                )}
+                                                                {!u.kyc_front_url && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>None</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                <button onClick={() => updateKYC(u.id, 'verified')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Verify</button>
+                                                                <button onClick={() => updateKYC(u.id, 'rejected')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Reject</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+
+                                    {tab === 'users' && (
+                                        <table style={{ marginTop: '0' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Contact</th>
+                                                    <th>ID Level</th>
+                                                    <th>Balances</th>
+                                                    <th style={{ textAlign: 'right' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {users.map((u) => (
+                                                    <tr key={u.id}>
+                                                        <td style={{ fontWeight: 600 }}>
+                                                            {u.full_name}<br />
+                                                            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{u.account_number || 'No Account #'}</div>
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>Joined: {new Date(u.createdAt).toLocaleDateString()}</span>
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ fontSize: '0.85rem' }}>{u.email}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.phone}</div>
+                                                        </td>
+                                                        <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
+                                                        <td>
+                                                            <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_ghs).toFixed(2)} GHS</div>
+                                                            <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_cad).toFixed(2)} CAD</div>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
                                                             <button
-                                                                onClick={() => { navigator.clipboard.writeText(log.ipAddress); toast.success('IP Copied!'); }}
-                                                                style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }}
-                                                                title="Copy IP"
+                                                                onClick={() => { setSelectedUser(u); setShowUserModal(true); }}
+                                                                style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
                                                             >
-                                                                📋
+                                                                Manage
                                                             </button>
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {auditLogs.length === 0 && (
+                                            </tbody>
+                                        </table>
+                                    )}
+
+                                    {tab === 'vendors' && (
+                                        <table style={{ marginTop: '0' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Vendor</th>
+                                                    <th>Status</th>
+                                                    <th>Region</th>
+                                                    <th>Account</th>
+                                                    <th style={{ textAlign: 'right' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {vendors.map((v) => (
+                                                    <tr key={v.id}>
+                                                        <td style={{ fontWeight: 600 }}>
+                                                            {v.full_name}<br />
+                                                            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{v.account_number || 'No Account #'}</div>
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{v.email}</span>
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: v.is_online ? 'var(--success)' : '#ccc' }}></div>
+                                                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{v.is_online ? 'Online' : 'Offline'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, background: 'var(--accent-peach)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase' }}>
+                                                                {v.country || 'All'}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span className={`badge ${v.is_active ? 'badge-verified' : 'badge-rejected'}`} style={{ fontSize: '0.7rem' }}>
+                                                                {v.is_active ? 'ACTIVE' : 'DISABLED'}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                <button
+                                                                    onClick={() => toggleStatus(v.id)}
+                                                                    style={{ fontSize: '0.75rem', padding: '6px 12px', background: v.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    {v.is_active ? 'Disable' : 'Enable'}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => { setSelectedUser(v); setShowUserModal(true); }}
+                                                                    style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    View
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {vendors.length === 0 && (
                                                     <tr>
-                                                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No audit logs found matching your criteria.</td>
+                                                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No vendors found on the platform.</td>
                                                     </tr>
                                                 )}
                                             </tbody>
                                         </table>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
 
-                            {/* Pagination */}
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
-                                {tab === 'transactions' ? (
-                                    Array.from({ length: totalPages }, (_, i) => (
-                                        <button
-                                            key={i + 1}
-                                            onClick={() => setPage(i + 1)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '4px',
-                                                border: '1px solid var(--border-color)',
-                                                background: page === i + 1 ? 'var(--primary)' : '#fff',
-                                                color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                fontWeight: 700,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    ))
-                                ) : tab === 'audit' ? (
-                                    Array.from({ length: auditTotalPages }, (_, i) => (
-                                        <button
-                                            key={i + 1}
-                                            onClick={() => setAuditPage(i + 1)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '4px',
-                                                border: '1px solid var(--border-color)',
-                                                background: auditPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                fontWeight: 700,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    ))
-                                ) : (
-                                    Array.from({ length: userTotalPages }, (_, i) => (
-                                        <button
-                                            key={i + 1}
-                                            onClick={() => setUserPage(i + 1)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '4px',
-                                                border: '1px solid var(--border-color)',
-                                                background: userPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                color: userPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                fontWeight: 700,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                        </>
-                    )}
+                                    {tab === 'audit' && (
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: '#fcfcfc', borderBottom: '1px solid #eee' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search logs..."
+                                                            value={auditSearch}
+                                                            onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                        />
+                                                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                                                    </div>
+                                                    <select
+                                                        value={auditAction}
+                                                        onChange={(e) => { setAuditAction(e.target.value); setAuditPage(1); }}
+                                                        style={{ flex: 0.3, padding: '10px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                    >
+                                                        <option value="">All Actions</option>
+                                                        <option value="LOGIN">Login</option>
+                                                        <option value="REGISTER">Register</option>
+                                                        <option value="TRANSACTION_CREATE">TX Create</option>
+                                                        <option value="TRANSACTION_STATUS_CHANGE">TX Status Change</option>
+                                                        <option value="VENDOR_ACCEPT_TRANSACTION">Vendor Accept</option>
+                                                        <option value="VENDOR_COMPLETE_TRANSACTION">Vendor Complete</option>
+                                                        <option value="CREATE_VENDOR">Create Vendor</option>
+                                                    </select>
+                                                </div>
+                                            </div>
 
-                    {tab === 'payment-settings' && <PaymentSettings />}
-                    {tab === 'profile' && <AdminProfile />}
-                </div>
-
-                {/* Admin Transaction Details Modal */}
-                {showTxModal && selectedTx && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                        <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
-                            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0 }}>Transaction Details</h3>
-                                <button onClick={() => setShowTxModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
-                            </div>
-                            <div style={{ padding: '24px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>User</label>
-                                        <div style={{ fontWeight: 700 }}>{selectedTx.user?.full_name}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.user?.email}</div>
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Status</label>
-                                        <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedTx.status}`}>{selectedTx.status.toUpperCase()}</span></div>
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Initiated At</label>
-                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{new Date(selectedTx.createdAt).toLocaleString()}</div>
-                                    </div>
-                                    {selectedTx.sent_at && (
-                                        <div>
-                                            <label style={{ fontSize: '0.7rem', color: 'var(--success)', textTransform: 'uppercase', fontWeight: 800 }}>Sent Date</label>
-                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--success)' }}>{new Date(selectedTx.sent_at).toLocaleString()}</div>
+                                            <table style={{ marginTop: '0' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Timestamp</th>
+                                                        <th>User & Action</th>
+                                                        <th>Details</th>
+                                                        <th>IP Address</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {auditLogs.map(log => (
+                                                        <tr key={log.id}>
+                                                            <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                                                                {new Date(log.createdAt).toLocaleString()}
+                                                            </td>
+                                                            <td>
+                                                                <div style={{ fontWeight: 700 }}>{log.user?.full_name || 'System'}</div>
+                                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.user?.email}</div>
+                                                                <div className={`badge badge-${log.action.toLowerCase().replace(/_/g, '-')}`} style={{ marginTop: '4px', fontSize: '0.6rem' }}>{log.action}</div>
+                                                            </td>
+                                                            <td style={{ fontSize: '0.8rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {log.details}
+                                                            </td>
+                                                            <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                                                {log.ipAddress}
+                                                                <button
+                                                                    onClick={() => { navigator.clipboard.writeText(log.ipAddress); toast.success('IP Copied!'); }}
+                                                                    style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }}
+                                                                    title="Copy IP"
+                                                                >
+                                                                    📋
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {auditLogs.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No audit logs found matching your criteria.</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     )}
                                 </div>
 
-                                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Financial Summary</label>
+                                {/* Pagination */}
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                                    {tab === 'transactions' ? (
+                                        Array.from({ length: totalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: page === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    ) : tab === 'audit' ? (
+                                        Array.from({ length: auditTotalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setAuditPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: auditPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        Array.from({ length: userTotalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setUserPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: userPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: userPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {tab === 'payment-settings' && <PaymentSettings />}
+                        {tab === 'profile' && <AdminProfile />}
+                    </div>
+                </main>
+            </div>
+            {/* Admin Transaction Details Modal */}
+            {showTxModal && selectedTx && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                    <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0 }}>Transaction Details</h3>
+                            <button onClick={() => setShowTxModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                        </div>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>User</label>
+                                    <div style={{ fontWeight: 700 }}>{selectedTx.user?.full_name}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.user?.email}</div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Status</label>
+                                    <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedTx.status}`}>{selectedTx.status.toUpperCase()}</span></div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Initiated At</label>
+                                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{new Date(selectedTx.createdAt).toLocaleString()}</div>
+                                </div>
+                                {selectedTx.sent_at && (
+                                    <div>
+                                        <label style={{ fontSize: '0.7rem', color: 'var(--success)', textTransform: 'uppercase', fontWeight: 800 }}>Sent Date</label>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--success)' }}>{new Date(selectedTx.sent_at).toLocaleString()}</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
+                                <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Financial Summary</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Currency Pair</div>
+                                        <div style={{ fontWeight: 700 }}>{selectedTx.type?.replace('-', ' ➔ ') || 'GHS ➔ CAD'}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Exchange Rate</div>
+                                        <div style={{ fontWeight: 700 }}>1 {selectedTx.type?.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type?.split('-')[1]}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Amount Sent</div>
+                                        <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-deep-brown)' }}>{selectedTx.amount_sent} {selectedTx.type?.split('-')[0]}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To Recipient</div>
+                                        <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)' }}>{selectedTx.amount_received} {selectedTx.type?.split('-')[1]}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Recipient Details</label>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, background: 'var(--text-deep-brown)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                                        {selectedTx.recipient_details?.type || 'Transfer'}
+                                    </span>
+                                </div>
+
+                                <div style={{ display: 'grid', gap: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Full Name:</span>
+                                        <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name}</span>
+                                    </div>
+
+                                    {selectedTx.recipient_details?.type === 'momo' && (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Provider:</span>
+                                                <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>{selectedTx.recipient_details?.momo_provider}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Number:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.phone || selectedTx.recipient_details?.account}</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {selectedTx.recipient_details?.type === 'bank' && (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bank Name:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.bank_name}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Account Number:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.account}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Transit Number:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.transit_number}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Institution:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.institution_number}</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {selectedTx.recipient_details?.type === 'interac' && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Interac Email:</span>
+                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.interac_email}</span>
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #eee' }}>
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reference:</span>
+                                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedTx.recipient_details?.admin_reference || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedTx.recipient_details?.note && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>User Note</label>
+                                    <div style={{ fontSize: '0.9rem', fontStyle: 'italic', marginTop: '4px', background: '#fff', padding: '8px', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                                        "{selectedTx.recipient_details?.note}"
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    onClick={() => setShowTxModal(false)}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Close
+                                </button>
+                                {selectedTx.status === 'pending' && (
+                                    <button
+                                        onClick={() => { updateStatus(selectedTx.id, 'processing'); setShowTxModal(false); }}
+                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--warning)', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Start Processing
+                                    </button>
+                                )}
+                                {selectedTx.status === 'processing' && (
+                                    <button
+                                        onClick={() => { updateStatus(selectedTx.id, 'sent'); setShowTxModal(false); }}
+                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Mark as Sent
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Admin User Management Modal */}
+            {showUserModal && selectedUser && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                    <div className="card scale-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0 }}>User Management</h3>
+                            <button onClick={() => setShowUserModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                        </div>
+                        <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+                                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--accent-peach)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>
+                                    {selectedUser.full_name?.charAt(0)}
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: '1.2rem' }}>{selectedUser.full_name}</h4>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, margin: '4px 0' }}>{selectedUser.account_number || 'N/A'}</div>
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{selectedUser.email}</div>
+                                    <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedUser.kyc_status}`}>{selectedUser.kyc_status.toUpperCase()}</span></div>
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>GHS Balance</label>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_ghs).toLocaleString()} GHS</div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>CAD Balance</label>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_cad).toLocaleString()} CAD</div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>KYC Actions</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => { updateKYC(selectedUser.id, 'verified'); setShowUserModal(false); }}
+                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Verify User
+                                    </button>
+                                    <button
+                                        onClick={() => { updateKYC(selectedUser.id, 'rejected'); setShowUserModal(false); }}
+                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--danger)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Reject KYC
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Account Access Control</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => toggleStatus(selectedUser.id)}
+                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        {selectedUser.is_active ? 'Disable Account' : 'Enable Account'}
+                                    </button>
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                    {selectedUser.is_active
+                                        ? 'Disabling this account will prevent the user from logging in or performing any transactions.'
+                                        : 'Enabling this account will restore full access to the platform.'}
+                                </p>
+                            </div>
+
+                            {selectedUser.role === 'vendor' && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Assigned Region</label>
+                                    <select
+                                        value={selectedUser.country || 'All'}
+                                        onChange={(e) => updateRegion(selectedUser.id, e.target.value)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff' }}
+                                    >
+                                        <option value="Canada">Canada</option>
+                                        <option value="Ghana">Ghana</option>
+                                        <option value="All">All Countries</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedUser.role === 'vendor' && (
+                                <div style={{ marginBottom: '32px' }}>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '16px' }}>Performance Overview</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Handled</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.totalCount}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>CAD Volume</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800 }}>${vendorStats.totalVolumeCAD.toLocaleString()}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>GHS Volume</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800 }}>{vendorStats.totalVolumeGHS.toLocaleString()}₵</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--success)', color: '#fff', borderRadius: '8px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.65rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Success Rate</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.successRate}%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
+                                    {selectedUser.role === 'vendor' ? 'Service History' : 'Transaction History'}
+                                </label>
+                                <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                    <table style={{ margin: 0, fontSize: '0.8rem' }}>
+                                        <thead style={{ background: '#f9f9f9' }}>
+                                            <tr>
+                                                <th style={{ padding: '10px' }}>ID/Type</th>
+                                                <th style={{ padding: '10px' }}>Amount</th>
+                                                <th style={{ padding: '10px' }}>Status</th>
+                                                <th style={{ padding: '10px' }}>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {userTransactionsLoading ? (
+                                                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading history...</td></tr>
+                                            ) : userTransactions.length === 0 ? (
+                                                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No transactions found.</td></tr>
+                                            ) : userTransactions.map(tx => (
+                                                <tr key={tx.id}>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <div style={{ fontWeight: 700 }}>#{tx.id}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{tx.type}</div>
+                                                    </td>
+                                                    <td style={{ padding: '10px', fontWeight: 700 }}>
+                                                        {parseFloat(tx.amount_sent).toLocaleString()} {tx.type?.split('-')[0]}
+                                                    </td>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <span className={`badge badge-${tx.status}`} style={{ fontSize: '0.65rem' }}>{tx.status}</span>
+                                                    </td>
+                                                    <td style={{ padding: '10px', color: 'var(--text-muted)' }}>
+                                                        {new Date(tx.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '24px' }}>
+                                <button
+                                    onClick={() => setShowUserModal(false)}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Vendor Modal (Registration Form) */}
+            {showAddVendorModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                    <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0 }}>Register New Workforce (Vendor)</h3>
+                            <button onClick={() => setShowAddVendorModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                        </div>
+                        <form onSubmit={handleCreateVendor}>
+                            <div style={{ padding: '24px' }}>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Fill in the details below to create a dedicated Vendor account. Vendors are managed separately from platform customers.</p>
+
+                                <div style={{ display: 'grid', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newVendor.full_name}
+                                            onChange={(e) => setNewVendor({ ...newVendor, full_name: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            placeholder="e.g. John Doe"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={newVendor.email}
+                                            onChange={(e) => setNewVendor({ ...newVendor, email: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            placeholder="vendor@qwiktransfers.com"
+                                        />
+                                    </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                         <div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Currency Pair</div>
-                                            <div style={{ fontWeight: 700 }}>{selectedTx.type?.replace('-', ' ➔ ') || 'GHS ➔ CAD'}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Exchange Rate</div>
-                                            <div style={{ fontWeight: 700 }}>1 {selectedTx.type?.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type?.split('-')[1]}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Amount Sent</div>
-                                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-deep-brown)' }}>{selectedTx.amount_sent} {selectedTx.type?.split('-')[0]}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To Recipient</div>
-                                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)' }}>{selectedTx.amount_received} {selectedTx.type?.split('-')[1]}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Recipient Details</label>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, background: 'var(--text-deep-brown)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
-                                            {selectedTx.recipient_details?.type || 'Transfer'}
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gap: '8px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Full Name:</span>
-                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name}</span>
-                                        </div>
-
-                                        {selectedTx.recipient_details?.type === 'momo' && (
-                                            <>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Provider:</span>
-                                                    <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>{selectedTx.recipient_details?.momo_provider}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Momo Number:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.phone || selectedTx.recipient_details?.account}</span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {selectedTx.recipient_details?.type === 'bank' && (
-                                            <>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bank Name:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.bank_name}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Account Number:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.account}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Transit Number:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.transit_number}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Institution:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.institution_number}</span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {selectedTx.recipient_details?.type === 'interac' && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Interac Email:</span>
-                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.interac_email}</span>
-                                            </div>
-                                        )}
-
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #eee' }}>
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reference:</span>
-                                            <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedTx.recipient_details?.admin_reference || 'N/A'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {selectedTx.recipient_details?.note && (
-                                    <div style={{ marginBottom: '24px' }}>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>User Note</label>
-                                        <div style={{ fontSize: '0.9rem', fontStyle: 'italic', marginTop: '4px', background: '#fff', padding: '8px', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                                            "{selectedTx.recipient_details?.note}"
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button
-                                        onClick={() => setShowTxModal(false)}
-                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Close
-                                    </button>
-                                    {selectedTx.status === 'pending' && (
-                                        <button
-                                            onClick={() => { updateStatus(selectedTx.id, 'processing'); setShowTxModal(false); }}
-                                            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--warning)', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            Start Processing
-                                        </button>
-                                    )}
-                                    {selectedTx.status === 'processing' && (
-                                        <button
-                                            onClick={() => { updateStatus(selectedTx.id, 'sent'); setShowTxModal(false); }}
-                                            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            Mark as Sent
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Admin User Management Modal */}
-                {showUserModal && selectedUser && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                        <div className="card scale-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0 }}>User Management</h3>
-                                <button onClick={() => setShowUserModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
-                            </div>
-                            <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
-                                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--accent-peach)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>
-                                        {selectedUser.full_name?.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h4 style={{ margin: 0, fontSize: '1.2rem' }}>{selectedUser.full_name}</h4>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, margin: '4px 0' }}>{selectedUser.account_number || 'N/A'}</div>
-                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{selectedUser.email}</div>
-                                        <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedUser.kyc_status}`}>{selectedUser.kyc_status.toUpperCase()}</span></div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>GHS Balance</label>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_ghs).toLocaleString()} GHS</div>
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>CAD Balance</label>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_cad).toLocaleString()} CAD</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>KYC Actions</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={() => { updateKYC(selectedUser.id, 'verified'); setShowUserModal(false); }}
-                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            Verify User
-                                        </button>
-                                        <button
-                                            onClick={() => { updateKYC(selectedUser.id, 'rejected'); setShowUserModal(false); }}
-                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--danger)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            Reject KYC
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Account Access Control</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={() => toggleStatus(selectedUser.id)}
-                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            {selectedUser.is_active ? 'Disable Account' : 'Enable Account'}
-                                        </button>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                                        {selectedUser.is_active
-                                            ? 'Disabling this account will prevent the user from logging in or performing any transactions.'
-                                            : 'Enabling this account will restore full access to the platform.'}
-                                    </p>
-                                </div>
-
-                                {selectedUser.role === 'vendor' && (
-                                    <div style={{ marginBottom: '24px' }}>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Assigned Region</label>
-                                        <select
-                                            value={selectedUser.country || 'All'}
-                                            onChange={(e) => updateRegion(selectedUser.id, e.target.value)}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff' }}
-                                        >
-                                            <option value="Canada">Canada</option>
-                                            <option value="Ghana">Ghana</option>
-                                            <option value="All">All Countries</option>
-                                        </select>
-                                    </div>
-                                )}
-
-                                {selectedUser.role === 'vendor' && (
-                                    <div style={{ marginBottom: '32px' }}>
-                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '16px' }}>Performance Overview</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Handled</div>
-                                                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.totalCount}</div>
-                                            </div>
-                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>CAD Volume</div>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800 }}>${vendorStats.totalVolumeCAD.toLocaleString()}</div>
-                                            </div>
-                                            <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>GHS Volume</div>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800 }}>{vendorStats.totalVolumeGHS.toLocaleString()}₵</div>
-                                            </div>
-                                            <div style={{ padding: '12px', background: 'var(--success)', color: '#fff', borderRadius: '8px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.65rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Success Rate</div>
-                                                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.successRate}%</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-                                        {selectedUser.role === 'vendor' ? 'Service History' : 'Transaction History'}
-                                    </label>
-                                    <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
-                                        <table style={{ margin: 0, fontSize: '0.8rem' }}>
-                                            <thead style={{ background: '#f9f9f9' }}>
-                                                <tr>
-                                                    <th style={{ padding: '10px' }}>ID/Type</th>
-                                                    <th style={{ padding: '10px' }}>Amount</th>
-                                                    <th style={{ padding: '10px' }}>Status</th>
-                                                    <th style={{ padding: '10px' }}>Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {userTransactionsLoading ? (
-                                                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading history...</td></tr>
-                                                ) : userTransactions.length === 0 ? (
-                                                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No transactions found.</td></tr>
-                                                ) : userTransactions.map(tx => (
-                                                    <tr key={tx.id}>
-                                                        <td style={{ padding: '10px' }}>
-                                                            <div style={{ fontWeight: 700 }}>#{tx.id}</div>
-                                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{tx.type}</div>
-                                                        </td>
-                                                        <td style={{ padding: '10px', fontWeight: 700 }}>
-                                                            {parseFloat(tx.amount_sent).toLocaleString()} {tx.type?.split('-')[0]}
-                                                        </td>
-                                                        <td style={{ padding: '10px' }}>
-                                                            <span className={`badge badge-${tx.status}`} style={{ fontSize: '0.65rem' }}>{tx.status}</span>
-                                                        </td>
-                                                        <td style={{ padding: '10px', color: 'var(--text-muted)' }}>
-                                                            {new Date(tx.createdAt).toLocaleDateString()}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '24px' }}>
-                                    <button
-                                        onClick={() => setShowUserModal(false)}
-                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Add Vendor Modal (Registration Form) */}
-                {showAddVendorModal && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                        <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
-                            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0 }}>Register New Workforce (Vendor)</h3>
-                                <button onClick={() => setShowAddVendorModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
-                            </div>
-                            <form onSubmit={handleCreateVendor}>
-                                <div style={{ padding: '24px' }}>
-                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Fill in the details below to create a dedicated Vendor account. Vendors are managed separately from platform customers.</p>
-
-                                    <div style={{ display: 'grid', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Full Name</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Phone Number</label>
                                             <input
                                                 type="text"
                                                 required
-                                                value={newVendor.full_name}
-                                                onChange={(e) => setNewVendor({ ...newVendor, full_name: e.target.value })}
+                                                value={newVendor.phone}
+                                                onChange={(e) => setNewVendor({ ...newVendor, phone: e.target.value })}
                                                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                                placeholder="e.g. John Doe"
+                                                placeholder="+233..."
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Email Address</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Password</label>
                                             <input
-                                                type="email"
+                                                type="password"
                                                 required
-                                                value={newVendor.email}
-                                                onChange={(e) => setNewVendor({ ...newVendor, email: e.target.value })}
+                                                value={newVendor.password}
+                                                onChange={(e) => setNewVendor({ ...newVendor, password: e.target.value })}
                                                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                                placeholder="vendor@qwiktransfers.com"
+                                                placeholder="••••••••"
                                             />
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Phone Number</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={newVendor.phone}
-                                                    onChange={(e) => setNewVendor({ ...newVendor, phone: e.target.value })}
-                                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                                    placeholder="+233..."
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Password</label>
-                                                <input
-                                                    type="password"
-                                                    required
-                                                    value={newVendor.password}
-                                                    onChange={(e) => setNewVendor({ ...newVendor, password: e.target.value })}
-                                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                                    placeholder="••••••••"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Assigned Region (Country)</label>
-                                            <select
-                                                required
-                                                value={newVendor.country}
-                                                onChange={(e) => setNewVendor({ ...newVendor, country: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
-                                            >
-                                                <option value="Canada">Canada (CAD Transactions)</option>
-                                                <option value="Ghana">Ghana (GHS Transactions)</option>
-                                                <option value="All">All Countries (Global)</option>
-                                            </select>
-                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                                Vendors assigned to a country can only claim transactions originating from that country.
-                                            </p>
                                         </div>
                                     </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Assigned Region (Country)</label>
+                                        <select
+                                            required
+                                            value={newVendor.country}
+                                            onChange={(e) => setNewVendor({ ...newVendor, country: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                        >
+                                            <option value="Canada">Canada (CAD Transactions)</option>
+                                            <option value="Ghana">Ghana (GHS Transactions)</option>
+                                            <option value="All">All Countries (Global)</option>
+                                        </select>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                            Vendors assigned to a country can only claim transactions originating from that country.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddVendorModal(false)}
-                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--text-deep-brown)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Create Vendor
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddVendorModal(false)}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--text-deep-brown)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Create Vendor
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )}
+                </div>
+            )}
 
-                {showPreviewModal && (
-                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
-                        <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
-                            <button
-                                onClick={() => setShowPreviewModal(false)}
-                                style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
-                            >
-                                &times;
-                            </button>
-                            {previewImage.endsWith('.pdf') ? (
-                                <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
-                            ) : (
-                                <img
-                                    src={previewImage}
-                                    alt="Preview"
-                                    style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-                                />
-                            )}
-                            {previewDate && (
-                                <div style={{ position: 'absolute', bottom: '-40px', left: 0, width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>
-                                    Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
-                                        month: 'long',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: 'numeric',
-                                        minute: 'numeric',
-                                        hour12: true
-                                    })}
-                                </div>
-                            )}
-                        </div>
+            {showPreviewModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
+                        <button
+                            onClick={() => setShowPreviewModal(false)}
+                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
+                        >
+                            &times;
+                        </button>
+                        {previewImage.endsWith('.pdf') ? (
+                            <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
+                        ) : (
+                            <img
+                                src={previewImage}
+                                alt="Preview"
+                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                            />
+                        )}
+                        {previewDate && (
+                            <div style={{ position: 'absolute', bottom: '-40px', left: 0, width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>
+                                Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                })}
+                            </div>
+                        )}
                     </div>
-                )}
-            </main>
+                </div>
+            )}
         </div>
     );
 };
