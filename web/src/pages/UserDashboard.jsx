@@ -67,6 +67,7 @@ const RateWatchCard = () => {
             toast.success("Rate alert set!");
             setTargetRate('');
             fetchAlerts();
+            window.dispatchEvent(new CustomEvent('refresh-notifications'));
         } catch (error) {
             toast.error("Failed to set alert");
         } finally {
@@ -275,6 +276,7 @@ const UserDashboard = () => {
             await api.patch(`/transactions/${id}/cancel`);
             toast.success('Transaction cancelled successfully');
             fetchTransactions();
+            window.dispatchEvent(new CustomEvent('refresh-notifications'));
             setShowDetailsModal(false);
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to cancel transaction');
@@ -319,6 +321,22 @@ const UserDashboard = () => {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return result;
+    };
+
+    const resetForm = () => {
+        setFormStep(1);
+        setAmount('');
+        setRecipientName('');
+        setRecipientAccount('');
+        setBankName('');
+        setMomoProvider('');
+        setNote('');
+        setAdminReference('');
+        setTransitNumber('');
+        setInstitutionNumber('');
+        setInteracEmail('');
+        setPin('');
+        setRateLockedUntil(null);
     };
 
     const nextStep = () => {
@@ -404,10 +422,11 @@ const UserDashboard = () => {
             });
 
             setRateLockedUntil(res.data.rate_locked_until);
+            setRateLockedUntil(res.data.rate_locked_until);
             fetchTransactions();
-            toast.success('Transfer Initiated! Please follow payment instructions below.');
-            // We stay on step 3 to show instructions and timer, but maybe we should disable the confirm button or show it's done.
-            // For now, let's just toast and stay there.
+            toast.success('Transfer Initiated! Please follow payment instructions.');
+            window.dispatchEvent(new CustomEvent('refresh-notifications'));
+            setFormStep(4); // Move to success step
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to send request');
         }
@@ -428,6 +447,7 @@ const UserDashboard = () => {
             });
             fetchTransactions();
             toast.success('Proof uploaded!');
+            window.dispatchEvent(new CustomEvent('refresh-notifications'));
         } catch (error) {
             toast.error('Failed to upload proof');
         }
@@ -535,7 +555,7 @@ const UserDashboard = () => {
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sending {fromCurrency} to {toCurrency}</p>
                             </div>
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--accent-peach)', padding: '4px 10px', borderRadius: '20px' }}>
-                                Step {formStep} of 3
+                                {formStep === 4 ? 'Success' : `Step ${formStep} of 3`}
                             </span>
                         </div>
 
@@ -794,6 +814,52 @@ const UserDashboard = () => {
                                 </div>
                             </div>
                         )}
+
+                        {formStep === 4 && (
+                            <div className="fade-in" style={{ textAlign: 'center', padding: '10px 0' }}>
+                                <div style={{ width: '64px', height: '64px', background: 'var(--success)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '2rem' }}>
+                                    ✓
+                                </div>
+                                <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Transfer Initiated!</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
+                                    Your exchange rate is securely <strong>locked</strong>. Please complete your payment now.
+                                </p>
+
+                                <div style={{ background: 'var(--text-deep-brown)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px', textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                        <h3 style={{ fontSize: '0.85rem', margin: 0, color: 'var(--accent-peach)' }}>PAYMENT INSTRUCTIONS</h3>
+                                        <RateLockTimer lockedUntil={rateLockedUntil} />
+                                    </div>
+                                    <p style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: '20px' }}>
+                                        Send <strong>{amount} {fromCurrency}</strong> to:
+                                    </p>
+
+                                    <div style={{ fontSize: '0.95rem', marginBottom: '20px' }}>
+                                        {fromCurrency === 'GHS' ? (
+                                            <>
+                                                <div style={{ marginBottom: '6px' }}><strong>MTN Momo:</strong> {ghsPaymentMethod?.number || '055 123 4567'}</div>
+                                                <div><strong>Name:</strong> {ghsPaymentMethod?.name || 'Qwiktransfers Limited'}</div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ marginBottom: '6px' }}><strong>Interac:</strong> {cadPaymentMethod?.email || 'pay@qwiktransfers.ca'}</div>
+                                                <div><strong>Name:</strong> {cadPaymentMethod?.name || 'Qwiktransfers Canada'}</div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                                        <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.7, display: 'block', marginBottom: '4px' }}>Reference Code</label>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-peach)', letterSpacing: '1px' }}>{adminReference}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <button onClick={resetForm} className="btn-primary">Send Another Transfer</button>
+                                    <button onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); resetForm(); }} className="btn-outline">View History</button>
+                                </div>
+                            </div>
+                        )}
                     </section>
 
 
@@ -822,12 +888,16 @@ const UserDashboard = () => {
                                 <Link to="/kyc" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>Increase Limit</Link>
                             </div>
                             <div style={{ height: '8px', background: 'var(--accent-peach)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                                <div style={{
-                                    height: '100%',
-                                    width: user?.limits ? '10%' : '0%',
-                                    background: 'var(--primary)',
-                                    borderRadius: '4px'
-                                }}></div>
+                                <div
+                                    className={loading ? 'shimmer-bar' : ''}
+                                    style={{
+                                        height: '100%',
+                                        width: user?.limits ? '10%' : '0%',
+                                        background: 'var(--primary)',
+                                        borderRadius: '4px',
+                                        transition: 'width 0.3s ease'
+                                    }}
+                                ></div>
                             </div>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>
                                 {!user?.is_email_verified && `Verify your email to increase limit to $${user?.limits?.tiers?.level2 || 500}.`}
@@ -929,16 +999,26 @@ const UserDashboard = () => {
                     )}
 
                     {!isHistoryLoading && totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '32px', padding: '16px 0', borderTop: '1px solid #f0f0f0' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginTop: '48px',
+                            padding: '24px 32px',
+                            borderTop: '1px solid var(--border-color)',
+                            background: 'var(--accent-peach)',
+                            borderBottomLeftRadius: '16px',
+                            borderBottomRightRadius: '16px'
+                        }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                 Showing page {page} of {totalPages} ({totalTransactions} transactions)
                             </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '12px' }}>
                                 <button
                                     disabled={page === 1}
                                     onClick={() => setPage(page - 1)}
                                     className="btn-outline"
-                                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                    style={{ padding: '8px 20px', fontSize: '0.85rem', width: 'auto' }}
                                 >
                                     Previous
                                 </button>
@@ -946,7 +1026,7 @@ const UserDashboard = () => {
                                     disabled={page === totalPages}
                                     onClick={() => setPage(page + 1)}
                                     className="btn-outline"
-                                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                    style={{ padding: '8px 20px', fontSize: '0.85rem', width: 'auto' }}
                                 >
                                     Next
                                 </button>

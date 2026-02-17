@@ -1,4 +1,5 @@
 const { RateAlert } = require('../models');
+const { createNotification } = require('../services/notificationService');
 
 const createAlert = async (req, res) => {
     try {
@@ -9,6 +10,14 @@ const createAlert = async (req, res) => {
             direction: direction || 'above',
             isActive: true
         });
+
+        // Add in-app notification
+        await createNotification({
+            userId: req.user.id,
+            type: 'RATE_ALERT',
+            message: `Rate Watcher Set: We will notify you when 1 CAD reaches ${parseFloat(targetRate).toFixed(2)} GHS (${direction || 'above'}).`
+        });
+
         res.status(201).json(alert);
     } catch (error) {
         res.status(500).json({ error: error.message });

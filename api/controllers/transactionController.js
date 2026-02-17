@@ -99,6 +99,13 @@ const createTransaction = async (req, res) => {
             await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`);
         }
 
+        // Create Notification for User
+        await createNotification({
+            userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Transaction of ${amount_sent} ${type.split('-')[0]} initiated. Your rate is locked for 15 minutes.`
+        });
+
         res.status(201).json(transaction);
     } catch (error) {
         res.status(500).json({ error: error.message });

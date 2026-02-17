@@ -21,7 +21,15 @@ const NotificationPanel = () => {
         fetchNotifications();
         // Poll for new notifications every 30 seconds
         const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
+
+        // Listen for internal refresh requests
+        const handleRefresh = () => fetchNotifications();
+        window.addEventListener('refresh-notifications', handleRefresh);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('refresh-notifications', handleRefresh);
+        };
     }, []);
 
     useEffect(() => {
