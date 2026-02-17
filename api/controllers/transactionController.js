@@ -31,14 +31,19 @@ const createTransaction = async (req, res) => {
             }
         });
 
-        const getReferenceAmount = (amount, t) => {
-            const currency = t.split('-')[0];
+        const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
+        const liveRate = rateRecord ? parseFloat(rateRecord.rate) : 0.10;
+
+        const getReferenceAmount = (amount, txType, rate) => {
+            const currency = txType.split('-')[0];
             const numAmount = parseFloat(amount) || 0;
-            return currency === 'GHS' ? numAmount / 15 : numAmount;
+            // If the transaction is GHS, we convert it to CAD (reference) using the live rate
+            // If it's already CAD, we keep it as is.
+            return currency === 'GHS' ? numAmount * rate : numAmount;
         };
 
-        const currentSpent = todayTransactions.reduce((sum, tx) => sum + getReferenceAmount(tx.amount_sent, tx.type), 0);
-        const prospectiveSent = getReferenceAmount(amount_sent, type || 'GHS-CAD');
+        const currentSpent = todayTransactions.reduce((sum, tx) => sum + getReferenceAmount(tx.amount_sent, tx.type, liveRate), 0);
+        const prospectiveSent = getReferenceAmount(amount_sent, type || 'GHS-CAD', liveRate);
 
         if (currentSpent + prospectiveSent > dailyLimit) {
             let reason = `Verify your email to increase your limit to $${limits.level2}.`;
@@ -53,14 +58,7 @@ const createTransaction = async (req, res) => {
             });
         }
 
-        const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
-        let exchange_rate = rateRecord ? rateRecord.rate : 0.10;
-
-        // If transaction is CAD to GHS, we need the inverse rate (1 / (GHS to CAD))
-        if (type === 'CAD-GHS') {
-            exchange_rate = (1 / exchange_rate).toFixed(6);
-        }
-
+        const exchange_rate = type === 'CAD-GHS' ? (1 / liveRate).toFixed(6) : liveRate.toFixed(6);
         const amount_received = (amount_sent * exchange_rate).toFixed(2);
 
         const rate_locked_until = new Date(Date.now() + 15 * 60000); // 15 minutes
@@ -171,13 +169,15 @@ const updateStatus = async (req, res) => {
 
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
-        transaction.status = status;
-        if (status === 'sent') {
-            transaction.sent_at = new Date();
-            // Async email notification
-            sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
-        }
-        await transaction.save();
+        const result = await sequelize.transaction(async (t) => {
+            transaction.status = status;
+            if (status === 'sent') {
+                transaction.sent_at = new Date();
+                // Async email notification - outside transaction usually, but here fine
+                sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
+            }
+            return await transaction.save({ transaction: t });
+        });
 
         // Notify user about status change via SMS
         if (transaction.user && transaction.user.phone) {

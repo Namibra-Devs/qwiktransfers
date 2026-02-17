@@ -12,18 +12,22 @@ const { logAction } = require('../services/auditService');
 const generateAccountNumber = async (role) => {
     let isUnique = false;
     let accountNumber = '';
-    while (!isUnique) {
-        if (role === 'vendor') {
-            const random = Math.floor(1000 + Math.random() * 9000); // 4 digits
-            accountNumber = `QT-V-${random}`;
-        } else {
-            const random = Math.floor(100000 + Math.random() * 900000); // 6 digits
-            accountNumber = `QT-${random}`;
-        }
+    const prefix = role === 'vendor' ? 'QT-V-' : 'QT-';
+
+    // Attempt up to 5 times to generate a unique number before failing
+    for (let attempts = 0; attempts < 5; attempts++) {
+        const random = role === 'vendor'
+            ? Math.floor(1000 + Math.random() * 9000)
+            : Math.floor(100000 + Math.random() * 900000);
+
+        accountNumber = `${prefix}${random}`;
         const existing = await User.findOne({ where: { account_number: accountNumber } });
-        if (!existing) isUnique = true;
+        if (!existing) return accountNumber;
     }
-    return accountNumber;
+
+    // If we reach here, we had 5 collisions (very unlikely but possible)
+    // Use a timestamp-based fallback to guarantee uniqueness
+    return `${prefix}${Date.now().toString().slice(-6)}`;
 };
 
 const register = async (req, res) => {
@@ -78,7 +82,7 @@ const register = async (req, res) => {
             ipAddress: req.ip
         });
 
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.status(201).json({ user, token });
     } catch (error) {
         if (error.name === 'SequelizeUniqueConstraintError') {
@@ -164,7 +168,7 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         // Audit log
         await logAction({

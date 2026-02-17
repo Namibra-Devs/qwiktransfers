@@ -5,7 +5,7 @@ const verifyToken = (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) return res.status(403).json({ error: 'No token provided' });
 
-    jwt.verify(token.split(' ')[1], process.env.JWT_SECRET || 'secret', async (err, decoded) => {
+    jwt.verify(token.split(' ')[1], process.env.JWT_SECRET, async (err, decoded) => {
         if (err) return res.status(401).json({ error: 'Failed to authenticate token' });
 
         try {
@@ -19,9 +19,8 @@ const verifyToken = (req, res, next) => {
                 return res.status(403).json({ error: 'Account is disabled' });
             }
 
-            // Update req.user with full user object (optional, or just keep decoded + status check)
-            // Keeping it simple: attach decoded, but we verified existence and status.
-            req.user = decoded;
+            // Update req.user with full user object to prevent stale state issues
+            req.user = user;
             next();
         } catch (dbError) {
             return res.status(500).json({ error: 'Internal server error during auth' });
