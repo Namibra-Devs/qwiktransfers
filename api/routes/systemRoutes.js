@@ -3,6 +3,7 @@ const router = express.Router();
 const notificationController = require('../controllers/notificationController');
 const auditController = require('../controllers/auditController');
 const rateAlertController = require('../controllers/rateAlertController');
+const systemController = require('../controllers/systemController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 
 // Notification Routes
@@ -14,6 +15,12 @@ router.post('/notifications/read-all', verifyToken, notificationController.markA
 router.get('/rate-alerts', verifyToken, rateAlertController.getMyAlerts);
 router.post('/rate-alerts', verifyToken, rateAlertController.createAlert);
 router.delete('/rate-alerts/:id', verifyToken, rateAlertController.deleteAlert);
+
+// System Settings Routes
+router.get('/payment-methods', verifyToken, systemController.getPaymentMethods);
+router.post('/payment-methods', verifyToken, verifyAdmin, systemController.updatePaymentMethod);
+router.get('/config', verifyToken, verifyAdmin, systemController.getSystemConfig);
+router.post('/config', verifyToken, verifyAdmin, systemController.updateSystemConfig);
 
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
