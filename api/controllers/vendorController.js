@@ -2,6 +2,8 @@ const { Transaction, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionCompletedEmail } = require('../services/emailService');
+const { logAction } = require('../services/auditService');
+const { createNotification } = require('../services/notificationService');
 
 const toggleStatus = async (req, res) => {
     try {
@@ -85,6 +87,21 @@ const acceptTransaction = async (req, res) => {
         transaction.status = 'processing';
         await transaction.save({ transaction: t });
 
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'VENDOR_ACCEPT_TRANSACTION',
+            details: `Vendor accepted transaction ${transaction.id}`,
+            ipAddress: req.ip
+        });
+
+        // Notification for User
+        await createNotification({
+            userId: transaction.userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Your transaction #${transaction.id} has been accepted by a vendor and is being processed.`
+        });
+
         await t.commit();
         res.json({ message: 'Transaction accepted successfully', transaction });
     } catch (error) {
@@ -111,6 +128,21 @@ const completeTransaction = async (req, res) => {
         transaction.status = 'sent';
         transaction.sent_at = new Date();
         await transaction.save();
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'VENDOR_COMPLETE_TRANSACTION',
+            details: `Vendor marked transaction ${transaction.id} as completed/sent`,
+            ipAddress: req.ip
+        });
+
+        // Notification for User
+        await createNotification({
+            userId: transaction.userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Good news! Your transaction #${transaction.id} has been fully processed and sent to the recipient.`
+        });
 
         // Fetch user for notifications
         const user = await User.findByPk(transaction.userId);

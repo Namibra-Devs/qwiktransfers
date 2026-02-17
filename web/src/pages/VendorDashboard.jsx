@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import NotificationPanel from '../components/NotificationPanel';
 
 const VendorDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -246,13 +247,25 @@ const VendorDashboard = () => {
                         </span>
                         <button
                             onClick={toggleStatus}
-                            style={{ marginLeft: '8px', padding: '2px 10px', borderRadius: '10px', border: 'none', background: isOnline ? 'var(--danger)' : 'var(--primary)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{
+                                marginLeft: '8px',
+                                padding: '4px 14px',
+                                borderRadius: '50px',
+                                border: 'none',
+                                background: isOnline ? 'var(--danger)' : 'var(--primary)',
+                                color: '#fff',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
                         >
                             {isOnline ? 'Go Offline' : 'Go Online'}
                         </button>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+                    <NotificationPanel />
                     <ThemeSwitcher />
                     <div
                         onClick={() => setActiveTab('settings')}
@@ -283,15 +296,11 @@ const VendorDashboard = () => {
                         onClick={logout}
                         className="btn-outline"
                         style={{
-                            padding: '8px 16px',
+                            padding: '8px 20px',
                             fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            color: 'var(--text-deep-brown)',
                             width: 'auto',
-                            cursor: 'pointer'
+                            borderColor: 'var(--danger)',
+                            color: 'var(--danger)'
                         }}
                     >
                         Sign Out
@@ -303,19 +312,19 @@ const VendorDashboard = () => {
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setActiveTab('pool')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'pool' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'pool' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', background: activeTab === 'pool' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'pool' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
                         Available Pool ({pool.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('my')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'my' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'my' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', background: activeTab === 'my' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'my' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
                         My Transfers ({myTransactions.filter(tx => tx.status === 'processing').length})
                     </button>
                     <button
                         onClick={() => setActiveTab('settings')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'settings' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'settings' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', background: activeTab === 'settings' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'settings' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
                         Security & Profile
                     </button>

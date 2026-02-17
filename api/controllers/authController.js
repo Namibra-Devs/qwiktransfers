@@ -7,6 +7,7 @@ const { sendVerificationEmail, sendVerificationSuccessEmail, sendResetPasswordEm
 const { sendSMS } = require('../services/smsService');
 const fs = require('fs');
 const path = require('path');
+const { logAction } = require('../services/auditService');
 
 const generateAccountNumber = async (role) => {
     let isUnique = false;
@@ -68,6 +69,14 @@ const register = async (req, res) => {
         if (phone) {
             await sendSMS(phone, `Welcome to Qwiktransfers! Please verify your email ${email} to start sending money.`);
         }
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'REGISTER',
+            details: `User registered with email: ${email}`,
+            ipAddress: req.ip
+        });
 
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
         res.status(201).json({ user, token });
@@ -156,6 +165,15 @@ const login = async (req, res) => {
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'LOGIN',
+            details: `User logged in: ${email}`,
+            ipAddress: req.ip
+        });
+
         res.json({ user, token });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -449,6 +467,14 @@ const createVendor = async (req, res) => {
             is_active: true,
             is_email_verified: true, // Admin-created vendors are pre-verified
             kyc_status: 'verified' // Admin assumes responsibility for vendor identity
+        });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'CREATE_VENDOR',
+            details: `Admin created vendor: ${email}`,
+            ipAddress: req.ip
         });
 
         res.status(201).json({ message: 'Vendor created successfully', vendor });

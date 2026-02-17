@@ -14,6 +14,7 @@ const transactionRoutes = require('./routes/transactionRoutes');
 const rateRoutes = require('./routes/rateRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const systemRoutes = require('./routes/systemRoutes');
+const { startRateWatcher } = require('./rateWatcher');
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +48,7 @@ const startServer = async () => {
     console.log('Database connected successfully.');
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      startRateWatcher();
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);

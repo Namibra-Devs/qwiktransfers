@@ -4,6 +4,134 @@ import api from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import NotificationPanel from '../components/NotificationPanel';
+
+const RateLockTimer = ({ lockedUntil }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        if (!lockedUntil) return;
+        const interval = setInterval(() => {
+            const now = new Date();
+            const end = new Date(lockedUntil);
+            const diff = end - now;
+            if (diff <= 0) {
+                setTimeLeft('EXPIRED');
+                clearInterval(interval);
+            } else {
+                const mins = Math.floor(diff / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                setTimeLeft(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [lockedUntil]);
+
+    if (!lockedUntil) return null;
+
+    return (
+        <div style={{
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            color: timeLeft === 'EXPIRED' ? 'var(--danger)' : 'var(--primary)',
+            background: timeLeft === 'EXPIRED' ? '#fee2e2' : 'var(--accent-peach)',
+            padding: '4px 10px',
+            borderRadius: '6px'
+        }}>
+            {timeLeft === 'EXPIRED' ? 'RATE EXPIRED' : `RATE SECURED: ${timeLeft}`}
+        </div>
+    );
+};
+
+const RateWatchCard = () => {
+    const [alerts, setAlerts] = useState([]);
+    const [targetRate, setTargetRate] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const fetchAlerts = async () => {
+        try {
+            const res = await api.get('/system/rate-alerts');
+            setAlerts(res.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    useEffect(() => { fetchAlerts(); }, []);
+
+    const setAlert = async () => {
+        if (!targetRate) return toast.error("Enter a target rate");
+        setLoading(true);
+        try {
+            await api.post('/system/rate-alerts', { targetRate: parseFloat(targetRate), direction: 'above' });
+            toast.success("Rate alert set!");
+            setTargetRate('');
+            fetchAlerts();
+        } catch (error) {
+            toast.error("Failed to set alert");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const deleteAlert = async (id) => {
+        try {
+            await api.delete(`/system/rate-alerts/${id}`);
+            setAlerts(alerts.filter(a => a.id !== id));
+            toast.success("Alert removed");
+        } catch (error) {
+            toast.error("Failed to delete alert");
+        }
+    };
+
+    return (
+        <section className="card" style={{ padding: '24px' }}>
+            <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', fontWeight: 700 }}>Rate Watcher</h3>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Target Rate (GHS)"
+                        value={targetRate}
+                        onChange={(e) => setTargetRate(e.target.value)}
+                        style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '0.9rem', width: '100%' }}
+                    />
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', fontWeight: 700, opacity: 0.5 }}>GHS</span>
+                </div>
+                <button
+                    onClick={setAlert}
+                    disabled={loading}
+                    className="btn-primary"
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', width: 'auto', minWidth: '100px' }}
+                >
+                    {loading ? '...' : 'Set Alert'}
+                </button>
+            </div>
+            {alerts.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    {alerts.map(alert => (
+                        <div key={alert.id} style={{
+                            fontSize: '0.75rem',
+                            background: 'var(--accent-peach)',
+                            color: 'var(--primary)',
+                            padding: '6px 12px',
+                            borderRadius: '30px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontWeight: 800,
+                            border: '1px solid var(--border-color)'
+                        }}>
+                            1 CAD ≥ {parseFloat(alert.targetRate).toFixed(2)}
+                            <span onClick={() => deleteAlert(alert.id)} style={{ cursor: 'pointer', opacity: 0.6, fontSize: '1rem' }}>&times;</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+};
 
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -56,6 +184,8 @@ const UserDashboard = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalTransactions, setTotalTransactions] = useState(0);
+
+    const [rateLockedUntil, setRateLockedUntil] = useState(null);
 
     // Export States
     const [showExportModal, setShowExportModal] = useState(false);
@@ -256,7 +386,7 @@ const UserDashboard = () => {
 
     const executeSend = async () => {
         try {
-            await api.post('/transactions', {
+            const res = await api.post('/transactions', {
                 amount_sent: amount,
                 type: `${fromCurrency}-${toCurrency}`,
                 recipient_details: {
@@ -272,19 +402,12 @@ const UserDashboard = () => {
                     admin_reference: adminReference
                 }
             });
-            // Reset form
-            setAmount('');
-            setRecipientName('');
-            setRecipientAccount('');
-            setBankName('');
-            setMomoProvider('');
-            setTransitNumber('');
-            setInstitutionNumber('');
-            setInteracEmail('');
-            setNote('');
-            setFormStep(1);
+
+            setRateLockedUntil(res.data.rate_locked_until);
             fetchTransactions();
-            toast.success('Transfer Initiated!');
+            toast.success('Transfer Initiated! Please follow payment instructions below.');
+            // We stay on step 3 to show instructions and timer, but maybe we should disable the confirm button or show it's done.
+            // For now, let's just toast and stay there.
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to send request');
         }
@@ -352,6 +475,7 @@ const UserDashboard = () => {
                         </Link>
                     </nav>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <NotificationPanel />
                         <ThemeSwitcher />
                         <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {user?.profile_picture && (
@@ -389,14 +513,10 @@ const UserDashboard = () => {
                     </div>
                     <button
                         onClick={logout}
+                        className="btn-outline"
                         style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border-color)',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            color: 'var(--text-deep-brown)'
+                            padding: '8px 20px',
+                            width: 'auto'
                         }}
                     >
                         Sign Out
@@ -406,44 +526,7 @@ const UserDashboard = () => {
 
             <main className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 460px) 1fr', gap: '32px', alignItems: 'start' }}>
                 <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Verification & Limits Section */}
-                    <section className="card" style={{ padding: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Verification Status</h3>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                {user?.is_email_verified ? (
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', background: '#d1fae5', padding: '2px 8px', borderRadius: '4px' }}>EMAIL ✓</span>
-                                ) : (
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#dc2626', background: '#fee2e2', padding: '2px 8px', borderRadius: '4px' }}>EMAIL ⚠</span>
-                                )}
-                                {user?.kyc_status === 'verified' ? (
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', background: '#d1fae5', padding: '2px 8px', borderRadius: '4px' }}>ID ✓</span>
-                                ) : (
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#d97706', background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>ID {user?.kyc_status?.toUpperCase()}</span>
-                                )}
-                            </div>
-                        </div>
 
-                        <div style={{ marginBottom: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>${user?.limits?.daily || 50} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Daily Limit</span></span>
-                                <Link to="/kyc" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>Increase Limit</Link>
-                            </div>
-                            <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{
-                                    height: '100%',
-                                    width: user?.limits ? '10%' : '0%', // This would ideally be calculated from current usage
-                                    background: 'var(--primary)',
-                                    borderRadius: '4px'
-                                }}></div>
-                            </div>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                                {!user?.is_email_verified && `Verify your email to increase limit to $${user?.limits?.tiers?.level2 || 500}.`}
-                                {user?.is_email_verified && user?.kyc_status !== 'verified' && `Complete KYC to increase limit to $${user?.limits?.tiers?.level3 || 5000}.`}
-                                {user?.kyc_status === 'verified' && "You have the maximum daily limit."}
-                            </p>
-                        </div>
-                    </section>
 
                     <section className="card" style={{ position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -640,7 +723,10 @@ const UserDashboard = () => {
                         {formStep === 3 && (
                             <div className="fade-in">
                                 <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', marginBottom: '24px' }}>
-                                    <h3 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text-muted)' }}>Transfer Summary</h3>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                        <h3 style={{ fontSize: '0.9rem', margin: 0, color: 'var(--text-muted)' }}>Transfer Summary</h3>
+                                        <RateLockTimer lockedUntil={rateLockedUntil} />
+                                    </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                         <span>Amount:</span>
                                         <span style={{ fontWeight: 700 }}>{amount} {fromCurrency}</span>
@@ -710,16 +796,46 @@ const UserDashboard = () => {
                         )}
                     </section>
 
-                    {user?.kyc_status !== 'verified' && (
-                        <div className="card" style={{ border: '2px solid var(--warning)', padding: '24px' }}>
-                            <h3 style={{ fontSize: '0.95rem', marginBottom: '8px' }}>Identity Verification</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Verify your identity to increase limits and speed up transfers.</p>
-                            <div style={{ position: 'relative' }}>
-                                <input type="file" onChange={(e) => handleKYCUpload(e.target.files[0])} style={{ position: 'absolute', opacity: 0, width: '100%', cursor: 'pointer', height: '100%' }} />
-                                <button className="btn-primary" style={{ background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '10px' }}>Upload ID Document</button>
+
+                    <RateWatchCard />
+
+                    <section className="card" style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Verification Status</h3>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {user?.is_email_verified ? (
+                                    <span className="badge badge-processing">EMAIL ✓</span>
+                                ) : (
+                                    <span className="badge badge-pending">EMAIL ⚠</span>
+                                )}
+                                {user?.kyc_status === 'verified' ? (
+                                    <span className="badge badge-processing">ID ✓</span>
+                                ) : (
+                                    <span className="badge badge-pending">ID {user?.kyc_status?.toUpperCase()}</span>
+                                )}
                             </div>
                         </div>
-                    )}
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>${user?.limits?.daily || 50} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Daily Limit</span></span>
+                                <Link to="/kyc" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>Increase Limit</Link>
+                            </div>
+                            <div style={{ height: '8px', background: 'var(--accent-peach)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: user?.limits ? '10%' : '0%',
+                                    background: 'var(--primary)',
+                                    borderRadius: '4px'
+                                }}></div>
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>
+                                {!user?.is_email_verified && `Verify your email to increase limit to $${user?.limits?.tiers?.level2 || 500}.`}
+                                {user?.is_email_verified && user?.kyc_status !== 'verified' && `Complete KYC to increase limit to $${user?.limits?.tiers?.level3 || 5000}.`}
+                                {user?.kyc_status === 'verified' && "You have the maximum daily limit."}
+                            </p>
+                        </div>
+                    </section>
                 </aside>
 
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>

@@ -3,6 +3,8 @@ const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
 const fs = require('fs');
 const path = require('path');
+const { logAction } = require('../services/auditService');
+const { createNotification } = require('../services/notificationService');
 
 const createTransaction = async (req, res) => {
     try {
@@ -61,6 +63,8 @@ const createTransaction = async (req, res) => {
 
         const amount_received = (amount_sent * exchange_rate).toFixed(2);
 
+        const rate_locked_until = new Date(Date.now() + 15 * 60000); // 15 minutes
+
         const transaction = await Transaction.create({
             userId,
             type: type || 'GHS-CAD',
@@ -69,7 +73,17 @@ const createTransaction = async (req, res) => {
             amount_received: parseFloat(amount_received),
             recipient_details,
             status: 'pending',
-            proof_url: ''
+            proof_url: '',
+            rate_locked_until,
+            locked_rate: parseFloat(exchange_rate)
+        });
+
+        // Audit log
+        await logAction({
+            userId,
+            action: 'TRANSACTION_CREATE',
+            details: `User created transaction ${transaction.id} for ${amount_sent} ${type.split('-')[0]}`,
+            ipAddress: req.ip
         });
 
         // Send Email Notification
@@ -164,6 +178,21 @@ const updateStatus = async (req, res) => {
             await sendSMS(transaction.user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`);
         }
 
+        // Update Audit Log
+        await logAction({
+            userId: req.user.id,
+            action: 'TRANSACTION_STATUS_CHANGE',
+            details: `Admin changed status of transaction ${transaction.id} to ${status}`,
+            ipAddress: req.ip
+        });
+
+        // Create Notification for User
+        await createNotification({
+            userId: transaction.userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Your transaction #${transaction.id} status has been updated to ${status.toUpperCase()}.`
+        });
+
         res.json(transaction);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -175,6 +204,14 @@ const uploadProof = async (req, res) => {
         const { id } = req.params;
         const transaction = await Transaction.findByPk(id, { include: ['user'] });
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+        // Check Rate Lock
+        if (transaction.rate_locked_until && new Date() > new Date(transaction.rate_locked_until)) {
+            return res.status(400).json({
+                error: 'Rate lock expired. Please create a new transaction with the current market rate.',
+                expired: true
+            });
+        }
 
         // Delete old proof if it exists
         if (transaction.proof_url) {
@@ -196,6 +233,21 @@ const uploadProof = async (req, res) => {
         if (transaction.user && transaction.user.phone) {
             await sendSMS(transaction.user.phone, `Proof of payment uploaded for transaction #${transaction.id}. We will verify it shortly.`);
         }
+
+        // Audit log
+        await logAction({
+            userId: transaction.userId,
+            action: 'TRANSACTION_PROOF_UPLOAD',
+            details: `User uploaded proof for transaction ${transaction.id}`,
+            ipAddress: req.ip
+        });
+
+        // Create Notification for User
+        await createNotification({
+            userId: transaction.userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Proof of payment for transaction #${transaction.id} has been uploaded and is pending verification.`
+        });
 
         res.json({ message: 'Proof uploaded successfully', proof_url: transaction.proof_url, proof_uploaded_at: transaction.proof_uploaded_at });
     } catch (error) {
@@ -223,6 +275,23 @@ const cancelTransaction = async (req, res) => {
 
         transaction.status = 'cancelled';
         await transaction.save();
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'TRANSACTION_CANCEL',
+            details: `Transaction ${transaction.id} cancelled by ${req.user.role}`,
+            ipAddress: req.ip
+        });
+
+        // Notification
+        if (req.user.role === 'admin') {
+            await createNotification({
+                userId: transaction.userId,
+                type: 'TRANSACTION_UPDATE',
+                message: `Your transaction #${transaction.id} was cancelled by an administrator.`
+            });
+        }
 
         res.json({ message: 'Transaction cancelled successfully', transaction });
     } catch (error) {

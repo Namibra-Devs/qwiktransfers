@@ -12,6 +12,11 @@ const AdminDashboard = () => {
     const [transactions, setTransactions] = useState([]);
     const [users, setUsers] = useState([]);
     const [vendors, setVendors] = useState([]);
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [auditTotalPages, setAuditTotalPages] = useState(1);
+    const [auditPage, setAuditPage] = useState(1);
+    const [auditSearch, setAuditSearch] = useState('');
+    const [auditAction, setAuditAction] = useState('');
     const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors'
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [adminStats, setAdminStats] = useState({ pendingTransactions: 0, pendingKYC: 0, successVolume: 0 });
@@ -57,8 +62,10 @@ const AdminDashboard = () => {
             fetchUsersServerSide('');
         } else if (tab === 'vendors') {
             fetchVendors();
+        } else if (tab === 'audit') {
+            fetchAuditLogs();
         }
-    }, [page, search, statusFilter, userPage, userSearch, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -133,6 +140,19 @@ const AdminDashboard = () => {
             setVendors(res.data.users || []);
         } catch (error) {
             console.error('Fetch vendors error:', error);
+        }
+    };
+
+    const fetchAuditLogs = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/system/admin/audit-logs?page=${auditPage}&limit=20&search=${auditSearch}&action=${auditAction}`);
+            setAuditLogs(res.data.logs);
+            setAuditTotalPages(res.data.pages);
+        } catch (error) {
+            console.error('Audit error:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -263,7 +283,7 @@ const AdminDashboard = () => {
                 )}
 
                 <div className="fade-in">
-                    {['transactions', 'kyc', 'users', 'vendors'].includes(tab) && (
+                    {['transactions', 'kyc', 'users', 'vendors', 'audit'].includes(tab) && (
                         <>
                             <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                 <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -557,6 +577,82 @@ const AdminDashboard = () => {
                                         </tbody>
                                     </table>
                                 )}
+
+                                {tab === 'audit' && (
+                                    <div className="fade-in">
+                                        <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: '#fcfcfc', borderBottom: '1px solid #eee' }}>
+                                            <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                <div style={{ position: 'relative', flex: 0.7 }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search logs..."
+                                                        value={auditSearch}
+                                                        onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
+                                                        style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                    />
+                                                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                                                </div>
+                                                <select
+                                                    value={auditAction}
+                                                    onChange={(e) => { setAuditAction(e.target.value); setAuditPage(1); }}
+                                                    style={{ flex: 0.3, padding: '10px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                >
+                                                    <option value="">All Actions</option>
+                                                    <option value="LOGIN">Login</option>
+                                                    <option value="REGISTER">Register</option>
+                                                    <option value="TRANSACTION_CREATE">TX Create</option>
+                                                    <option value="TRANSACTION_STATUS_CHANGE">TX Status Change</option>
+                                                    <option value="VENDOR_ACCEPT_TRANSACTION">Vendor Accept</option>
+                                                    <option value="VENDOR_COMPLETE_TRANSACTION">Vendor Complete</option>
+                                                    <option value="CREATE_VENDOR">Create Vendor</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <table style={{ marginTop: '0' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Timestamp</th>
+                                                    <th>User & Action</th>
+                                                    <th>Details</th>
+                                                    <th>IP Address</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {auditLogs.map(log => (
+                                                    <tr key={log.id}>
+                                                        <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                                                            {new Date(log.createdAt).toLocaleString()}
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ fontWeight: 700 }}>{log.user?.full_name || 'System'}</div>
+                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.user?.email}</div>
+                                                            <div className={`badge badge-${log.action.toLowerCase().replace(/_/g, '-')}`} style={{ marginTop: '4px', fontSize: '0.6rem' }}>{log.action}</div>
+                                                        </td>
+                                                        <td style={{ fontSize: '0.8rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {log.details}
+                                                        </td>
+                                                        <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                                            {log.ipAddress}
+                                                            <button
+                                                                onClick={() => { navigator.clipboard.writeText(log.ipAddress); toast.success('IP Copied!'); }}
+                                                                style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }}
+                                                                title="Copy IP"
+                                                            >
+                                                                📋
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {auditLogs.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No audit logs found matching your criteria.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Pagination */}
@@ -572,6 +668,24 @@ const AdminDashboard = () => {
                                                 border: '1px solid var(--border-color)',
                                                 background: page === i + 1 ? 'var(--primary)' : '#fff',
                                                 color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                fontWeight: 700,
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))
+                                ) : tab === 'audit' ? (
+                                    Array.from({ length: auditTotalPages }, (_, i) => (
+                                        <button
+                                            key={i + 1}
+                                            onClick={() => setAuditPage(i + 1)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: '4px',
+                                                border: '1px solid var(--border-color)',
+                                                background: auditPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
                                                 fontWeight: 700,
                                                 cursor: 'pointer'
                                             }}

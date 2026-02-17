@@ -1,16 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { getPaymentMethods, updatePaymentMethod, getSystemConfig, updateSystemConfig } = require('../controllers/systemController');
+const notificationController = require('../controllers/notificationController');
+const auditController = require('../controllers/auditController');
+const rateAlertController = require('../controllers/rateAlertController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 
-// Public route to get payment instructions (e.g., for User Dashboard)
-router.get('/payment-methods', verifyToken, getPaymentMethods);
+// Notification Routes
+router.get('/notifications', verifyToken, notificationController.getNotifications);
+router.patch('/notifications/:id/read', verifyToken, notificationController.markAsRead);
+router.post('/notifications/read-all', verifyToken, notificationController.markAllAsRead);
 
-// Admin route to update payment instructions
-router.post('/payment-methods', verifyAdmin, updatePaymentMethod);
+// Rate Alert Routes
+router.get('/rate-alerts', verifyToken, rateAlertController.getMyAlerts);
+router.post('/rate-alerts', verifyToken, rateAlertController.createAlert);
+router.delete('/rate-alerts/:id', verifyToken, rateAlertController.deleteAlert);
 
-// System Config Routes
-router.get('/config', verifyToken, getSystemConfig);
-router.post('/config', verifyAdmin, updateSystemConfig);
+// Audit Log Routes (Admin Only)
+router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
 
 module.exports = router;
