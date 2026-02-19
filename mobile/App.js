@@ -11,9 +11,21 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import KYCScreen from './src/screens/KYCScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import RateAlertScreen from './src/screens/RateAlertScreen';
+// import RateAlertScreen from './src/screens/RateAlertScreen';
 import TransferScreen from './src/screens/TransferScreen';
+import TransactionDetailsScreen from './src/screens/TransactionDetailsScreen';
 import { ActivityIndicator, View, Text, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import {
+  useFonts,
+  Outfit_300Light,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_900Black
+} from '@expo-google-fonts/outfit';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -35,53 +47,58 @@ const TabNavigator = () => {
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textMuted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginTop: -4 },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: -4,
+          fontFamily: 'Outfit_600SemiBold'
+        },
         tabBarIcon: ({ color, size, focused }) => {
-          let icon;
-          // Coinbase-style minimalist icons (using text for now as placeholders for vector icons)
-          if (route.name === 'Home') icon = '◆';
-          else if (route.name === 'Verify') icon = '🛡';
-          else if (route.name === 'Alerts') icon = '●';
-          else if (route.name === 'Rates') icon = '▲';
-          else if (route.name === 'Profile') icon = '👤';
-          return (
-            <Text style={{
-              fontSize: 24,
-              color: color,
-              fontWeight: focused ? '900' : '400',
-              opacity: focused ? 1 : 0.6
-            }}>{icon}</Text>
-          );
+          let iconName;
+          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'Assets') iconName = focused ? 'wallet' : 'wallet-outline';
+          else if (route.name === 'Alerts') iconName = focused ? 'notifications' : 'notifications-outline';
+          else if (route.name === 'Rates') iconName = focused ? 'trending-up' : 'trending-up-outline';
+          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+
+          return <Ionicons name={iconName} size={24} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={DashboardScreen} options={{ tabBarLabel: 'Assets' }} />
-      <Tab.Screen name="Verify" component={KYCScreen} options={{ tabBarLabel: 'Verify' }} />
+      <Tab.Screen name="Home" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="Assets" component={KYCScreen} options={{ tabBarLabel: 'Assets' }} />
       <Tab.Screen name="Alerts" component={NotificationScreen} options={{ tabBarLabel: 'Activity' }} />
-      <Tab.Screen name="Rates" component={RateAlertScreen} options={{ tabBarLabel: 'Rates' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Settings' }} />
+      <Tab.Screen name="Rates" component={RateAlertScreen} options={{ tabBarLabel: 'Trade' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Pay' }} />
     </Tab.Navigator>
   );
 };
 
 const Navigation = () => {
   const { user, loading } = useAuth();
+  const theme = useTheme();
 
   if (loading === true) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
-        <ActivityIndicator size="large" color="#818cf8" animating={true} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+        <ActivityIndicator size="large" color={theme.primary} animating={true} />
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: theme.background }
+        }}
+      >
         {user ? (
           <Stack.Group>
             <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen name="Transfer" component={TransferScreen} />
+            <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
           </Stack.Group>
         ) : (
           <Stack.Group>
@@ -95,6 +112,23 @@ const Navigation = () => {
 };
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Outfit_300Light,
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_900Black
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
+        <ActivityIndicator size="large" color="#6366f1" />
+      </View>
+    );
+  }
+
   return (
     <ThemeProvider>
       <AuthProvider>

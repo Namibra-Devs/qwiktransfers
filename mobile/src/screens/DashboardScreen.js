@@ -19,11 +19,12 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
-const ActionButton = ({ icon, label, onPress, theme }) => (
+const ActionButton = ({ icon, label, onPress, theme, color }) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
-        <View style={[styles.actionIconContainer, { backgroundColor: theme.primary }]}>
-            <Text style={styles.actionIcon}>{icon}</Text>
+        <View style={[styles.actionIconContainer, { backgroundColor: color || theme.primary }]}>
+            <Ionicons name={icon} size={22} color="white" />
         </View>
         <Text style={[styles.actionLabel, { color: theme.text }]}>{label}</Text>
     </TouchableOpacity>
@@ -82,7 +83,19 @@ const DashboardScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+            <View style={styles.appHeader}>
+                <TouchableOpacity>
+                    <Ionicons name="menu-outline" size={28} color={theme.text} />
+                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity style={[styles.giftButton, { backgroundColor: theme.primary + '15' }]}>
+                        <Text style={[styles.giftText, { color: theme.primary }]}>Get $10</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                        <Ionicons name="notifications-outline" size={26} color={theme.text} />
+                    </TouchableOpacity>
+                </View>
+            </View>
 
             <ScrollView
                 refreshControl={
@@ -97,36 +110,70 @@ const DashboardScreen = ({ navigation }) => {
             >
                 {/* Coinbase-style Portfolio Header */}
                 <View style={styles.portfolioHeader}>
-                    <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Total Sent (GHS)</Text>
-                    <Text style={[styles.portfolioValue, { color: theme.text }]}>
-                        ₵{totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                    <View style={styles.changeBadge}>
-                        <Text style={styles.changeText}>Global Fintech Solutions</Text>
+                    <View style={styles.headerTop}>
+                        <View>
+                            <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Your balance</Text>
+                            <Text style={[styles.portfolioValue, { color: theme.text }]}>
+                                ₵{totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </View>
+                        <View style={styles.sparklineContainer}>
+                            <Ionicons name="stats-chart" size={44} color={theme.primary} style={{ opacity: 0.8 }} />
+                        </View>
                     </View>
                 </View>
 
                 {/* Quick Action Buttons */}
                 <View style={styles.actionGrid}>
-                    <ActionButton icon="↑" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} />
-                    <ActionButton icon="↓" label="Receive" onPress={() => { }} theme={theme} />
-                    <ActionButton icon="⇄" label="Rates" onPress={() => { }} theme={theme} />
-                    <ActionButton icon="👤" label="KYC" onPress={() => { }} theme={theme} />
+                    <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color="#0052FF" />
+                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color="#0052FF" />
+                    <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color="#0052FF" />
+                    <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color="#0052FF" />
+                    <ActionButton icon="swap-horizontal" label="Convert" onPress={() => { }} theme={theme} color="#0052FF" />
                 </View>
 
-                {/* Performance / Rate Ticker Strip */}
-                <View style={[styles.tickerCard, { backgroundColor: theme.card }]}>
-                    <View style={styles.tickerItem}>
-                        <Text style={[styles.tickerLabel, { color: theme.textMuted }]}>GHS / CAD</Text>
-                        <Text style={[styles.tickerValue, { color: '#10b981' }]}>1 GHS = 0.0904 CAD</Text>
+                {/* Verification / Limits Card */}
+                <TouchableOpacity
+                    style={[styles.verificationCard, { backgroundColor: theme.card }]}
+                    onPress={() => navigation.navigate('Assets')}
+                >
+                    <View style={styles.verifContent}>
+                        <Text style={[styles.verifTitle, { color: theme.text }]}>
+                            {user?.kyc_status === 'verified' ? 'Higher limits unlocked' : 'Increase your daily limit'}
+                        </Text>
+                        <Text style={[styles.verifSubtitle, { color: theme.textMuted }]}>
+                            {user?.kyc_status === 'verified'
+                                ? 'You can now send up to $50,000 daily'
+                                : 'Complete Level 2 verification to send more'}
+                        </Text>
+
+                        <View style={styles.progressContainer}>
+                            <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
+                                <View style={[
+                                    styles.progressFill,
+                                    {
+                                        backgroundColor: '#0052FF',
+                                        width: user?.kyc_status === 'verified' ? '100%' : '30%'
+                                    }
+                                ]} />
+                            </View>
+                            <Text style={[styles.progressText, { color: theme.textMuted }]}>
+                                {user?.kyc_status === 'verified' ? 'Level 2 Verified' : 'Level 1: $1,000 limit'}
+                            </Text>
+                        </View>
                     </View>
-                </View>
+                    <View style={styles.verifImageContainer}>
+                        <View style={[styles.verifCircle, { backgroundColor: '#F0F5FF' }]}>
+                            <Ionicons name={user?.kyc_status === 'verified' ? "checkmark-circle" : "shield-checkmark"} size={32} color="#0052FF" />
+                        </View>
+                    </View>
+                </TouchableOpacity>
 
                 {/* Transactions Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
                     <TouchableOpacity>
-                        <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
+                        <Text style={[styles.seeAll, { color: '#0052FF' }]}>See all</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -143,36 +190,41 @@ const DashboardScreen = ({ navigation }) => {
                         ))
                     ) : transactions.length === 0 ? (
                         <View style={styles.emptyContainer}>
-                            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No transactions yet</Text>
+                            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No activity found</Text>
                         </View>
                     ) : (
                         transactions.map((tx) => (
-                            <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border }]}>
-                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#1e293b' : '#f1f5f9' }]}>
-                                    <Text style={styles.txIconLetter}>
-                                        {tx.recipient_details?.name?.charAt(0) || 'R'}
-                                    </Text>
+                            <TouchableOpacity
+                                key={tx.id}
+                                style={[styles.txRow, { borderBottomColor: theme.border }]}
+                                onPress={() => navigation.navigate('TransactionDetails', { transactionId: tx.id, initialData: tx })}
+                            >
+                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#1e293b' : '#F0F5FF' }]}>
+                                    <Ionicons
+                                        name={tx.recipient_details?.type === 'bank' ? 'business' : 'phone-portrait'}
+                                        size={20}
+                                        color="#0052FF"
+                                    />
                                 </View>
                                 <View style={styles.txInfo}>
                                     <View style={styles.txMain}>
-                                        <Text style={[styles.txName, { color: theme.text }]} numberOfLines={1}>
+                                        <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>
                                             {tx.recipient_details?.name}
                                         </Text>
-                                        <Text style={[styles.txAmount, { color: theme.text }]}>
-                                            -{tx.amount_sent} {tx.type?.split('-')[0]}
+                                        <Text style={[styles.txAmountLarge, { color: theme.text }]}>
+                                            ₵{parseFloat(tx.amount_sent).toLocaleString()}
                                         </Text>
                                     </View>
                                     <View style={styles.txSub}>
-                                        <Text style={[styles.txDate, { color: theme.textMuted }]}>
-                                            {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        <Text style={[styles.txSubtitle, { color: theme.textMuted }]}>
+                                            {tx.recipient_details?.type?.toUpperCase()} • {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                         </Text>
-                                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(tx.status) }]} />
-                                        <Text style={[styles.txStatus, { color: getStatusColor(tx.status) }]}>
-                                            {tx.status}
+                                        <Text style={[styles.txDetail, { color: getStatusColor(tx.status) }]}>
+                                            {tx.status === 'sent' ? '↘ 0.00%' : tx.status.toUpperCase()}
                                         </Text>
                                     </View>
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                         ))
                     )}
                 </View>
@@ -183,111 +235,170 @@ const DashboardScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    appHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 15,
+    },
+    giftButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    giftText: {
+        fontSize: 13,
+        fontWeight: '700',
+        fontFamily: 'Outfit_700Bold',
+    },
     portfolioHeader: {
-        paddingTop: 40,
-        paddingBottom: 30,
-        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 25,
+        paddingHorizontal: 20,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
     portfolioLabel: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
-        marginBottom: 8,
+        marginBottom: 4,
+        fontFamily: 'Outfit_600SemiBold',
     },
     portfolioValue: {
-        fontSize: 42,
-        fontWeight: '900',
-        letterSpacing: -1,
-    },
-    changeBadge: {
-        marginTop: 12,
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 20,
-    },
-    changeText: {
-        color: '#10b981',
-        fontSize: 12,
+        fontSize: 36,
         fontWeight: '700',
+        letterSpacing: -1,
+        fontFamily: 'Outfit_700Bold',
+    },
+    sparklineContainer: {
+        width: 100,
+        height: 60,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
     },
     actionGrid: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        marginBottom: 32,
+        paddingHorizontal: 15,
+        marginBottom: 30,
     },
     actionItem: {
         alignItems: 'center',
         flex: 1,
     },
     actionIconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        shadowColor: "#000",
+        shadowColor: "#0052FF",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 2,
-    },
-    actionIcon: {
-        color: 'white',
-        fontSize: 24,
-        fontWeight: 'bold',
+        elevation: 3,
     },
     actionLabel: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
+        fontFamily: 'Outfit_600SemiBold',
     },
-    tickerCard: {
-        marginHorizontal: 24,
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 32,
+    verificationCard: {
+        marginHorizontal: 16,
+        padding: 20,
+        borderRadius: 20,
+        marginBottom: 30,
         flexDirection: 'row',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
         alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    verifContent: {
+        flex: 1,
+    },
+    verifTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        marginBottom: 6,
+        fontFamily: 'Outfit_700Bold',
+    },
+    verifSubtitle: {
+        fontSize: 14,
+        fontWeight: '400',
+        lineHeight: 18,
+        marginBottom: 12,
+        fontFamily: 'Outfit_400Regular',
+    },
+    progressContainer: {
+        marginTop: 4,
+    },
+    progressBar: {
+        height: 6,
+        borderRadius: 3,
+        width: '85%',
+        marginBottom: 8,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+    },
+    progressText: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        fontFamily: 'Outfit_700Bold',
+    },
+    verifImageContainer: {
+        marginLeft: 15,
+    },
+    verifCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         justifyContent: 'center',
-    },
-    tickerItem: {
-        flexDirection: 'row',
         alignItems: 'center',
-    },
-    tickerLabel: {
-        fontSize: 13,
-        fontWeight: '700',
-        marginRight: 8,
-    },
-    tickerValue: {
-        fontSize: 13,
-        fontWeight: '700',
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        marginBottom: 16,
+        paddingHorizontal: 20,
+        marginBottom: 20,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '800',
+        fontSize: 20,
+        fontWeight: '700',
+        fontFamily: 'Outfit_700Bold',
     },
     seeAll: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '700',
+        fontFamily: 'Outfit_700Bold',
     },
     listContainer: {
-        paddingHorizontal: 24,
         paddingBottom: 40,
     },
     txRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
     },
     txIconContainer: {
@@ -298,11 +409,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 16,
     },
-    txIconLetter: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#6366f1',
-    },
     txInfo: {
         flex: 1,
     },
@@ -312,35 +418,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 4,
     },
-    txName: {
+    txTitle: {
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: '600',
         flex: 1,
+        fontFamily: 'Outfit_600SemiBold',
     },
-    txAmount: {
+    txAmountLarge: {
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: '600',
         marginLeft: 12,
+        fontFamily: 'Outfit_600SemiBold',
     },
     txSub: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-    txDate: {
+    txSubtitle: {
         fontSize: 13,
-        fontWeight: '500',
-        marginRight: 12,
+        fontWeight: '400',
+        fontFamily: 'Outfit_400Regular',
     },
-    statusDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginRight: 6,
-    },
-    txStatus: {
+    txDetail: {
         fontSize: 13,
         fontWeight: '600',
-        textTransform: 'capitalize',
+        fontFamily: 'Outfit_600SemiBold',
     },
     emptyContainer: {
         paddingVertical: 40,
@@ -348,7 +451,8 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 15,
-        fontWeight: '500',
+        fontWeight: '600',
+        fontFamily: 'Outfit_600SemiBold',
     },
     txIconShimmer: {
         width: 44,
