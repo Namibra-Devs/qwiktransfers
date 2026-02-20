@@ -112,7 +112,7 @@ const DashboardScreen = ({ navigation }) => {
                 <View style={styles.portfolioHeader}>
                     <View style={styles.headerTop}>
                         <View>
-                            <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Your balance</Text>
+                            <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Total Sent</Text>
                             <Text style={[styles.portfolioValue, { color: theme.text }]}>
                                 ₵{totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Text>
@@ -125,17 +125,17 @@ const DashboardScreen = ({ navigation }) => {
 
                 {/* Quick Action Buttons */}
                 <View style={styles.actionGrid}>
-                    <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color="#0052FF" />
-                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color="#0052FF" />
-                    <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color="#0052FF" />
-                    <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color="#0052FF" />
-                    <ActionButton icon="swap-horizontal" label="Convert" onPress={() => { }} theme={theme} color="#0052FF" />
+                    {/* <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} /> */}
+                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color={theme.primary} />
+                    <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
+                    <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color={theme.primary} />
+                    <ActionButton icon="swap-horizontal" label="Convert" onPress={() => { }} theme={theme} color={theme.primary} />
                 </View>
 
                 {/* Verification / Limits Card */}
                 <TouchableOpacity
                     style={[styles.verificationCard, { backgroundColor: theme.card }]}
-                    onPress={() => navigation.navigate('Assets')}
+                    onPress={() => navigation.navigate('KYC')}
                 >
                     <View style={styles.verifContent}>
                         <Text style={[styles.verifTitle, { color: theme.text }]}>
@@ -152,7 +152,7 @@ const DashboardScreen = ({ navigation }) => {
                                 <View style={[
                                     styles.progressFill,
                                     {
-                                        backgroundColor: '#0052FF',
+                                        backgroundColor: theme.primary,
                                         width: user?.kyc_status === 'verified' ? '100%' : '30%'
                                     }
                                 ]} />
@@ -163,8 +163,8 @@ const DashboardScreen = ({ navigation }) => {
                         </View>
                     </View>
                     <View style={styles.verifImageContainer}>
-                        <View style={[styles.verifCircle, { backgroundColor: '#F0F5FF' }]}>
-                            <Ionicons name={user?.kyc_status === 'verified' ? "checkmark-circle" : "shield-checkmark"} size={32} color="#0052FF" />
+                        <View style={[styles.verifCircle, { backgroundColor: theme.primary + '15' }]}>
+                            <Ionicons name={user?.kyc_status === 'verified' ? "checkmark-circle" : "shield-checkmark"} size={32} color={theme.primary} />
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -172,8 +172,8 @@ const DashboardScreen = ({ navigation }) => {
                 {/* Transactions Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
-                    <TouchableOpacity>
-                        <Text style={[styles.seeAll, { color: '#0052FF' }]}>See all</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Transactions')}>
+                        <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -199,11 +199,11 @@ const DashboardScreen = ({ navigation }) => {
                                 style={[styles.txRow, { borderBottomColor: theme.border }]}
                                 onPress={() => navigation.navigate('TransactionDetails', { transactionId: tx.id, initialData: tx })}
                             >
-                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#1e293b' : '#F0F5FF' }]}>
+                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#292524' : theme.primary + '10' }]}>
                                     <Ionicons
                                         name={tx.recipient_details?.type === 'bank' ? 'business' : 'phone-portrait'}
                                         size={20}
-                                        color="#0052FF"
+                                        color={theme.primary}
                                     />
                                 </View>
                                 <View style={styles.txInfo}>
@@ -300,9 +300,10 @@ const styles = StyleSheet.create({
         height: 48,
         borderRadius: 24,
         justifyContent: 'center',
+        justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        shadowColor: "#0052FF",
+        shadowColor: "red", // Or remove shadow color logic to let it inherit or use theme if needed, but 'red' is safer generic if theme not in scope of styles
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,

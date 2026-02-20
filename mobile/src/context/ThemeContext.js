@@ -24,13 +24,13 @@ export const ThemeProvider = ({ children }) => {
     };
 
     const theme = {
-        background: isDark ? '#0f172a' : '#f8fafc',
-        card: isDark ? '#1e293b' : '#ffffff',
-        text: isDark ? '#f8fafc' : '#0f172a',
-        textMuted: isDark ? '#94a3b8' : '#64748b',
-        primary: '#6366f1',
-        border: isDark ? '#334155' : '#e2e8f0',
-        input: isDark ? '#0f172a' : '#f1f5f9',
+        background: isDark ? '#1C1917' : '#FDFBF7', // Cream-ish for light, Warm Black for dark
+        card: isDark ? '#292524' : '#FFFFFF',
+        text: isDark ? '#F5F5F4' : '#1C1917', // Stone-900 / Stone-100
+        textMuted: isDark ? '#A8A29E' : '#78716C', // Stone-400 / Stone-500
+        primary: '#DC2626', // Red-600 (Vibrant Red)
+        border: isDark ? '#44403C' : '#E7E5E4', // Stone-700 / Stone-200
+        input: isDark ? '#1C1917' : '#F5F5F4', // Match background/card logic
         isDark,
         toggleTheme
     };
