@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import { Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
@@ -118,7 +118,7 @@ const Profile = () => {
                     <section className="card" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
                         <div style={{ position: 'relative' }}>
                             <img
-                                src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://via.placeholder.com/100'}
+                                src={user?.profile_picture ? getImageUrl(user.profile_picture) : 'https://via.placeholder.com/100'}
                                 alt="Profile"
                                 style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--accent-peach)' }}
                             />

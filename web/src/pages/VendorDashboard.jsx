@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import NotificationPanel from '../components/NotificationPanel';
@@ -274,7 +274,7 @@ const VendorDashboard = () => {
                     >
                         {user?.profile_picture && (
                             <img
-                                src={`http://localhost:5000${user.profile_picture}`}
+                                src={getImageUrl(user.profile_picture)}
                                 alt="Avatar"
                                 style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)', objectFit: 'cover' }}
                             />
@@ -452,7 +452,7 @@ const VendorDashboard = () => {
                                                 <span
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                        setPreviewImage(getImageUrl(tx.proof_url));
                                                         setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
                                                         setShowPreviewModal(true);
                                                     }}
@@ -495,7 +495,7 @@ const VendorDashboard = () => {
                         <section className="card" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
                             <div style={{ position: 'relative', cursor: 'pointer', transition: 'transform 0.2s ease' }} className="avatar-upload-container">
                                 <img
-                                    src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://ui-avatars.com/api/?name=' + user?.full_name + '&background=random'}
+                                    src={user?.profile_picture ? getImageUrl(user.profile_picture) : 'https://ui-avatars.com/api/?name=' + user?.full_name + '&background=random'}
                                     alt="Profile"
                                     style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                 />

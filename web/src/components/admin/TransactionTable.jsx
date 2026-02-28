@@ -1,4 +1,5 @@
 import React from 'react';
+import { getImageUrl } from '../../services/api';
 
 const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTxModal, setPreviewImage, setPreviewDate, setShowPreviewModal }) => {
     return (
@@ -36,7 +37,7 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
                                     <span
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                            setPreviewImage(getImageUrl(tx.proof_url));
                                             setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
                                             setShowPreviewModal(true);
                                         }}

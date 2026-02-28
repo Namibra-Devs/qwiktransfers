@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import { toast } from 'react-hot-toast';
 import AdminSidebar from '../components/AdminSidebar';
 import PaymentSettings from '../components/PaymentSettings';
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
                             </div>
                             <div className="admin-profile-chip" onClick={() => setTab('profile')}>
                                 <img
-                                    src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://via.placeholder.com/40'}
+                                    src={user?.profile_picture ? getImageUrl(user.profile_picture) : 'https://via.placeholder.com/40'}
                                     alt="Admin Avatar"
                                     className="admin-profile-avatar"
                                 />

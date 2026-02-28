@@ -36,41 +36,41 @@ const vendorRoutes = require('./routes/vendorRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const { startRateWatcher } = require('./rateWatcher');
 
-// app.use(cors({
-//   origin: '*',
-//   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-const defaultOrigins = [
-  process.env.APP_URL,
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-];
+// const defaultOrigins = [
+//   process.env.APP_URL,
+//   "http://localhost:3000",
+//   "http://127.0.0.1:3000",
+// ];
 
-const envOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",")
-  : [];
+// const envOrigins = process.env.CORS_ORIGINS
+//   ? process.env.CORS_ORIGINS.split(",")
+//   : [];
 
-const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+// const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like Postman, mobile apps)
-      if (!origin) return callback(null, true);
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (like Postman, mobile apps)
+//       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // important if using cookies or auth
-  })
-);
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     credentials: true, // important if using cookies or auth
+//   })
+// );
 
 app.use(express.json());
 

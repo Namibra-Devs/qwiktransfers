@@ -1,4 +1,5 @@
 import React from 'react';
+import { getImageUrl } from '../../services/api';
 
 const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPreviewModal }) => {
     return (
@@ -35,7 +36,7 @@ const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPr
                                     <span
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setPreviewImage(`http://localhost:5000${u.kyc_front_url}`);
+                                            setPreviewImage(getImageUrl(u.kyc_front_url));
                                             setPreviewDate(u.updatedAt);
                                             setShowPreviewModal(true);
                                         }}
@@ -48,7 +49,7 @@ const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPr
                                     <span
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setPreviewImage(`http://localhost:5000${u.kyc_back_url}`);
+                                            setPreviewImage(getImageUrl(u.kyc_back_url));
                                             setPreviewDate(u.updatedAt);
                                             setShowPreviewModal(true);
                                         }}

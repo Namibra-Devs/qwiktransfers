@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -500,7 +500,7 @@ const UserDashboard = () => {
                         <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {user?.profile_picture && (
                                 <img
-                                    src={`http://localhost:5000${user.profile_picture}`}
+                                    src={getImageUrl(user.profile_picture)}
                                     alt="Avatar"
                                     style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)' }}
                                 />
@@ -982,7 +982,7 @@ const UserDashboard = () => {
                                                 <span
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                        setPreviewImage(getImageUrl(tx.proof_url));
                                                         setPreviewDate(tx.proof_uploaded_at);
                                                         setShowPreviewModal(true);
                                                     }}
