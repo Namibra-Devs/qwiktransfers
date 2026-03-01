@@ -18,6 +18,8 @@ import api from '../services/api';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateAsync } from '../services/biometrics';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -114,18 +116,14 @@ const LoginScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.textMuted }]}>Email</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
-                                placeholder="name@example.com"
-                                placeholderTextColor={theme.textMuted}
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
-                        </View>
+                        <Input
+                            label="Email"
+                            placeholder="name@example.com"
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                        />
 
                         <View style={styles.inputGroup}>
                             <View style={styles.labelRow}>
@@ -134,37 +132,31 @@ const LoginScreen = ({ navigation }) => {
                                     <Text style={[styles.forgotToken, { color: theme.primary }]}>Forgot password?</Text>
                                 </TouchableOpacity>
                             </View>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                            <Input
                                 placeholder="••••••••"
-                                placeholderTextColor={theme.textMuted}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={true}
+                                containerStyle={{ marginBottom: 0 }} // Remove default bottom margin for grouped password
                             />
                         </View>
 
-                        <TouchableOpacity
-                            style={[styles.button, { backgroundColor: theme.primary }, loading ? { opacity: 0.7 } : null]}
+                        <Button
+                            title="Sign in"
                             onPress={handleLogin}
-                            disabled={loading === true}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.buttonText}>Sign in</Text>
-                            )}
-                        </TouchableOpacity>
+                            loading={loading}
+                            style={{ marginTop: 16 }}
+                        />
 
                         {canUseBiometrics && (
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.primary, marginTop: 16 }]}
+                            <Button
+                                title="Use Biometrics"
                                 onPress={handleBiometricLogin}
-                                disabled={loading === true}
-                            >
-                                <Ionicons name="finger-print" size={24} color={theme.primary} style={{ marginRight: 8 }} />
-                                <Text style={[styles.buttonText, { color: theme.primary }]}>Use Biometrics</Text>
-                            </TouchableOpacity>
+                                variant="outline"
+                                icon="finger-print"
+                                style={{ marginTop: 16 }}
+                                disabled={loading}
+                            />
                         )}
                     </View>
 

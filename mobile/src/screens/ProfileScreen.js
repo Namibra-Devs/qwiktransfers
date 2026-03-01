@@ -21,6 +21,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isBiometricSupported } from '../services/biometrics';
+import Input from '../components/Input';
 
 const ProfileScreen = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -223,27 +224,19 @@ const ProfileScreen = () => {
 
                 {renderSection('Personal Information', 'person-outline', (
                     <View style={styles.cardContent}>
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.textMuted }]}>Full Name</Text>
-                            <TextInput
-                                style={[styles.input, { color: theme.text, backgroundColor: theme.background }]}
-                                value={fullName}
-                                onChangeText={setFullName}
-                                placeholder="Enter your full name"
-                                placeholderTextColor={theme.textMuted}
-                            />
-                        </View>
-                        <View style={[styles.inputGroup, { marginBottom: 20 }]}>
-                            <Text style={[styles.label, { color: theme.textMuted }]}>Phone Number</Text>
-                            <TextInput
-                                style={[styles.input, { color: theme.text, backgroundColor: theme.background }]}
-                                value={phone}
-                                onChangeText={setPhone}
-                                placeholder="+233..."
-                                placeholderTextColor={theme.textMuted}
-                                keyboardType="phone-pad"
-                            />
-                        </View>
+                        <Input
+                            label="Full Name"
+                            value={fullName}
+                            onChangeText={setFullName}
+                            placeholder="Enter your full name"
+                        />
+                        <Input
+                            label="Phone Number"
+                            value={phone}
+                            onChangeText={setPhone}
+                            placeholder="+233..."
+                            keyboardType="phone-pad"
+                        />
                         <TouchableOpacity
                             style={[styles.smallButton, { backgroundColor: theme.primary }]}
                             onPress={handleUpdateProfile}
@@ -257,21 +250,19 @@ const ProfileScreen = () => {
                 {renderSection('Security', 'lock-closed-outline', (
                     <View style={styles.cardContent}>
                         <Text style={[styles.subLabel, { color: theme.textMuted, marginBottom: 12 }]}>Change Password</Text>
-                        <TextInput
-                            style={[styles.input, { color: theme.text, backgroundColor: theme.background, marginBottom: 10 }]}
+                        <Input
+                            placeholder="Current Password"
                             value={currentPassword}
                             onChangeText={setCurrentPassword}
                             secureTextEntry
-                            placeholder="Current Password"
-                            placeholderTextColor={theme.textMuted}
+                            containerStyle={{ marginBottom: 10 }}
                         />
-                        <TextInput
-                            style={[styles.input, { color: theme.text, backgroundColor: theme.background, marginBottom: 16 }]}
+                        <Input
+                            placeholder="New Password"
                             value={newPassword}
                             onChangeText={setNewPassword}
                             secureTextEntry
-                            placeholder="New Password"
-                            placeholderTextColor={theme.textMuted}
+                            containerStyle={{ marginBottom: 16 }}
                         />
                         <TouchableOpacity
                             style={[styles.smallButton, { backgroundColor: theme.primary, marginBottom: 24 }]}
@@ -282,15 +273,14 @@ const ProfileScreen = () => {
                         </TouchableOpacity>
 
                         <Text style={[styles.subLabel, { color: theme.textMuted, marginBottom: 12 }]}>Transaction PIN</Text>
-                        <TextInput
-                            style={[styles.input, { color: theme.text, backgroundColor: theme.background, marginBottom: 16 }]}
+                        <Input
+                            placeholder="4-Digit PIN"
                             value={pin}
                             onChangeText={(val) => setPin(val.replace(/\D/g, ''))}
                             secureTextEntry
                             maxLength={4}
                             keyboardType="number-pad"
-                            placeholder="4-Digit PIN"
-                            placeholderTextColor={theme.textMuted}
+                            containerStyle={{ marginBottom: 16 }}
                         />
                         <TouchableOpacity
                             style={[styles.smallButton, { backgroundColor: theme.primary }]}

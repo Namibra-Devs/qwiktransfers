@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -50,32 +52,30 @@ const Login = () => {
                 {error && <p style={{ color: 'var(--danger)', marginBottom: '16px', fontWeight: 600 }}>{error}</p>}
 
                 <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
-                    <div className="form-group">
-                        <label>Email Address</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Email"
-                            required
-                        />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: '8px' }}>
-                        <label>Password</label>
-                        <input
+                    <Input
+                        label="Email Address"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="email@example.com"
+                        required
+                    />
+                    <div style={{ marginBottom: '8px' }}>
+                        <Input
+                            label="Password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Password"
+                            placeholder="••••••••"
                             required
                         />
                     </div>
                     <div style={{ textAlign: 'right', marginBottom: '32px' }}>
                         <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Forgot password?</Link>
                     </div>
-                    <button type="submit" className="btn-primary" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
+                    <Button type="submit" loading={loading} style={{ width: '100%' }}>
+                        Sign In
+                    </Button>
                 </form>
 
                 <p style={{ marginTop: '32px', color: 'var(--text-muted)' }}>

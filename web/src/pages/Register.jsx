@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const countryCodes = {
     'Ghana': '+233',
@@ -98,14 +100,21 @@ const Register = () => {
                 <form onSubmit={step === 1 ? handleNext : handleSubmit} style={{ textAlign: 'left' }}>
                     {step === 1 ? (
                         <>
-                            <div className="form-group">
-                                <label>Full Name</label>
-                                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Hamza Ibrahim" required />
-                            </div>
-                            <div className="form-group">
-                                <label>Email Address</label>
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" required />
-                            </div>
+                            <Input
+                                label="Full Name"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="Hamza Ibrahim"
+                                required
+                            />
+                            <Input
+                                label="Email Address"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="email@example.com"
+                                required
+                            />
                             <div className="form-group">
                                 <label>Your Country</label>
                                 <select value={country} onChange={(e) => {
@@ -115,21 +124,29 @@ const Register = () => {
                                     {Object.keys(countryCodes).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>Phone Number</label>
-                                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={countryCodes[country]} required />
-                            </div>
-                            <button type="submit" className="btn-primary">Next Step</button>
+                            <Input
+                                label="Phone Number"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder={countryCodes[country]}
+                                required
+                                style={{ marginBottom: '32px' }}
+                            />
+                            <Button type="submit" style={{ width: '100%' }}>Next Step</Button>
                         </>
                     ) : (
                         <>
-                            <div className="form-group">
-                                <label>Password</label>
-                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 6 characters" required />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>4-Digit Transaction PIN</label>
-                                <input
+                            <Input
+                                label="Password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Minimum 6 characters"
+                                required
+                            />
+                            <div style={{ marginBottom: '32px' }}>
+                                <Input
+                                    label="4-Digit Transaction PIN"
                                     type="password"
                                     maxLength="4"
                                     value={pin}
@@ -137,13 +154,19 @@ const Register = () => {
                                     placeholder="••••"
                                     required
                                 />
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>Used to authorize transfers and uploads.</p>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-16px', marginBottom: '8px' }}>Used to authorize transfers and uploads.</p>
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button type="button" onClick={() => setStep(1)} className="btn-primary" style={{ background: 'transparent', color: 'var(--text-deep-brown)', border: '1px solid var(--border-color)' }}>Back</button>
-                                <button type="submit" className="btn-primary" disabled={loading}>
-                                    {loading ? 'Creating Account...' : 'Complete Registration'}
-                                </button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setStep(1)}
+                                    style={{ flex: 1, color: 'var(--text-deep-brown)', borderColor: 'var(--border-color)' }}
+                                >
+                                    Back
+                                </Button>
+                                <Button type="submit" loading={loading} style={{ flex: 2 }}>
+                                    Complete Registration
+                                </Button>
                             </div>
                         </>
                     )}

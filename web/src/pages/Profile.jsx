@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const Profile = () => {
     const { user, refreshProfile } = useAuth();
@@ -138,21 +140,28 @@ const Profile = () => {
                     <section className="card">
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Personal Information</h3>
                         <form onSubmit={handleUpdateProfile}>
-                            <div className="form-group">
-                                <label>Email Address (Immutable)</label>
-                                <input type="text" value={user?.email || ''} readOnly style={{ background: '#f9f9f9', cursor: 'not-allowed' }} />
-                            </div>
-                            <div className="form-group">
-                                <label>Full Name</label>
-                                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>Phone Number</label>
-                                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+233..." />
-                            </div>
-                            <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
-                                {loading ? 'Saving...' : 'Update Profile'}
-                            </button>
+                            <Input
+                                label="Email Address (Immutable)"
+                                value={user?.email || ''}
+                                readOnly
+                                style={{ background: 'var(--bg-main)', cursor: 'not-allowed', opacity: 0.7 }}
+                            />
+                            <Input
+                                label="Full Name"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="Full Name"
+                            />
+                            <Input
+                                label="Phone Number"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="+233..."
+                                style={{ marginBottom: '32px' }}
+                            />
+                            <Button type="submit" loading={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                Update Profile
+                            </Button>
                         </form>
                     </section>
 
@@ -160,17 +169,26 @@ const Profile = () => {
                     <section className="card">
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Security</h3>
                         <form onSubmit={handleChangePassword}>
-                            <div className="form-group">
-                                <label>Current Password</label>
-                                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" required />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>New Password</label>
-                                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" required />
-                            </div>
-                            <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
-                                {loading ? 'Updating...' : 'Change Password'}
-                            </button>
+                            <Input
+                                label="Current Password"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                placeholder="••••••••"
+                                required
+                            />
+                            <Input
+                                label="New Password"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Min 6 characters"
+                                required
+                                style={{ marginBottom: '32px' }}
+                            />
+                            <Button type="submit" loading={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                Change Password
+                            </Button>
                         </form>
                     </section>
 
@@ -178,9 +196,9 @@ const Profile = () => {
                     <section className="card">
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Transaction PIN</h3>
                         <form onSubmit={handleSetPin}>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>4-Digit PIN</label>
-                                <input
+                            <div style={{ marginBottom: '32px' }}>
+                                <Input
+                                    label="4-Digit PIN"
                                     type="password"
                                     maxLength="4"
                                     value={pin}
@@ -188,13 +206,13 @@ const Profile = () => {
                                     placeholder="••••"
                                     required
                                 />
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-16px' }}>
                                     This PIN is required for every send request and proof upload.
                                 </p>
                             </div>
-                            <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
-                                {loading ? 'Updating...' : 'Set Transaction PIN'}
-                            </button>
+                            <Button type="submit" loading={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                Set Transaction PIN
+                            </Button>
                         </form>
                     </section>
                 </div>

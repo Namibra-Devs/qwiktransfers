@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import NotificationPanel from '../components/NotificationPanel';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const RateLockTimer = ({ lockedUntil }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -89,25 +91,23 @@ const RateWatchCard = () => {
         <section className="card" style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', fontWeight: 700 }}>Rate Watcher</h3>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                    <input
+                <div style={{ flex: 1 }}>
+                    <Input
                         type="number"
                         step="0.01"
                         placeholder="Target Rate (GHS)"
                         value={targetRate}
                         onChange={(e) => setTargetRate(e.target.value)}
-                        style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '0.9rem', width: '100%' }}
+                        style={{ padding: '10px 14px' }} // Slightly override for compact look
                     />
-                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', fontWeight: 700, opacity: 0.5 }}>GHS</span>
                 </div>
-                <button
+                <Button
                     onClick={setAlert}
-                    disabled={loading}
-                    className="btn-primary"
-                    style={{ padding: '10px 20px', fontSize: '0.85rem', width: 'auto', minWidth: '100px' }}
+                    loading={loading}
+                    style={{ width: 'auto', padding: '10px 20px', height: '44px' }}
                 >
-                    {loading ? '...' : 'Set Alert'}
-                </button>
+                    Set Alert
+                </Button>
             </div>
             {alerts.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
@@ -541,16 +541,16 @@ const UserDashboard = () => {
                             </Link>
                         </div>
                     </div>
-                    <button
+                    <Button
                         onClick={logout}
-                        className="btn-outline"
+                        variant="outline"
                         style={{
                             padding: '8px 20px',
                             width: 'auto'
                         }}
                     >
                         Sign Out
-                    </button>
+                    </Button>
                 </div>
             </header>
 
@@ -571,20 +571,15 @@ const UserDashboard = () => {
 
                         {formStep === 1 && (
                             <div className="fade-in">
-                                <div className="form-group">
-                                    <label>You send</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input
-                                            type="number"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="0.00"
-                                            style={{ paddingRight: '60px', fontSize: '1.25rem', fontWeight: 600 }}
-                                            required
-                                        />
-                                        <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>{fromCurrency}</span>
-                                    </div>
-                                </div>
+                                <Input
+                                    label="You send"
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    required
+                                    style={{ fontSize: '1.25rem', fontWeight: 600 }}
+                                />
 
                                 <div style={{ textAlign: 'center', margin: '-10px 0 10px 0' }}>
                                     <button type="button" onClick={handleCurrencySwitch} style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -592,28 +587,26 @@ const UserDashboard = () => {
                                     </button>
                                 </div>
 
-                                <div className="form-group">
-                                    <label>Recipient gets</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input
-                                            type="text"
-                                            value={amount ? (amount * rate).toFixed(2) : '0.00'}
-                                            readOnly
-                                            style={{ paddingRight: '60px', background: '#f9f9f9', fontSize: '1.25rem', fontWeight: 600 }}
-                                        />
-                                        <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>{toCurrency}</span>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>
-                                        Exchange Rate: 1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
-                                    </p>
-                                </div>
+                                <Input
+                                    label="Recipient gets"
+                                    value={amount ? (amount * rate).toFixed(2) : '0.00'}
+                                    readOnly
+                                    style={{ background: 'var(--bg-main)', fontSize: '1.25rem', fontWeight: 600, cursor: 'not-allowed' }}
+                                    placeholder="0.00"
+                                />
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-16px', marginBottom: '8px', fontWeight: 500 }}>
+                                    Exchange Rate: 1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
+                                </p>
 
-                                <div className="form-group">
-                                    <label>Note / Reference (Optional)</label>
-                                    <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What is this for?" />
-                                </div>
+                                <Input
+                                    label="Note / Reference (Optional)"
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder="What is this for?"
+                                    style={{ marginBottom: '12px' }}
+                                />
 
-                                <button onClick={nextStep} className="btn-primary" style={{ marginTop: '12px' }}>Next: Recipient Details</button>
+                                <Button onClick={nextStep} style={{ marginTop: '12px' }}>Next: Recipient Details</Button>
                             </div>
                         )}
 
@@ -624,96 +617,112 @@ const UserDashboard = () => {
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         {toCurrency === 'GHS' ? (
                                             <>
-                                                <button
-                                                    type="button"
+                                                <Button
                                                     onClick={() => setRecipientType('momo')}
-                                                    className={recipientType === 'momo' ? 'btn-primary' : 'btn-outline'}
+                                                    variant={recipientType === 'momo' ? 'primary' : 'outline'}
                                                     style={{ flex: 1, padding: '12px', fontSize: '0.85rem' }}
                                                 >
                                                     Mobile Money
-                                                </button>
-                                                <button
-                                                    type="button"
+                                                </Button>
+                                                <Button
                                                     onClick={() => setRecipientType('bank')}
-                                                    className={recipientType === 'bank' ? 'btn-primary' : 'btn-outline'}
+                                                    variant={recipientType === 'bank' ? 'primary' : 'outline'}
                                                     style={{ flex: 1, padding: '12px', fontSize: '0.85rem' }}
                                                 >
                                                     Bank Transfer
-                                                </button>
+                                                </Button>
                                             </>
                                         ) : (
                                             <>
-                                                <button
-                                                    type="button"
+                                                <Button
                                                     onClick={() => setRecipientType('interac')}
-                                                    className={recipientType === 'interac' ? 'btn-primary' : 'btn-outline'}
+                                                    variant={recipientType === 'interac' ? 'primary' : 'outline'}
                                                     style={{ flex: 1, padding: '12px', fontSize: '0.85rem' }}
                                                 >
                                                     Interac e-Transfer
-                                                </button>
-                                                <button
-                                                    type="button"
+                                                </Button>
+                                                <Button
                                                     onClick={() => setRecipientType('bank')}
-                                                    className={recipientType === 'bank' ? 'btn-primary' : 'btn-outline'}
+                                                    variant={recipientType === 'bank' ? 'primary' : 'outline'}
                                                     style={{ flex: 1, padding: '12px', fontSize: '0.85rem' }}
                                                 >
                                                     Bank Transfer
-                                                </button>
+                                                </Button>
                                             </>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="form-group">
-                                    <label>Recipient Full Name</label>
-                                    <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Full Name" required />
-                                </div>
+                                <Input
+                                    label="Recipient Full Name"
+                                    value={recipientName}
+                                    onChange={(e) => setRecipientName(e.target.value)}
+                                    placeholder="Full Name"
+                                    required
+                                />
 
                                 {toCurrency === 'CAD' ? (
                                     recipientType === 'bank' ? (
                                         <div className="fade-in">
-                                            <div className="form-group">
-                                                <label>Account Number</label>
-                                                <input type="text" value={recipientAccount} onChange={(e) => setRecipientAccount(e.target.value)} placeholder="Account Number" required />
-                                            </div>
+                                            <Input
+                                                label="Account Number"
+                                                value={recipientAccount}
+                                                onChange={(e) => setRecipientAccount(e.target.value)}
+                                                placeholder="Account Number"
+                                                required
+                                            />
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                                <div className="form-group">
-                                                    <label>Transit #</label>
-                                                    <input type="text" value={transitNumber} onChange={(e) => setTransitNumber(e.target.value)} placeholder="5 digits" maxLength="5" required />
-                                                </div>
-                                                <div className="form-group">
-                                                    <label>Institution #</label>
-                                                    <input type="text" value={institutionNumber} onChange={(e) => setInstitutionNumber(e.target.value)} placeholder="3 digits" maxLength="3" required />
-                                                </div>
+                                                <Input
+                                                    label="Transit #"
+                                                    value={transitNumber}
+                                                    onChange={(e) => setTransitNumber(e.target.value)}
+                                                    placeholder="5 digits"
+                                                    maxLength="5"
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Institution #"
+                                                    value={institutionNumber}
+                                                    onChange={(e) => setInstitutionNumber(e.target.value)}
+                                                    placeholder="3 digits"
+                                                    maxLength="3"
+                                                    required
+                                                />
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="form-group fade-in">
-                                            <label>Interac Email</label>
-                                            <input type="email" value={interacEmail} onChange={(e) => setInteracEmail(e.target.value)} placeholder="recipient@email.com" required />
-                                        </div>
+                                        <Input
+                                            label="Interac Email"
+                                            type="email"
+                                            value={interacEmail}
+                                            onChange={(e) => setInteracEmail(e.target.value)}
+                                            placeholder="recipient@email.com"
+                                            required
+                                            className="fade-in"
+                                        />
                                     )
                                 ) : ( // GHS
                                     recipientType === 'momo' ? (
                                         <div className="fade-in">
                                             <div className="form-group">
-                                                <label>Select Momo Provider</label>
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                                                <label style={{ marginBottom: '12px', display: 'block' }}>Select Momo Provider</label>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
                                                     {momoProviders.map(provider => (
                                                         <button
                                                             key={provider.id}
                                                             type="button"
                                                             onClick={() => setMomoProvider(provider.name)}
                                                             style={{
-                                                                background: momoProvider === provider.name ? provider.color : '#fff',
+                                                                background: momoProvider === provider.name ? provider.color : 'var(--bg-main)',
                                                                 color: momoProvider === provider.name ? provider.textColor : 'var(--text-deep-brown)',
-                                                                border: `2px solid ${momoProvider === provider.name ? provider.color : '#eee'}`,
+                                                                border: `2px solid ${momoProvider === provider.name ? provider.color : 'var(--border-color)'}`,
                                                                 padding: '12px 4px',
-                                                                borderRadius: '8px',
+                                                                borderRadius: '12px',
                                                                 cursor: 'pointer',
                                                                 fontSize: '0.7rem',
                                                                 fontWeight: 800,
-                                                                transition: 'all 0.2s'
+                                                                transition: 'all 0.2s',
+                                                                boxShadow: momoProvider === provider.name ? '0 4px 12px ' + provider.color + '40' : 'none'
                                                             }}
                                                         >
                                                             {provider.name}
@@ -721,10 +730,13 @@ const UserDashboard = () => {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <div className="form-group">
-                                                <label>Momo Number</label>
-                                                <input type="text" value={recipientAccount} onChange={(e) => setRecipientAccount(e.target.value)} placeholder="024XXXXXXX" required />
-                                            </div>
+                                            <Input
+                                                label="Momo Number"
+                                                value={recipientAccount}
+                                                onChange={(e) => setRecipientAccount(e.target.value)}
+                                                placeholder="024XXXXXXX"
+                                                required
+                                            />
                                         </div>
                                     ) : (
                                         <div className="fade-in">
@@ -735,17 +747,20 @@ const UserDashboard = () => {
                                                     {ghanaBanks.map(bank => <option key={bank} value={bank}>{bank}</option>)}
                                                 </select>
                                             </div>
-                                            <div className="form-group">
-                                                <label>Account Number</label>
-                                                <input type="text" value={recipientAccount} onChange={(e) => setRecipientAccount(e.target.value)} placeholder="Account Number" required />
-                                            </div>
+                                            <Input
+                                                label="Account Number"
+                                                value={recipientAccount}
+                                                onChange={(e) => setRecipientAccount(e.target.value)}
+                                                placeholder="Account Number"
+                                                required
+                                            />
                                         </div>
                                     )
                                 )}
 
                                 <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
-                                    <button onClick={prevStep} className="btn-outline" style={{ flex: 0.5 }}>Back</button>
-                                    <button onClick={nextStep} className="btn-primary" style={{ flex: 1 }}>Next: Review & Pay</button>
+                                    <Button variant="outline" onClick={prevStep} style={{ flex: 1 }}>Back</Button>
+                                    <Button onClick={nextStep} style={{ flex: 2 }}>Next: Review & Pay</Button>
                                 </div>
                             </div>
                         )}
@@ -819,8 +834,8 @@ const UserDashboard = () => {
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button onClick={prevStep} className="btn-outline" style={{ flex: 0.5 }}>Back</button>
-                                    <button onClick={handleSend} className="btn-primary" style={{ flex: 1 }}>Confirm & Send</button>
+                                    <Button variant="outline" onClick={prevStep} style={{ flex: 1 }}>Back</Button>
+                                    <Button onClick={handleSend} style={{ flex: 2 }}>Confirm & Send</Button>
                                 </div>
                             </div>
                         )}
@@ -865,8 +880,10 @@ const UserDashboard = () => {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <button onClick={resetForm} className="btn-primary">Send Another Transfer</button>
-                                    <button onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); resetForm(); }} className="btn-outline">View History</button>
+                                    <Button onClick={resetForm}>Send Another Transfer</Button>
+                                    <Button variant="outline" onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); resetForm(); }}>
+                                        View History
+                                    </Button>
                                 </div>
                             </div>
                         )}
@@ -921,24 +938,22 @@ const UserDashboard = () => {
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
                     <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ width: '220px' }}>
+                                <Input
+                                    placeholder="Search transactions..."
                                     value={search}
                                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                    style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                    style={{ padding: '8px 12px' }}
                                 />
-                                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
                             </div>
-                            <button
+                            <Button
+                                variant="outline"
                                 onClick={() => setShowExportModal(true)}
-                                className="btn-outline"
-                                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto', height: '42px', marginTop: '-15px' }}
                             >
-                                ⬇ Export CSV
-                            </button>
+                                Export CSV
+                            </Button>
                         </div>
                     </div>
                     {isHistoryLoading ? (
@@ -1024,22 +1039,22 @@ const UserDashboard = () => {
                                 Showing page {page} of {totalPages} ({totalTransactions} transactions)
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button
+                                <Button
+                                    variant="outline"
                                     disabled={page === 1}
                                     onClick={() => setPage(page - 1)}
-                                    className="btn-outline"
                                     style={{ padding: '8px 20px', fontSize: '0.85rem', width: 'auto' }}
                                 >
                                     Previous
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     disabled={page === totalPages}
                                     onClick={() => setPage(page + 1)}
-                                    className="btn-outline"
                                     style={{ padding: '8px 20px', fontSize: '0.85rem', width: 'auto' }}
                                 >
                                     Next
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -1052,7 +1067,7 @@ const UserDashboard = () => {
                         <h3 style={{ marginBottom: '16px' }}>Verify Transaction</h3>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>Enter your 4-digit security PIN to proceed.</p>
                         <form onSubmit={handlePinSubmit}>
-                            <input
+                            <Input
                                 type="password"
                                 maxLength="4"
                                 value={pin}
@@ -1063,10 +1078,10 @@ const UserDashboard = () => {
                                 required
                             />
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button type="button" onClick={() => setShowPinModal(false)} className="btn-primary" style={{ background: 'transparent', color: 'var(--text-deep-brown)', border: '1px solid var(--border-color)' }}>Cancel</button>
-                                <button type="submit" className="btn-primary" disabled={loading}>
-                                    {loading ? 'Verifying...' : 'Verify'}
-                                </button>
+                                <Button variant="outline" onClick={() => setShowPinModal(false)} style={{ flex: 1 }}>Cancel</Button>
+                                <Button type="submit" loading={loading} style={{ flex: 1 }}>
+                                    Verify
+                                </Button>
                             </div>
                         </form>
                     </div>
@@ -1180,15 +1195,15 @@ const UserDashboard = () => {
                             </div>
 
                             <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
-                                <button onClick={() => setShowDetailsModal(false)} className="btn-primary" style={{ background: '#f0f0f0', border: 'none', color: 'var(--text-deep-brown)' }}>Close</button>
+                                <Button variant="outline" onClick={() => setShowDetailsModal(false)} style={{ flex: 1 }}>Close</Button>
                                 {selectedTx.status === 'pending' && !selectedTx.proof_url && (
-                                    <button
+                                    <Button
                                         onClick={() => handleCancelTransaction(selectedTx.id)}
-                                        className="btn-primary"
-                                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none' }}
+                                        variant="danger" // Variant isn't in button.jsx but we can use style for now or just stick to standard
+                                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none', flex: 1.5 }}
                                     >
                                         Cancel Transaction
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </div>
@@ -1253,8 +1268,8 @@ const UserDashboard = () => {
                         </div>
 
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                            <button onClick={() => setShowExportModal(false)} className="btn-outline" style={{ flex: 1 }}>Cancel</button>
-                            <button onClick={handleExport} className="btn-primary" style={{ flex: 1 }}>Download CSV</button>
+                            <Button variant="outline" onClick={() => setShowExportModal(false)} style={{ flex: 1 }}>Cancel</Button>
+                            <Button onClick={handleExport} style={{ flex: 1 }}>Download CSV</Button>
                         </div>
                     </div>
                 </div>

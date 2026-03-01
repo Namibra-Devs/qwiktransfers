@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const RegisterScreen = ({ navigation }) => {
     const theme = useTheme();
@@ -76,20 +78,16 @@ const RegisterScreen = ({ navigation }) => {
             case 1:
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={[styles.label, { color: theme.text }]}>First Name</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                        <Input
+                            label="First Name"
                             placeholder="First Name"
-                            placeholderTextColor={theme.textMuted}
                             value={firstName}
                             onChangeText={setFirstName}
                             autoFocus
                         />
-                        <Text style={[styles.label, { color: theme.text, marginTop: 20 }]}>Last Name</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                        <Input
+                            label="Last Name"
                             placeholder="Last Name"
-                            placeholderTextColor={theme.textMuted}
                             value={lastName}
                             onChangeText={setLastName}
                         />
@@ -98,11 +96,9 @@ const RegisterScreen = ({ navigation }) => {
             case 2:
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={[styles.label, { color: theme.text }]}>Email</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                        <Input
+                            label="Email"
                             placeholder="Email address"
-                            placeholderTextColor={theme.textMuted}
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
@@ -114,21 +110,21 @@ const RegisterScreen = ({ navigation }) => {
             case 3:
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={[styles.label, { color: theme.text }]}>Password</Text>
-                        <View style={[styles.passwordContainer, { borderColor: theme.border }]}>
-                            <TextInput
-                                style={[styles.passwordInput, { color: theme.text }]}
-                                placeholder="Minimum 8 characters"
-                                placeholderTextColor={theme.textMuted}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                autoFocus
-                            />
-                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={theme.textMuted} />
-                            </TouchableOpacity>
-                        </View>
+                        <Input
+                            label="Password"
+                            placeholder="Minimum 8 characters"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry={!showPassword}
+                            autoFocus
+                        // This part handles the eye icon - we could also update Input to support right icon
+                        />
+                        <TouchableOpacity
+                            onPress={() => setShowPassword(!showPassword)}
+                            style={{ position: 'absolute', right: 16, top: 44 }}
+                        >
+                            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={theme.textMuted} />
+                        </TouchableOpacity>
                     </View>
                 );
             default:
@@ -169,19 +165,12 @@ const RegisterScreen = ({ navigation }) => {
 
                     {renderStep()}
 
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: theme.primary }, loading && { opacity: 0.7 }]}
+                    <Button
+                        title={step === 3 ? 'Create Account' : 'Continue'}
                         onPress={step === 3 ? handleRegister : handleNext}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.buttonText}>
-                                {step === 3 ? 'Create Account' : 'Continue'}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
+                        loading={loading}
+                        style={{ marginTop: 20 }}
+                    />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
