@@ -39,7 +39,7 @@ export default {
             "expo-font"
         ],
         extra: {
-            apiUrl: process.env.API_URL ? (process.env.API_URL + '/api') : 'http://localhost:5000/api',
+            apiUrl: (process.env.API_URL || 'http://uowkkskssoo0k8cccg00ssks.161.97.80.67.sslip.io') + '/api',
             eas: {
                 projectId: "7489686b-bc77-4483-b54c-2cde26d23842"
             }
