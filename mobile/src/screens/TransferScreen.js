@@ -198,50 +198,59 @@ const TransferScreen = ({ navigation }) => {
     };
 
     const executeTransaction = async () => {
-        const details = {
-            type: recipientType,
-            name: recipientName,
-            note: note,
-            admin_reference: adminReference
-        };
+        if (loading) return; // Robust guard
+        setLoading(true);
 
-        if (toCurrency === 'GHS') {
-            if (recipientType === 'momo') {
-                details.momo_provider = momoProvider;
-                details.account = accountNumber;
-            } else {
-                details.bank_name = bankName;
-                details.account = accountNumber;
+        try {
+            const details = {
+                type: recipientType,
+                name: recipientName,
+                note: note,
+                admin_reference: adminReference
+            };
+
+            if (toCurrency === 'GHS') {
+                if (recipientType === 'momo') {
+                    details.momo_provider = momoProvider;
+                    details.account = accountNumber;
+                } else {
+                    details.bank_name = bankName;
+                    details.account = accountNumber;
+                }
+            } else { // CAD
+                if (recipientType === 'interac') {
+                    details.interac_email = interacEmail;
+                } else {
+                    details.bank_name = bankName || 'Bank Transfer'; // Default if standard bank flow
+                    details.account = accountNumber;
+                    details.transit_number = transitNumber;
+                    details.institution_number = institutionNumber;
+                }
             }
-        } else { // CAD
-            if (recipientType === 'interac') {
-                details.interac_email = interacEmail;
-            } else {
-                details.bank_name = bankName || 'Bank Transfer'; // Default if standard bank flow
-                details.account = accountNumber;
-                details.transit_number = transitNumber;
-                details.institution_number = institutionNumber;
+
+            const res = await api.post('/transactions', {
+                amount_sent: amount,
+                type: `${fromCurrency}-${toCurrency}`,
+                recipient_details: details
+            });
+
+            setRateLockedUntil(res.data.rate_locked_until);
+
+            // Store full transaction for details navigation
+            const txData = res.data.transaction || res.data;
+            if (txData) {
+                setNewTransaction(txData);
             }
+
+            setShowPinModal(false);
+            setPin('');
+            setStep(4); // Success Step
+        } catch (error) {
+            console.error('Transaction execution failed:', error);
+            throw error; // Rethrow to be caught by caller
+        } finally {
+            setLoading(false);
         }
-
-        const res = await api.post('/transactions', {
-            amount_sent: amount,
-            type: `${fromCurrency}-${toCurrency}`,
-            recipient_details: details
-        });
-
-        setRateLockedUntil(res.data.rate_locked_until);
-
-        // Store full transaction for details navigation
-        if (res.data.transaction) {
-            setNewTransaction(res.data.transaction);
-        } else if (res.data.id) {
-            setNewTransaction(res.data);
-        }
-
-        setShowPinModal(false);
-        setPin('');
-        setStep(4); // Success Step
     };
 
     const handlePinSubmit = async () => {
@@ -258,16 +267,15 @@ const TransferScreen = ({ navigation }) => {
     };
 
     const handleVerifyPress = async () => {
+        if (loading) return;
+
         if (canUseBiometrics) {
             const result = await authenticateAsync('Authorize Transfer');
             if (result.success) {
-                setLoading(true);
                 try {
                     await executeTransaction();
                 } catch (error) {
-                    Alert.alert('Error', error.response?.data?.error || 'Transaction failed.');
-                } finally {
-                    setLoading(false);
+                    Alert.alert('Error', error.response?.data?.error || 'Transaction failed. Please check your history before trying again.');
                 }
             } else {
                 // Fallback to PIN if biometric auth fails or cancels

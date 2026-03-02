@@ -1,24 +1,71 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../context/ThemeContext';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
-const Button = ({ onPress, style, textStyle, label, loading, disabled, ...props }) => {
+const Button = ({ onPress, style, textStyle, label, loading, disabled, variant = 'primary', icon, ...props }) => {
+    const theme = useTheme();
+
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (onPress) onPress();
     };
 
+    const getVariantStyle = () => {
+        switch (variant) {
+            case 'outline':
+                return {
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderColor: theme.primary,
+                };
+            case 'danger':
+                return {
+                    backgroundColor: '#fee2e2',
+                    borderWidth: 0,
+                };
+            case 'primary':
+            default:
+                return {
+                    backgroundColor: theme.primary,
+                    borderWidth: 0,
+                };
+        }
+    };
+
+    const getTextStyle = () => {
+        switch (variant) {
+            case 'outline':
+                return { color: theme.primary };
+            case 'danger':
+                return { color: '#dc2626' };
+            case 'primary':
+            default:
+                return { color: '#fff' };
+        }
+    };
+
     return (
         <TouchableOpacity
-            style={[styles.button, style, (disabled || loading) && styles.disabled]}
+            style={[
+                styles.button,
+                getVariantStyle(),
+                style,
+                (disabled || loading) && styles.disabled
+            ]}
             onPress={handlePress}
             disabled={disabled || loading}
+            activeOpacity={0.8}
             {...props}
         >
             {loading ? (
-                <ActivityIndicator color={textStyle?.color || "#fff"} />
+                <ActivityIndicator color={getTextStyle().color} />
             ) : (
-                <Text style={[styles.text, textStyle]}>{label}</Text>
+                <>
+                    {icon && <Ionicons name={icon} size={20} color={getTextStyle().color} style={{ marginRight: 8 }} />}
+                    <Text style={[styles.text, getTextStyle(), textStyle]}>{label}</Text>
+                </>
             )}
         </TouchableOpacity>
     );

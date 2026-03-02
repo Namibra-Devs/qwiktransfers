@@ -18,6 +18,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authenticateAsync } from '../services/biometrics';
+import Button from '../components/Button';
 
 const TransactionDetailsScreen = ({ route, navigation }) => {
     const { transactionId, initialData } = route.params || {};
@@ -35,6 +38,19 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
     // Preview State
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+
+    useEffect(() => {
+        checkBiometrics();
+    }, []);
+
+    const checkBiometrics = async () => {
+        const bioEnabled = await AsyncStorage.getItem('biometricEnabled');
+        if (bioEnabled === 'true') {
+            setCanUseBiometrics(true);
+        }
+    };
 
     useEffect(() => {
         fetchTransactionDetails();
@@ -66,22 +82,43 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
     };
 
     const handlePickImage = async () => {
-        // Request permissions
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission needed', 'We need access to your photos to upload proof.');
-            return;
+        try {
+            // Request permissions
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission needed', 'We need access to your photos to upload proof.');
+                return;
+            }
+
+            console.log('Launching Image Library...');
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images', // Use string for better compatibility across versions
+                quality: 0.8,
+                allowsEditing: false,
+            });
+
+            console.log('Picker result:', result.canceled ? 'canceled' : 'success');
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                setSelectedImage(result.assets[0]);
+                setShowPinModal(true); // Prompt PIN immediately after selection
+            }
+        } catch (error) {
+            console.error('Image picker error:', error);
+            Alert.alert('Picker Error', 'An error occurred while opening the image gallery.');
         }
+    };
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images, // Images only for now, PDF support requires more work on native
-            quality: 0.8,
-            allowsEditing: false,
-        });
-
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-            setSelectedImage(result.assets[0]);
-            setShowPinModal(true); // Prompt PIN immediately after selection
+    const handleBiometricVerify = async () => {
+        const result = await authenticateAsync('Confirm Proof Upload');
+        if (result.success) {
+            setPinLoading(true);
+            try {
+                await uploadProof();
+            } catch (error) {
+                Alert.alert('Error', error.response?.data?.error || 'Upload failed');
+                setPinLoading(false);
+            }
         }
     };
 
@@ -129,10 +166,10 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             setSelectedImage(null);
             setPinLoading(false);
 
-            // Manually update local state since GET /transactions/:id might handle 404s
+            // Manually update local state
             setTransaction(prev => ({
                 ...prev,
-                proof_url: 'uploaded_successfully',
+                proof_url: `/uploads/${filename}`, // Use the same format as backend
                 localProofUri: localUri, // Store local URI for immediate preview
                 proof_uploaded_at: new Date().toISOString(),
                 status: prev.status === 'initiated' ? 'pending' : prev.status
@@ -147,14 +184,16 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
     };
 
     const handleViewProof = () => {
+        setPreviewLoading(true);
         if (transaction.localProofUri) {
             setPreviewImage(transaction.localProofUri);
         } else if (transaction.proof_url) {
-            // Handle relative paths from DB - using fixed IP for now as per api.js
-            const baseUrl = 'http://192.168.79.98:5000';
+            // Handle relative paths from DB
+            const baseUrl = api.defaults.baseURL.replace('/api', '');
             const url = transaction.proof_url.startsWith('http')
                 ? transaction.proof_url
                 : `${baseUrl}${transaction.proof_url}`;
+            console.log('Viewing proof URL:', url);
             setPreviewImage(url);
         }
         setShowPreviewModal(true);
@@ -304,7 +343,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                     <View style={styles.detailRow}>
                         <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Date</Text>
                         <Text style={[styles.detailValue, { color: theme.text }]}>
-                            {new Date(transaction.created_at).toLocaleString()}
+                            {new Date(transaction.createdAt).toLocaleString()}
                         </Text>
                     </View>
 
@@ -378,16 +417,15 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 {/* Proof Upload Action */}
                 {!proof_url && transaction.status !== 'cancelled' && transaction.status !== 'sent' && (
                     <View style={styles.actionContainer}>
-                        <Text style={[styles.actionHint, { color: theme.textMuted }]}>
+                        <Text style={[styles.actionHint, { color: theme.textMuted, marginBottom: 8 }]}>
                             Please upload proof of payment to proceed.
                         </Text>
-                        <TouchableOpacity
-                            style={[styles.uploadBtn, { backgroundColor: theme.primary }]}
+                        <Button
+                            label="Upload Proof"
+                            icon="cloud-upload"
                             onPress={handlePickImage}
-                        >
-                            <Ionicons name="cloud-upload" size={20} color="#fff" style={{ marginRight: 8 }} />
-                            <Text style={styles.uploadBtnText}>Upload Proof</Text>
-                        </TouchableOpacity>
+                            style={{ width: '80%' }}
+                        />
                     </View>
                 )}
 
@@ -419,10 +457,21 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                                 <Ionicons name="close-circle" size={36} color="#fff" />
                             </TouchableOpacity>
                             {previewImage && (
-                                <Image
-                                    source={{ uri: previewImage }}
-                                    style={{ width: '90%', height: '80%', resizeMode: 'contain' }}
-                                />
+                                <>
+                                    {previewLoading && (
+                                        <ActivityIndicator size="large" color="#fff" style={{ position: 'absolute' }} />
+                                    )}
+                                    <Image
+                                        source={{ uri: previewImage }}
+                                        style={{ width: '90%', height: '80%', resizeMode: 'contain' }}
+                                        onLoad={() => setPreviewLoading(false)}
+                                        onError={(e) => {
+                                            console.error('Image load error:', e.nativeEvent.error);
+                                            setPreviewLoading(false);
+                                            Alert.alert('Load Error', 'Could not load the proof image.');
+                                        }}
+                                    />
+                                </>
                             )}
                         </View>
                     </View>
@@ -455,23 +504,31 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                         />
 
                         <View style={styles.modalActions}>
-                            <TouchableOpacity
-                                style={[styles.modalBtn, { backgroundColor: theme.input }]}
+                            <Button
+                                label="Cancel"
+                                variant="outline"
+                                style={{ flex: 1, height: 48 }}
+                                textStyle={{ fontSize: 14 }}
                                 onPress={() => { setShowPinModal(false); setPin(''); setSelectedImage(null); }}
-                            >
-                                <Text style={[styles.modalBtnText, { color: theme.text }]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalBtn, { backgroundColor: theme.primary }]}
+                            />
+                            {canUseBiometrics && (
+                                <Button
+                                    label="Bio"
+                                    variant="outline"
+                                    icon="finger-print"
+                                    style={{ flex: 1, height: 48 }}
+                                    textStyle={{ fontSize: 14 }}
+                                    onPress={handleBiometricVerify}
+                                    disabled={pinLoading}
+                                />
+                            )}
+                            <Button
+                                label="Confirm"
+                                style={{ flex: 1, height: 48 }}
+                                textStyle={{ fontSize: 14 }}
                                 onPress={handlePinSubmit}
-                                disabled={pinLoading}
-                            >
-                                {pinLoading ? (
-                                    <ActivityIndicator color="#fff" size="small" />
-                                ) : (
-                                    <Text style={[styles.modalBtnText, { color: '#fff' }]}>Confirm</Text>
-                                )}
-                            </TouchableOpacity>
+                                loading={pinLoading}
+                            />
                         </View>
                     </View>
                 </View>
@@ -626,17 +683,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
         width: '100%',
-    },
-    modalBtn: {
-        flex: 1,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalBtnText: {
-        fontSize: 16,
-        fontFamily: 'Outfit_600SemiBold',
     },
 });
 

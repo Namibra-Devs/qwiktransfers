@@ -143,6 +143,7 @@ const LoginScreen = ({ navigation }) => {
 
                         <Button
                             title="Sign in"
+                            label="Sign in"
                             onPress={handleLogin}
                             loading={loading}
                             style={{ marginTop: 16 }}
@@ -151,6 +152,7 @@ const LoginScreen = ({ navigation }) => {
                         {canUseBiometrics && (
                             <Button
                                 title="Use Biometrics"
+                                label="Use Biometrics"
                                 onPress={handleBiometricLogin}
                                 variant="outline"
                                 icon="finger-print"
@@ -259,11 +261,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 4,
     },
     buttonText: {
         color: 'white',

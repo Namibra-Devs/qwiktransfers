@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
     Text,
@@ -41,10 +42,29 @@ const DashboardScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [totalSent, setTotalSent] = useState(0);
 
+    const [rate, setRate] = useState(null);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [])
+    );
+
     useEffect(() => {
         loadCachedData();
-        fetchData();
+        fetchRate();
     }, []);
+
+    const fetchRate = async () => {
+        try {
+            const response = await api.get('/rates');
+            const rawRate = response.data.rate;
+            const displayRate = rawRate < 1 ? (1 / rawRate) : rawRate;
+            setRate(displayRate.toFixed(2));
+        } catch (error) {
+            console.log('Failed to fetch rate', error);
+        }
+    };
 
     const loadCachedData = async () => {
         try {
@@ -76,10 +96,18 @@ const DashboardScreen = ({ navigation }) => {
             const txs = res.data.transactions || res.data; // Handle different API response shapes
             setTransactions(txs);
 
-            // Calculate total sent
+            // Calculate total sent in GHS equivalent
             const total = txs
                 .filter(tx => tx.status === 'sent')
-                .reduce((acc, tx) => acc + parseFloat(tx.amount_sent), 0);
+                .reduce((acc, tx) => {
+                    const [fromCur, toCur] = tx.type.split('-');
+                    if (fromCur === 'GHS') {
+                        return acc + parseFloat(tx.amount_sent);
+                    } else if (toCur === 'GHS') {
+                        return acc + parseFloat(tx.amount_received);
+                    }
+                    return acc;
+                }, 0);
             setTotalSent(total);
 
             // Save to cache for offline mode
@@ -96,17 +124,27 @@ const DashboardScreen = ({ navigation }) => {
         setRefreshing(false);
     };
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning ☀️';
+        if (hour < 17) return 'Good afternoon 🌤️';
+        return 'Good evening 🌙';
+    };
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.appHeader}>
-                <TouchableOpacity>
-                    <Ionicons name="menu-outline" size={28} color={theme.text} />
-                </TouchableOpacity>
+                <View>
+                    <Text style={{ fontSize: 13, color: theme.textMuted, fontFamily: 'Outfit_400Regular' }}>{getGreeting()}</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, fontFamily: 'Outfit_700Bold' }}>{(user?.full_name || user?.firstName || 'User').split(' ')[0]}</Text>
+                </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={[styles.giftButton, { backgroundColor: theme.primary + '15' }]}>
-                        <Text style={[styles.giftText, { color: theme.primary }]}>Get $10</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
+                    {rate && (
+                        <View style={[styles.rateBadge, { backgroundColor: theme.primary + '15' }]}>
+                            <Text style={[styles.rateBadgeText, { color: theme.primary }]}>1 CAD = {rate} GHS</Text>
+                        </View>
+                    )}
+                    <TouchableOpacity onPress={() => navigation.navigate('Alerts')}>
                         <Ionicons name="notifications-outline" size={26} color={theme.text} />
                     </TouchableOpacity>
                 </View>
@@ -144,8 +182,8 @@ const DashboardScreen = ({ navigation }) => {
                     <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color={theme.primary} /> */}
                     <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
                     <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color={theme.primary} />
-                    <ActionButton icon="swap-horizontal" label="Rate" onPress={() => { }} theme={theme} color={theme.primary} />
-                    <ActionButton icon="shield-half-outline" label="KYC" onPress={() => { }} theme={theme} color={theme.primary} />
+                    <ActionButton icon="swap-horizontal" label="Rate" onPress={() => navigation.navigate('Watcher')} theme={theme} color={theme.primary} />
+                    <ActionButton icon="shield-half-outline" label="KYC" onPress={() => navigation.navigate('KYC')} theme={theme} color={theme.primary} />
                 </View>
 
                 {/* Verification / Limits Card */}
@@ -241,12 +279,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 15,
     },
-    giftButton: {
+    rateBadge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
     },
-    giftText: {
+    rateBadgeText: {
         fontSize: 13,
         fontWeight: '700',
         fontFamily: 'Outfit_700Bold',
