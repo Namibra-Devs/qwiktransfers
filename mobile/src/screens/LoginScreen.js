@@ -81,8 +81,8 @@ const LoginScreen = ({ navigation }) => {
             await login(email, password);
         } catch (error) {
             Alert.alert(
-                'Login Failed',
-                'Invalid email or password. Please also ensure your API_URL is correctly set to your local IP in api.js.'
+                'Connection Debug',
+                `Login failed. Current API URL is: ${api.defaults.baseURL}\n\nError: ${error.message}`
             );
         } finally {
             setLoading(false);
