@@ -23,7 +23,8 @@ export default {
                 backgroundColor: "#ffffff"
             },
             edgeToEdgeEnabled: true,
-            package: "com.anonymous.mobile"
+            package: "com.anonymous.mobile",
+            usesCleartextTraffic: true
         },
         web: {
             favicon: "./assets/logo-red.png"
