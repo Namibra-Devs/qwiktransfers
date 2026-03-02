@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 18,
-        fontWeight: '700',
         fontFamily: 'Outfit_700Bold',
         color: '#fff',
     }

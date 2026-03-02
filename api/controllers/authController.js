@@ -68,10 +68,19 @@ const register = async (req, res) => {
             is_email_verified: false
         });
 
-        // Send Communications
-        await sendVerificationEmail(email, verificationToken, full_name);
+        // Send Communications (Non-blocking or catch errors)
+        try {
+            await sendVerificationEmail(email, verificationToken, full_name);
+        } catch (mailError) {
+            console.error('Email sending failed:', mailError.message);
+        }
+
         if (phone) {
-            await sendSMS(phone, `Welcome to Qwiktransfers! Please verify your email ${email} to start sending money.`);
+            try {
+                await sendSMS(phone, `Welcome to Qwiktransfers! Please verify your email ${email} to start sending money.`);
+            } catch (smsError) {
+                console.error('SMS sending failed:', smsError.message);
+            }
         }
 
         // Audit log

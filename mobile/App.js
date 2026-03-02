@@ -15,6 +15,7 @@ import RateAlertScreen from './src/screens/RateAlertScreen';
 import TransferScreen from './src/screens/TransferScreen';
 import TransactionDetailsScreen from './src/screens/TransactionDetailsScreen';
 import TransactionsScreen from './src/screens/TransactionsScreen';
+import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
 import { ActivityIndicator, View, Text, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -108,6 +109,7 @@ const Navigation = () => {
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="RegisterSuccess" component={RegisterSuccessScreen} />
           </Stack.Group>
         )}
       </Stack.Navigator>

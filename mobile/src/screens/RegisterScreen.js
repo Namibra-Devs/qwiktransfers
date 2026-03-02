@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
     Alert,
@@ -10,7 +9,6 @@ import {
     Platform,
     StatusBar,
     ScrollView,
-    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +16,12 @@ import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import CountryPicker from '../components/CountryPicker';
+
+const countryCodes = {
+    'Ghana': '+233',
+    'Canada': '+1',
+};
 
 const RegisterScreen = ({ navigation }) => {
     const theme = useTheme();
@@ -26,20 +30,39 @@ const RegisterScreen = ({ navigation }) => {
     const [step, setStep] = useState(1);
 
     // Form State
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
+    const [country, setCountry] = useState('Ghana');
+    const [phone, setPhone] = useState('+233');
     const [password, setPassword] = useState('');
+    const [pin, setPin] = useState('');
+
+    // UI State
     const [showPassword, setShowPassword] = useState(false);
+    const [showPin, setShowPin] = useState(false);
+    const [pickerVisible, setPickerVisible] = useState(false);
 
     const handleNext = () => {
-        if (step === 1 && (!firstName.trim() || !lastName.trim())) {
-            Alert.alert('Required', 'Please enter your first and last name.');
-            return;
+        if (step === 1) {
+            if (!fullName.trim()) {
+                Alert.alert('Required', 'Please enter your full name.');
+                return;
+            }
+            if (!email.trim().includes('@')) {
+                Alert.alert('Invalid Email', 'Please enter a valid email address.');
+                return;
+            }
         }
-        if (step === 2 && !email.trim().includes('@')) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address.');
-            return;
+        if (step === 2) {
+            const code = countryCodes[country];
+            if (!phone.startsWith(code)) {
+                Alert.alert('Invalid Phone', `Phone number must start with ${code} for ${country}`);
+                return;
+            }
+            if (phone.length < 10) {
+                Alert.alert('Too Short', 'Please enter a valid phone number.');
+                return;
+            }
         }
         setStep(step + 1);
     };
@@ -53,21 +76,31 @@ const RegisterScreen = ({ navigation }) => {
     };
 
     const handleRegister = async () => {
-        if (password.length < 8) {
-            Alert.alert('Weak Password', 'Password must be at least 8 characters.');
+        if (password.length < 6) {
+            Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+            return;
+        }
+        if (pin.length !== 4) {
+            Alert.alert('Invalid PIN', 'Transaction PIN must be 4 digits.');
             return;
         }
 
         setLoading(true);
         try {
             await register({
-                email,
+                email: email.toLowerCase().trim(),
                 password,
-                full_name: `${firstName} ${lastName}`,
-                // phone: '' // Phone can be added in a future step or optional
-            });
+                full_name: fullName.trim(),
+                phone: phone.trim(),
+                country: country,
+                pin: pin,
+                role: 'user'
+            }, { autoLogin: false });
+
+            navigation.navigate('RegisterSuccess', { email: email.toLowerCase().trim() });
         } catch (error) {
-            Alert.alert('Registration Failed', error.message || 'Please check your details.');
+            console.error('Registration error:', error);
+            Alert.alert('Registration Failed', error.response?.data?.error || error.message || 'Please check your details.');
         } finally {
             setLoading(false);
         }
@@ -79,31 +112,55 @@ const RegisterScreen = ({ navigation }) => {
                 return (
                     <View style={styles.stepContainer}>
                         <Input
-                            label="First Name"
-                            placeholder="First Name"
-                            value={firstName}
-                            onChangeText={setFirstName}
-                            autoFocus
+                            label="Full Name"
+                            placeholder="Hamza Ibrahim"
+                            value={fullName}
+                            onChangeText={setFullName}
                         />
                         <Input
-                            label="Last Name"
-                            placeholder="Last Name"
-                            value={lastName}
-                            onChangeText={setLastName}
+                            label="Email Address"
+                            placeholder="email@example.com"
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
                         />
                     </View>
                 );
             case 2:
                 return (
                     <View style={styles.stepContainer}>
+                        <Text style={[styles.label, { color: theme.textMuted }]}>Your Country</Text>
+                        <TouchableOpacity
+                            style={[
+                                styles.pickerTrigger,
+                                {
+                                    backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+                                    borderColor: theme.border || (theme.isDark ? '#374151' : '#e5e7eb')
+                                }
+                            ]}
+                            onPress={() => setPickerVisible(true)}
+                        >
+                            <Text style={[styles.pickerText, { color: theme.text }]}>{country}</Text>
+                            <Ionicons name="chevron-down" size={20} color={theme.textMuted} />
+                        </TouchableOpacity>
+
                         <Input
-                            label="Email"
-                            placeholder="Email address"
-                            value={email}
-                            onChangeText={setEmail}
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            autoFocus
+                            label="Phone Number"
+                            placeholder={countryCodes[country]}
+                            value={phone}
+                            onChangeText={setPhone}
+                            keyboardType="phone-pad"
+                        />
+
+                        <CountryPicker
+                            visible={pickerVisible}
+                            onClose={() => setPickerVisible(false)}
+                            selectedCountry={country}
+                            onSelect={(item) => {
+                                setCountry(item.name);
+                                setPhone(item.code);
+                            }}
                         />
                     </View>
                 );
@@ -112,19 +169,29 @@ const RegisterScreen = ({ navigation }) => {
                     <View style={styles.stepContainer}>
                         <Input
                             label="Password"
-                            placeholder="Minimum 8 characters"
+                            placeholder="Minimum 6 characters"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
-                            autoFocus
-                        // This part handles the eye icon - we could also update Input to support right icon
+                            rightIcon={showPassword ? "eye-off" : "eye"}
+                            onRightIconPress={() => setShowPassword(!showPassword)}
                         />
-                        <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
-                            style={{ position: 'absolute', right: 16, top: 44 }}
-                        >
-                            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={theme.textMuted} />
-                        </TouchableOpacity>
+                        <View style={{ marginBottom: 10 }}>
+                            <Input
+                                label="4-Digit Transaction PIN"
+                                placeholder="••••"
+                                value={pin}
+                                onChangeText={(text) => setPin(text.replace(/\D/g, ''))}
+                                secureTextEntry={!showPin}
+                                rightIcon={showPin ? "eye-off" : "eye"}
+                                onRightIconPress={() => setShowPin(!showPin)}
+                                keyboardType="number-pad"
+                                maxLength={4}
+                            />
+                            <Text style={[styles.helperText, { color: theme.textMuted }]}>
+                                Used to authorize transfers and uploads.
+                            </Text>
+                        </View>
                     </View>
                 );
             default:
@@ -133,9 +200,9 @@ const RegisterScreen = ({ navigation }) => {
     };
 
     const getHeaderTitle = () => {
-        if (step === 1) return "Could you tell us your name?";
-        if (step === 2) return "What is your email?";
-        if (step === 3) return "Create a password";
+        if (step === 1) return "Personal Information";
+        if (step === 2) return "Location Information";
+        if (step === 3) return "Account Security";
         return "Create Account";
     }
 
@@ -148,7 +215,6 @@ const RegisterScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                {/* Progress Bar (Optional) */}
                 <View style={[styles.progressBarInfo]}>
                     <View style={[styles.progressValues, { width: `${(step / 3) * 100}%`, backgroundColor: theme.primary }]} />
                 </View>
@@ -165,12 +231,31 @@ const RegisterScreen = ({ navigation }) => {
 
                     {renderStep()}
 
-                    <Button
-                        title={step === 3 ? 'Create Account' : 'Continue'}
-                        onPress={step === 3 ? handleRegister : handleNext}
-                        loading={loading}
-                        style={{ marginTop: 20 }}
-                    />
+                    <View style={{ gap: 12 }}>
+                        <Button
+                            label={step === 3 ? 'Complete Registration' : 'Next Step'}
+                            onPress={step === 3 ? handleRegister : handleNext}
+                            loading={loading}
+                        />
+
+                        {step > 1 && (
+                            <Button
+                                label="Back"
+                                variant="outline"
+                                onPress={handleBack}
+                                disabled={loading}
+                            />
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Login')}
+                        style={{ marginTop: 30, alignItems: 'center' }}
+                    >
+                        <Text style={{ color: theme.textMuted, fontFamily: 'Outfit_400Regular' }}>
+                            Already have an account? <Text style={{ color: theme.primary, fontFamily: 'Outfit_700Bold' }}>Sign in</Text>
+                        </Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -198,7 +283,7 @@ const styles = StyleSheet.create({
     progressBarInfo: {
         flex: 1,
         height: 4,
-        backgroundColor: '#e2e8f0', // Light grey background for bar
+        backgroundColor: '#e2e8f0',
         borderRadius: 2,
         overflow: 'hidden',
         marginRight: 20
@@ -209,53 +294,41 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 24,
         paddingTop: 30,
+        paddingBottom: 40
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontFamily: 'Outfit_700Bold',
         marginBottom: 30,
     },
     stepContainer: {
-        marginBottom: 30,
+        marginBottom: 20,
     },
     label: {
         fontSize: 14,
         fontFamily: 'Outfit_600SemiBold',
         marginBottom: 8,
+        marginLeft: 4,
     },
-    input: {
+    pickerTrigger: {
         height: 56,
-        borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 16,
+        borderWidth: 1.5,
         paddingHorizontal: 16,
-        fontSize: 16,
-        fontFamily: 'Outfit_400Regular',
-    },
-    passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 56,
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 16,
+        justifyContent: 'space-between',
+        marginBottom: 20,
     },
-    passwordInput: {
-        flex: 1,
+    pickerText: {
         fontSize: 16,
         fontFamily: 'Outfit_400Regular',
-        height: '100%',
     },
-    button: {
-        height: 56,
-        borderRadius: 28,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontFamily: 'Outfit_700Bold',
+    helperText: {
+        fontSize: 12,
+        fontFamily: 'Outfit_400Regular',
+        marginTop: -10,
+        marginLeft: 4,
     }
 });
 

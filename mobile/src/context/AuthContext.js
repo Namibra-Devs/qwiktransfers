@@ -63,11 +63,16 @@ export const AuthProvider = ({ children }) => {
         return false;
     };
 
-    const register = async (userData) => {
+    const register = async (userData, options = { autoLogin: true }) => {
         const response = await api.post('/auth/register', userData);
-        await AsyncStorage.setItem('token', response.data.token);
-        setUser(response.data.user);
-        await syncPushToken();
+
+        if (options.autoLogin) {
+            await AsyncStorage.setItem('token', response.data.token);
+            setUser(response.data.user);
+            await syncPushToken();
+        }
+
+        return response.data;
     };
 
     const logout = async () => {
