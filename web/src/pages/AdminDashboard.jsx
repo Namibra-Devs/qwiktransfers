@@ -329,6 +329,34 @@ const AdminDashboard = () => {
                                                 ?
                                             </button>
                                         </div>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            {tab === 'audit' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/system/admin/audit-logs/export`, '_blank')}
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                                    >
+                                                        📥 Export XLSX
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
+                                                                try {
+                                                                    const res = await api.delete('/system/admin/audit-logs/cleanup');
+                                                                    alert(res.data.message);
+                                                                    fetchAuditLogs();
+                                                                } catch (err) { alert('Cleanup failed'); }
+                                                            }
+                                                        }}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '8px 16px', fontSize: '0.85rem', background: '#d83b01' }}
+                                                    >
+                                                        🧹 Clean Old Logs
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                         {tab === 'transactions' ? (
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                                 <select

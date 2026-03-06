@@ -80,7 +80,9 @@ const createTransaction = async (req, res) => {
             proof_url: '',
             rate_locked_until,
             locked_rate: parseFloat(exchange_rate),
-            transaction_id
+            transaction_id,
+            market_rate: liveRate,
+            base_currency_profit: 0 // Will be calculated upon completion/success
         });
 
         // Audit log
@@ -204,7 +206,26 @@ const updateStatus = async (req, res) => {
             transaction.status = status;
             if (status === 'sent') {
                 transaction.sent_at = new Date();
-                // Async email notification - outside transaction usually, but here fine
+
+                // Calculate Profit
+                const type = transaction.type || 'GHS-CAD';
+                const marketRate = parseFloat(transaction.market_rate) || 0;
+                const amountSent = parseFloat(transaction.amount_sent);
+                const amountReceived = parseFloat(transaction.amount_received);
+
+                if (type === 'GHS-CAD' && marketRate > 0) {
+                    // How many CAD the market would have given for the GHS sent
+                    const marketCAD = amountSent * marketRate;
+                    // Profit is the difference
+                    transaction.base_currency_profit = (marketCAD - amountReceived).toFixed(4);
+                } else if (type === 'CAD-GHS' && marketRate > 0) {
+                    // How many CAD the recipient actually got at market rate
+                    const actualCADEquivalent = amountReceived / marketRate;
+                    // Profit is what user paid (CAD) minus what recipient got (in CAD equiv)
+                    transaction.base_currency_profit = (amountSent - actualCADEquivalent).toFixed(4);
+                }
+
+                // Async email notification
                 sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
             }
             return await transaction.save({ transaction: t });
@@ -448,11 +469,15 @@ const getAdminStats = async (req, res) => {
 
         const volumeGrowth = lastMonthVolume > 0 ? ((thisMonthVolume - lastMonthVolume) / lastMonthVolume * 100).toFixed(1) : 100;
 
+        // Total Profit (Sum of base_currency_profit for 'sent' transactions)
+        const totalProfitSum = await Transaction.sum('base_currency_profit', { where: { status: 'sent' } }) || 0;
+
         res.json({
             pendingTransactions,
             pendingKYC,
             successVolume: successVolume || 0,
             volumeGrowth,
+            totalProfit: parseFloat(totalProfitSum).toFixed(2),
             history: {
                 volume: volumeHistory,
                 transactions: txHistory,
@@ -464,4 +489,34 @@ const getAdminStats = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats };
+const exportStats = async (req, res) => {
+    try {
+        const { exportToExcel } = require('../services/exportService');
+        const transactions = await Transaction.findAll({
+            where: { status: 'sent' },
+            limit: 5000,
+            order: [['createdAt', 'DESC']]
+        });
+
+        const columns = [
+            { header: 'Date', key: 'createdAt', width: 20 },
+            { header: 'TX ID', key: 'transaction_id', width: 25 },
+            { header: 'Type', key: 'type', width: 10 },
+            { header: 'Sent', key: 'amount_sent', width: 15 },
+            { header: 'Received', key: 'amount_received', width: 15 },
+            { header: 'Market Rate', key: 'market_rate', width: 15 },
+            { header: 'Actual Rate', key: 'locked_rate', width: 15 },
+            { header: 'Profit (CAD)', key: 'base_currency_profit', width: 15 }
+        ];
+
+        const buffer = await exportToExcel(transactions, columns, 'Transaction Analytics');
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=qwik-analytics-report.xlsx');
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats, exportStats };

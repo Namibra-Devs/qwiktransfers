@@ -36,6 +36,65 @@ const HelpCenter = () => {
                         <h4>TX per User Ratio</h4>
                         <p>Calculated as <code>Total Transactions / New Users</code>. A higher number indicates strong engagement and repeat use by your newer customer base.</p>
                     </div>
+
+                    <div className="help-box">
+                        <h4>Revenue & Profit Analysis</h4>
+                        <p>Total Revenue is calculated based on the <strong>Market Rate Baseline</strong> System.</p>
+                        <ul>
+                            <li><strong>Market Rate:</strong> The real mid-market exchange rate at the time of the transaction.</li>
+                            <li><strong>Actual Rate:</strong> The rate provided to the user (can be manually adjusted in settings).</li>
+                            <li><strong>Profit calculation:</strong> The system automatically calculates the difference between the Market Rate and your Actual Rate to determine your exact margin in CAD.</li>
+                        </ul>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'reports',
+            title: 'Reporting & Exports',
+            icon: '📄',
+            content: (
+                <div className="help-content">
+                    <h3>Exporting Platform Data</h3>
+                    <p>You can export various datasets to Microsoft Excel (XLSX) for offline analysis or tax reporting.</p>
+
+                    <div className="help-box">
+                        <h4>Analytics Report</h4>
+                        <p>Go to the Analytics tab and click <strong>"Export Full Analytics"</strong>. This generates a detailed list of all successful transactions, including their market rate, actual rate, and specific profit margin for each.</p>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Audit Log Export</h4>
+                        <p>In the Audit Logs tab, click <strong>"Export XLSX"</strong>. This provides a complete history of all administrative actions, user logins, and system changes across the platform.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'system',
+            title: 'Monitoring & Alerts',
+            icon: '🚨',
+            content: (
+                <div className="help-content">
+                    <h3>System Health & Monitoring</h3>
+                    <p>The system automatically monitors platform health every hour to protect against business dips or security risks.</p>
+
+                    <div className="help-box">
+                        <h4>Autonomous Alerts</h4>
+                        <ul>
+                            <li><strong>Volume Drop:</strong> Triggered if transaction volume falls 70% below your 7-day average. You will receive a Push Notification.</li>
+                            <li><strong>KYC Spikes:</strong> Triggered if 5 or more KYC rejections occur within a single hour (indicates potential bot activity).</li>
+                        </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Audit Table Cleanup</h4>
+                        <p>To prevent the database from slowing down, you should periodically prune the Audit Logs.</p>
+                        <ul>
+                            <li><strong>Manual Cleanup:</strong> Use the "Clean Old Logs" button in the Audit tab to delete logs older than 90 days.</li>
+                            <li><strong>Automatic Option:</strong> Can be toggled in System Settings to run once a week automatically at 3 AM.</li>
+                        </ul>
+                    </div>
                 </div>
             )
         },

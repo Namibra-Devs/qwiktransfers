@@ -35,6 +35,7 @@ const rateRoutes = require('./routes/rateRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const { startRateWatcher } = require('./rateWatcher');
+const { initMonitoring } = require('./services/monitoringService');
 
 app.use(cors({
   origin: '*',
@@ -104,6 +105,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       startRateWatcher();
+      initMonitoring();
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);

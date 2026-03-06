@@ -24,5 +24,7 @@ router.post('/config', verifyToken, verifyAdmin, systemController.updateSystemCo
 
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
+router.get('/admin/audit-logs/export', verifyToken, verifyAdmin, auditController.exportAuditLogs);
+router.delete('/admin/audit-logs/cleanup', verifyToken, verifyAdmin, auditController.cleanupAuditLogs);
 
 module.exports = router;

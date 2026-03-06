@@ -130,6 +130,22 @@ const AnalyticsContainer = ({ stats }) => {
                     <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{(transactions.reduce((a, b) => a + parseInt(b.count), 0) / (users.reduce((a, b) => a + parseInt(b.count), 0) || 1)).toFixed(1)}</div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>TX per new user ratio</p>
                 </div>
+
+                <div className="card" style={{ padding: '24px', borderLeft: '4px solid #b7472a', background: 'rgba(183, 71, 42, 0.05)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Est. Revenue (CAD)</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#b7472a' }}>${stats.totalProfit || '0.00'}</div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>Total margin from sent transactions</p>
+                </div>
+            </div>
+
+            <div style={{ marginBottom: '32px', display: 'flex', gap: '12px' }}>
+                <button
+                    onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/admin/stats/export`, '_blank')}
+                    className="btn btn-secondary"
+                    style={{ background: '#fff', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                    📥 Export Full Analytics (XLSX)
+                </button>
             </div>
 
             {/* Charts Grid */}
