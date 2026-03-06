@@ -377,21 +377,87 @@ const exportTransactions = async (req, res) => {
 
 const getAdminStats = async (req, res) => {
     try {
-        const { Op } = require('sequelize');
+        const { Op, fn, col } = require('sequelize');
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-        // Pending Transactions
+        // Current KPIs
         const pendingTransactions = await Transaction.count({ where: { status: 'pending' } });
-
-        // Pending KYC
         const pendingKYC = await User.count({ where: { kyc_status: 'pending' } });
-
-        // Success Volume (Total Sent to recipients)
         const successVolume = await Transaction.sum('amount_received', { where: { status: 'sent' } });
+
+        // Time-series Volume (CAD & GHS) - Group by day
+        const volumeHistory = await Transaction.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('SUM', col('amount_sent')), 'total_sent'],
+                'type'
+            ],
+            where: {
+                status: 'sent',
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt')), 'type'],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        // Time-series Transaction count
+        const txHistory = await Transaction.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('COUNT', col('id')), 'count']
+            ],
+            where: {
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt'))],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        // User Growth History
+        const userHistory = await User.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('COUNT', col('id')), 'count']
+            ],
+            where: {
+                role: 'user',
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt'))],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        // Growth Calculation (Simple Month-over-Month estimation)
+        const lastMonthStart = new Date();
+        lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+        const thisMonthVolume = await Transaction.sum('amount_received', {
+            where: { status: 'sent', createdAt: { [Op.gte]: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }
+        }) || 0;
+        const lastMonthVolume = await Transaction.sum('amount_received', {
+            where: {
+                status: 'sent', createdAt: {
+                    [Op.between]: [
+                        new Date(lastMonthStart.getFullYear(), lastMonthStart.getMonth(), 1),
+                        new Date(lastMonthStart.getFullYear(), lastMonthStart.getMonth() + 1, 0)
+                    ]
+                }
+            }
+        }) || 0;
+
+        const volumeGrowth = lastMonthVolume > 0 ? ((thisMonthVolume - lastMonthVolume) / lastMonthVolume * 100).toFixed(1) : 100;
 
         res.json({
             pendingTransactions,
             pendingKYC,
-            successVolume: successVolume || 0
+            successVolume: successVolume || 0,
+            volumeGrowth,
+            history: {
+                volume: volumeHistory,
+                transactions: txHistory,
+                users: userHistory
+            }
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

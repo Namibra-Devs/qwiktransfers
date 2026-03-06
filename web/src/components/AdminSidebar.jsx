@@ -4,6 +4,7 @@ import ThemeSwitcher from './ThemeSwitcher';
 
 const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
     const menuItems = [
+        { id: 'analytics', label: 'Analytics', icon: '📈' },
         { id: 'transactions', label: 'Transactions', icon: '📊' },
         { id: 'kyc', label: 'KYC Review', icon: '🆔' },
         { id: 'users', label: 'Users', icon: '👥' },
@@ -11,6 +12,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         { id: 'audit', label: 'Audit Logs', icon: '📜' },
         { id: 'payment-settings', label: 'Payment Settings', icon: '💳' },
         { id: 'profile', label: 'Profile', icon: '👤' },
+        { id: 'help', label: 'Help Center', icon: '❓' },
     ];
 
     return (

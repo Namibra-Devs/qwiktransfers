@@ -11,6 +11,8 @@ import TransactionTable from '../components/admin/TransactionTable';
 import KYCTable from '../components/admin/KYCTable';
 import UserTable from '../components/admin/UserTable';
 import VendorTable from '../components/admin/VendorTable';
+import AnalyticsContainer from '../components/admin/AnalyticsContainer';
+import HelpCenter from '../components/admin/HelpCenter';
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -22,7 +24,7 @@ const AdminDashboard = () => {
     const [auditPage, setAuditPage] = useState(1);
     const [auditSearch, setAuditSearch] = useState('');
     const [auditAction, setAuditAction] = useState('');
-    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors'
+    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help'
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [adminStats, setAdminStats] = useState({ pendingTransactions: 0, pendingKYC: 0, successVolume: 0 });
 
@@ -56,6 +58,14 @@ const AdminDashboard = () => {
     const [userTransactions, setUserTransactions] = useState([]);
     const [userTransactionsLoading, setUserTransactionsLoading] = useState(false);
     const [vendorStats, setVendorStats] = useState({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
+
+    useEffect(() => {
+        const handleSwitchTab = (e) => {
+            if (e.detail) setTab(e.detail);
+        };
+        window.addEventListener('switch-tab', handleSwitchTab);
+        return () => window.removeEventListener('switch-tab', handleSwitchTab);
+    }, []);
 
     useEffect(() => {
         fetchStats();
@@ -240,7 +250,13 @@ const AdminDashboard = () => {
                 <button className="mobile-nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
                     {sidebarOpen ? '✕' : '☰'}
                 </button>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--primary)' }}>QWIK Admin</h1>
+                <button
+                    onClick={() => setTab('help')}
+                    style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}
+                >
+                    ❓
+                </button>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--primary)', flex: 1, textAlign: 'center' }}>QWIK Admin</h1>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <NotificationPanel />
                     <ThemeSwitcher />
@@ -301,9 +317,18 @@ const AdminDashboard = () => {
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                            {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : 'Manage Users'}
-                                        </h2>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
+                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : 'Manage Users'}
+                                            </h2>
+                                            <button
+                                                onClick={() => setTab('help')}
+                                                style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
+                                                title="How does this page work?"
+                                            >
+                                                ?
+                                            </button>
+                                        </div>
                                         {tab === 'transactions' ? (
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                                 <select
@@ -534,6 +559,8 @@ const AdminDashboard = () => {
 
                         {tab === 'payment-settings' && <PaymentSettings />}
                         {tab === 'profile' && <AdminProfile />}
+                        {tab === 'analytics' && <AnalyticsContainer stats={adminStats} />}
+                        {tab === 'help' && <HelpCenter />}
                     </div>
                 </main>
             </div>

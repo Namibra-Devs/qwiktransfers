@@ -22,7 +22,7 @@ export default {
     android: {
         adaptiveIcon: {
             foregroundImage: "./assets/logo-red.png",
-            backgroundColor: "#ffffff"
+            // backgroundColor: "#ffffff"
         },
         edgeToEdgeEnabled: true,
         package: "com.anonymous.mobile",
