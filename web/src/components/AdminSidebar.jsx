@@ -5,6 +5,7 @@ import ThemeSwitcher from './ThemeSwitcher';
 
 const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
     const [systemLogo, setSystemLogo] = React.useState(null);
+    const [systemName, setSystemName] = React.useState('QWIK Admin');
 
     React.useEffect(() => {
         fetchSystemLogo();
@@ -17,6 +18,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
             const res = await api.get('/system/config');
             if (res.data.system_logo) {
                 setSystemLogo(`${import.meta.env.VITE_API_URL}/${res.data.system_logo}`);
+            }
+            if (res.data.system_name) {
+                setSystemName(res.data.system_name);
             }
         } catch (error) {
             console.error('Failed to fetch system logo');

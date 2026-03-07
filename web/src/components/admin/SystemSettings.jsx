@@ -11,6 +11,7 @@ const SystemSettings = () => {
 
     // Form states for contact info
     const [contactInfo, setContactInfo] = useState({
+        system_name: '',
         system_email: '',
         system_contact: '',
         system_address: ''
@@ -25,6 +26,7 @@ const SystemSettings = () => {
             const res = await api.get('/system/config');
             setConfigs(res.data);
             setContactInfo({
+                system_name: res.data.system_name || '',
                 system_email: res.data.system_email || '',
                 system_contact: res.data.system_contact || '',
                 system_address: res.data.system_address || ''
@@ -86,6 +88,7 @@ const SystemSettings = () => {
         setSaving(true);
         try {
             await Promise.all([
+                api.post('/system/config', { key: 'system_name', value: contactInfo.system_name }),
                 api.post('/system/config', { key: 'system_email', value: contactInfo.system_email }),
                 api.post('/system/config', { key: 'system_contact', value: contactInfo.system_contact }),
                 api.post('/system/config', { key: 'system_address', value: contactInfo.system_address })
@@ -121,6 +124,16 @@ const SystemSettings = () => {
                             )}
                         </div>
                         <div style={{ flex: 1 }}>
+                            <div className="form-group" style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px' }}>System Name</label>
+                                <input
+                                    type="text"
+                                    value={contactInfo.system_name}
+                                    onChange={(e) => setContactInfo({ ...contactInfo, system_name: e.target.value })}
+                                    placeholder="Qwiktransfers"
+                                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                                />
+                            </div>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px' }}>System Logo</label>
                             <input
                                 type="file"
@@ -137,7 +150,7 @@ const SystemSettings = () => {
                                 Upload New Logo
                             </button>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                                This logo will appear in the sidebar next to the system name.
+                                The name and logo will appear in the browser tab and sidebar.
                             </p>
                         </div>
                     </div>
