@@ -6,6 +6,15 @@ const SystemSettings = () => {
     const [configs, setConfigs] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(null);
+
+    // Form states for contact info
+    const [contactInfo, setContactInfo] = useState({
+        system_email: '',
+        system_contact: '',
+        system_address: ''
+    });
 
     useEffect(() => {
         fetchConfigs();
@@ -15,6 +24,14 @@ const SystemSettings = () => {
         try {
             const res = await api.get('/system/config');
             setConfigs(res.data);
+            setContactInfo({
+                system_email: res.data.system_email || '',
+                system_contact: res.data.system_contact || '',
+                system_address: res.data.system_address || ''
+            });
+            if (res.data.system_logo) {
+                setLogoPreview(`${import.meta.env.VITE_API_URL}/${res.data.system_logo}`);
+            }
         } catch (error) {
             toast.error('Failed to load system configurations');
         } finally {
@@ -35,16 +52,136 @@ const SystemSettings = () => {
         }
     };
 
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleUploadLogo = async () => {
+        if (!logoFile) return;
+        setSaving(true);
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+
+        try {
+            const res = await api.post('/system/logo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            toast.success('Logo updated successfully');
+            setConfigs(prev => ({ ...prev, system_logo: res.data.logo_url }));
+            // Trigger a sidebar refresh if needed (e.g., via event)
+            window.dispatchEvent(new CustomEvent('system-config-updated'));
+        } catch (error) {
+            toast.error('Failed to upload logo');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveContactInfo = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await Promise.all([
+                api.post('/system/config', { key: 'system_email', value: contactInfo.system_email }),
+                api.post('/system/config', { key: 'system_contact', value: contactInfo.system_contact }),
+                api.post('/system/config', { key: 'system_address', value: contactInfo.system_address })
+            ]);
+            toast.success('Contact information updated');
+            window.dispatchEvent(new CustomEvent('system-config-updated'));
+        } catch (error) {
+            toast.error('Failed to update contact information');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return <div className="spinner"></div>;
 
     return (
         <div className="fade-in" style={{ maxWidth: '800px' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>System Settings</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-                Manage global platform maintenance and automated background tasks.
+                Manage global platform branding, contact info, and maintenance.
             </p>
 
             <div style={{ display: 'grid', gap: '24px' }}>
+                {/* Branding Section */}
+                <div className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>System Branding</h3>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+                        <div style={{ width: '120px', height: '120px', borderRadius: '12px', border: '2px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f9f9f9' }}>
+                            {logoPreview ? (
+                                <img src={logoPreview} alt="System Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                            ) : (
+                                <span style={{ fontSize: '2rem', opacity: 0.2 }}>🖼️</span>
+                            )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px' }}>System Logo</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoChange}
+                                style={{ display: 'block', marginBottom: '16px', fontSize: '0.85rem' }}
+                            />
+                            <button
+                                onClick={handleUploadLogo}
+                                className="btn-primary"
+                                disabled={saving || !logoFile}
+                                style={{ width: 'auto', padding: '8px 24px', fontSize: '0.85rem' }}
+                            >
+                                Upload New Logo
+                            </button>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                This logo will appear in the sidebar next to the system name.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact Information Section */}
+                <div className="card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '20px' }}>Contact Information</h3>
+                    <form onSubmit={handleSaveContactInfo}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                            <div className="form-group">
+                                <label>System Email</label>
+                                <input
+                                    type="email"
+                                    value={contactInfo.system_email}
+                                    onChange={(e) => setContactInfo({ ...contactInfo, system_email: e.target.value })}
+                                    placeholder="support@qwiktransfers.com"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>System Contact Phone</label>
+                                <input
+                                    type="text"
+                                    value={contactInfo.system_contact}
+                                    onChange={(e) => setContactInfo({ ...contactInfo, system_contact: e.target.value })}
+                                    placeholder="+1 234 567 890"
+                                />
+                            </div>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                            <label>Physical Address</label>
+                            <textarea
+                                value={contactInfo.system_address}
+                                onChange={(e) => setContactInfo({ ...contactInfo, system_address: e.target.value })}
+                                placeholder="123 Transfer Way, Suite 100, Financial District"
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', minHeight: '80px', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <button type="submit" className="btn-primary" disabled={saving} style={{ width: 'auto', padding: '10px 32px' }}>
+                            Save Contact Details
+                        </button>
+                    </form>
+                </div>
+
                 {/* Automated Maintenance */}
                 <div className="card" style={{ borderLeft: '4px solid var(--primary)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

@@ -1,4 +1,6 @@
 const { PaymentMethod, SystemConfig } = require('../models');
+const fs = require('fs');
+const path = require('path');
 
 const getPaymentMethods = async (req, res) => {
     try {
@@ -88,9 +90,43 @@ const updateSystemConfig = async (req, res) => {
     }
 };
 
+const uploadLogo = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const newLogoPath = `uploads/${req.file.filename}`;
+
+        // Find existing logo config
+        let logoConfig = await SystemConfig.findOne({ where: { key: 'system_logo' } });
+
+        if (logoConfig) {
+            // Delete old file if it exists
+            const oldPath = path.join(__dirname, '..', logoConfig.value);
+            if (fs.existsSync(oldPath)) {
+                try {
+                    fs.unlinkSync(oldPath);
+                } catch (err) {
+                    console.error('Failed to delete old logo:', err);
+                }
+            }
+            logoConfig.value = newLogoPath;
+            await logoConfig.save();
+        } else {
+            logoConfig = await SystemConfig.create({ key: 'system_logo', value: newLogoPath });
+        }
+
+        res.json({ message: 'Logo updated successfully', logo_url: newLogoPath });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     getPaymentMethods,
     updatePaymentMethod,
     getSystemConfig,
-    updateSystemConfig
+    updateSystemConfig,
+    uploadLogo
 };

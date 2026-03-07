@@ -5,6 +5,7 @@ const auditController = require('../controllers/auditController');
 const rateAlertController = require('../controllers/rateAlertController');
 const systemController = require('../controllers/systemController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 // Notification Routes
 router.get('/notifications', verifyToken, notificationController.getNotifications);
@@ -21,6 +22,7 @@ router.get('/payment-methods', verifyToken, systemController.getPaymentMethods);
 router.post('/payment-methods', verifyToken, verifyAdmin, systemController.updatePaymentMethod);
 router.get('/config', verifyToken, verifyAdmin, systemController.getSystemConfig);
 router.post('/config', verifyToken, verifyAdmin, systemController.updateSystemConfig);
+router.post('/logo', verifyToken, verifyAdmin, upload.single('logo'), systemController.uploadLogo);
 
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
