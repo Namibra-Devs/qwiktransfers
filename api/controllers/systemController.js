@@ -1,6 +1,7 @@
 const { PaymentMethod, SystemConfig } = require('../models');
 const fs = require('fs');
 const path = require('path');
+const backupService = require('../services/backupService');
 
 const getPaymentMethods = async (req, res) => {
     try {
@@ -123,10 +124,47 @@ const uploadLogo = async (req, res) => {
     }
 };
 
+const manualBackup = async (req, res) => {
+    try {
+        const result = await backupService.createBackup();
+        res.json({ message: 'Backup created successfully', filename: result.filename });
+    } catch (error) {
+        console.error('Manual backup failed:', error);
+        res.status(500).json({ error: 'System backup failed. Ensure pg_dump is installed and configured.' });
+    }
+};
+
+const getBackupsList = async (req, res) => {
+    try {
+        const backups = await backupService.getBackups();
+        res.json(backups);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch backups' });
+    }
+};
+
+const downloadBackup = async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filepath = path.join(backupService.backupDir, filename);
+
+        if (!fs.existsSync(filepath)) {
+            return res.status(404).json({ error: 'Backup file not found' });
+        }
+
+        res.download(filepath);
+    } catch (error) {
+        res.status(500).json({ error: 'Download failed' });
+    }
+};
+
 module.exports = {
     getPaymentMethods,
     updatePaymentMethod,
     getSystemConfig,
     updateSystemConfig,
-    uploadLogo
+    uploadLogo,
+    manualBackup,
+    getBackupsList,
+    downloadBackup
 };

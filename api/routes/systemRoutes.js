@@ -24,6 +24,11 @@ router.get('/config', verifyToken, verifyAdmin, systemController.getSystemConfig
 router.post('/config', verifyToken, verifyAdmin, systemController.updateSystemConfig);
 router.post('/logo', verifyToken, verifyAdmin, upload.single('logo'), systemController.uploadLogo);
 
+// Backup Routes
+router.post('/backup/manual', verifyToken, verifyAdmin, systemController.manualBackup);
+router.get('/backups', verifyToken, verifyAdmin, systemController.getBackupsList);
+router.get('/backups/download/:filename', verifyToken, verifyAdmin, systemController.downloadBackup);
+
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
 router.get('/admin/audit-logs/export', verifyToken, verifyAdmin, auditController.exportAuditLogs);

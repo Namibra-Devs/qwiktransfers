@@ -6,6 +6,8 @@ const SystemSettings = () => {
     const [configs, setConfigs] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [backingUp, setBackingUp] = useState(false);
+    const [backups, setBackups] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
 
@@ -19,6 +21,7 @@ const SystemSettings = () => {
 
     useEffect(() => {
         fetchConfigs();
+        fetchBackups();
     }, []);
 
     const fetchConfigs = async () => {
@@ -59,6 +62,44 @@ const SystemSettings = () => {
         if (file) {
             setLogoFile(file);
             setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const fetchBackups = async () => {
+        try {
+            const res = await api.get('/system/backups');
+            setBackups(res.data);
+        } catch (error) {
+            console.error('Failed to fetch backups');
+        }
+    };
+
+    const handleManualBackup = async () => {
+        setBackingUp(true);
+        const tid = toast.loading('Creating system snapshot...');
+        try {
+            await api.post('/system/backup/manual');
+            toast.success('Backup created successfully!', { id: tid });
+            fetchBackups();
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Backup failed', { id: tid });
+        } finally {
+            setBackingUp(false);
+        }
+    };
+
+    const handleDownloadBackup = async (filename) => {
+        try {
+            const response = await api.get(`/system/backups/download/${filename}`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            link.click();
+        } catch (error) {
+            toast.error('Download failed');
         }
     };
 
@@ -218,6 +259,83 @@ const SystemSettings = () => {
                         <strong>Current Policy:</strong> Audit logs older than <strong>90 days</strong> are deleted automatically every hour if this is enabled.
                     </div>
                 </div>
+
+                {/* System Backup */}
+                <section className="card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>System Persistence & Recovery</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Manage database snapshots and automated recovery points.</p>
+                        </div>
+                        <button
+                            onClick={handleManualBackup}
+                            disabled={backingUp}
+                            className="btn-primary"
+                            style={{
+                                width: 'auto',
+                                padding: '10px 24px',
+                                background: 'var(--text-deep-brown)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            {backingUp ? '🏗️ Processing...' : '🛡️ Backup Now'}
+                        </button>
+                    </div>
+
+                    <div style={{ background: '#fcfcfc', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Automated Daily Backup</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Trigger a full database snapshot every night at 3:00 AM.</div>
+                            </div>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={configs.auto_backup_daily === 'true'}
+                                    onChange={(e) => handleUpdateConfig('auto_backup_daily', e.target.checked ? 'true' : 'false')}
+                                    disabled={saving}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+
+                        <div style={{ padding: '0' }}>
+                            <table style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ background: '#f9f9f9' }}>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', fontSize: '0.75rem', padding: '12px 20px', borderBottom: '1px solid var(--border-color)' }}>Created At</th>
+                                        <th style={{ textAlign: 'left', fontSize: '0.75rem', padding: '12px 20px', borderBottom: '1px solid var(--border-color)' }}>Size</th>
+                                        <th style={{ textAlign: 'right', fontSize: '0.75rem', padding: '12px 20px', borderBottom: '1px solid var(--border-color)' }}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {backups.length > 0 ? backups.slice(0, 5).map(b => (
+                                        <tr key={b.filename}>
+                                            <td style={{ fontSize: '0.85rem', padding: '12px 20px', borderBottom: '1px solid #f0f0f0' }}>{new Date(b.createdAt).toLocaleString()}</td>
+                                            <td style={{ fontSize: '0.85rem', padding: '12px 20px', borderBottom: '1px solid #f0f0f0' }}>{(b.size / 1024 / 1024).toFixed(2)} MB</td>
+                                            <td style={{ padding: '12px 20px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>
+                                                <button
+                                                    onClick={() => handleDownloadBackup(b.filename)}
+                                                    style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+                                                >
+                                                    Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan="3" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                No backups available yet. Click "Backup Now" to create one.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
 
                 {/* System Health Overview */}
                 <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>

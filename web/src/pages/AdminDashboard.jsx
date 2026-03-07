@@ -330,30 +330,79 @@ const AdminDashboard = () => {
                                                 ?
                                             </button>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ display: 'flex', gap: '16px' }}>
                                             {tab === 'audit' && (
                                                 <>
                                                     <button
-                                                        onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/system/admin/audit-logs/export`, '_blank')}
-                                                        className="btn btn-secondary"
-                                                        style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                                        onClick={async () => {
+                                                            try {
+                                                                toast.loading('Exporting logs...', { id: 'audit-export' });
+                                                                const response = await api.get('/system/admin/audit-logs/export', { responseType: 'blob' });
+                                                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                                const link = document.createElement('a');
+                                                                link.href = url;
+                                                                link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                                                link.click();
+                                                                toast.success('Audit logs exported!', { id: 'audit-export' });
+                                                            } catch (err) { toast.error('Export failed', { id: 'audit-export' }); }
+                                                        }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '10px',
+                                                            padding: '12px 24px',
+                                                            background: 'var(--text-deep-brown)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '12px',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.9rem',
+                                                            cursor: 'pointer',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                                                     >
-                                                        📥 Export XLSX
+                                                        <span style={{ fontSize: '1.2rem' }}>📂</span>
+                                                        Export Logs
                                                     </button>
                                                     <button
                                                         onClick={async () => {
                                                             if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
+                                                                const tid = toast.loading('Cleaning platform logs...');
                                                                 try {
                                                                     const res = await api.delete('/system/admin/audit-logs/cleanup');
-                                                                    alert(res.data.message);
+                                                                    toast.success(res.data.message, { id: tid });
                                                                     fetchAuditLogs();
-                                                                } catch (err) { alert('Cleanup failed'); }
+                                                                } catch (err) { toast.error('Cleanup failed', { id: tid }); }
                                                             }
                                                         }}
-                                                        className="btn btn-danger"
-                                                        style={{ padding: '8px 16px', fontSize: '0.85rem', background: '#d83b01' }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '10px',
+                                                            padding: '12px 24px',
+                                                            background: 'linear-gradient(135deg, rgba(216, 59, 1, 0.1) 0%, rgba(216, 59, 1, 0.05) 100%)',
+                                                            color: '#d83b01',
+                                                            border: '1.5px solid #d83b01',
+                                                            borderRadius: '12px',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.9rem',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)';
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)';
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                        }}
                                                     >
-                                                        🧹 Clean Old Logs
+                                                        <span style={{ fontSize: '1.2rem' }}>🧹</span>
+                                                        Pulse Clean (90d)
                                                     </button>
                                                 </>
                                             )}
