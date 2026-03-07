@@ -10,6 +10,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         { id: 'users', label: 'Users', icon: '👥' },
         { id: 'vendors', label: 'Vendors', icon: '🏢' },
         { id: 'audit', label: 'Audit Logs', icon: '📜' },
+        { id: 'system-settings', label: 'System Settings', icon: '⚙️' },
         { id: 'payment-settings', label: 'Payment Settings', icon: '💳' },
         { id: 'profile', label: 'Profile', icon: '👤' },
         { id: 'help', label: 'Help Center', icon: '❓' },

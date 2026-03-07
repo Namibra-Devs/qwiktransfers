@@ -13,6 +13,7 @@ import UserTable from '../components/admin/UserTable';
 import VendorTable from '../components/admin/VendorTable';
 import AnalyticsContainer from '../components/admin/AnalyticsContainer';
 import HelpCenter from '../components/admin/HelpCenter';
+import SystemSettings from '../components/admin/SystemSettings';
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -313,7 +314,7 @@ const AdminDashboard = () => {
                     )}
 
                     <div className="fade-in">
-                        {['transactions', 'kyc', 'users', 'vendors', 'audit'].includes(tab) && (
+                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'system-settings'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -589,6 +590,7 @@ const AdminDashboard = () => {
                         {tab === 'profile' && <AdminProfile />}
                         {tab === 'analytics' && <AnalyticsContainer stats={adminStats} />}
                         {tab === 'help' && <HelpCenter />}
+                        {tab === 'system-settings' && <SystemSettings />}
                     </div>
                 </main>
             </div>
