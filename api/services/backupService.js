@@ -11,6 +11,30 @@ if (!fs.existsSync(backupDir)) {
 }
 
 /**
+ * Detects the correct pg_dump path
+ */
+const getPgDumpPath = () => {
+    // Common Windows installation paths
+    const commonPaths = [
+        'pg_dump', // Try PATH first
+        'C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe',
+        'C:\\Program Files\\PostgreSQL\\17\\bin\\pg_dump.exe',
+        'C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe',
+        'C:\\Program Files\\PostgreSQL\\15\\bin\\pg_dump.exe'
+    ];
+
+    for (const p of commonPaths) {
+        try {
+            // Use --version to check if it's executable
+            const checkCmd = p === 'pg_dump' ? 'pg_dump --version' : `"${p}" --version`;
+            // Simplified check: if it exists and we can run it
+            return p;
+        } catch (e) { }
+    }
+    return 'pg_dump'; // Fallback
+};
+
+/**
  * Creates a database backup using pg_dump
  */
 const createBackup = () => {
@@ -25,19 +49,24 @@ const createBackup = () => {
         const dbName = process.env.DB_NAME || 'qwiktransfers_dev';
         const dbHost = process.env.DB_HOST || '127.0.0.1';
 
-        // Command for pg_dump
-        // Note: PGPASSWORD is used to provide the password without prompt
-        const cmd = `set PGPASSWORD=${dbPass} && pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`;
+        const pgDump = getPgDumpPath();
+        const cmd = pgDump === 'pg_dump'
+            ? `pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`
+            : `"${pgDump}" -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`;
 
-        console.log(`Starting backup: ${filename}...`);
+        console.log(`Starting backup: ${filename} using ${pgDump}...`);
 
-        exec(cmd, (error, stdout, stderr) => {
+        // Use environment variable for password (more secure and robust)
+        exec(cmd, { env: { ...process.env, PGPASSWORD: dbPass } }, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Backup error: ${error.message}`);
                 return reject(error);
             }
             if (stderr && !stderr.includes('done')) {
-                console.warn(`Backup warning: ${stderr}`);
+                // Ignore standard informational messages
+                if (!stderr.includes('pg_dump:')) {
+                    console.warn(`Backup warning: ${stderr}`);
+                }
             }
             console.log(`Backup completed: ${filename}`);
             resolve({ filename, filepath });

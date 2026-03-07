@@ -524,6 +524,10 @@ const AdminDashboard = () => {
                                                         <option value="VENDOR_ACCEPT_TRANSACTION">Vendor Accept</option>
                                                         <option value="VENDOR_COMPLETE_TRANSACTION">Vendor Complete</option>
                                                         <option value="CREATE_VENDOR">Create Vendor</option>
+                                                        <option value="UPDATE_SYSTEM_CONFIG">System Config Update</option>
+                                                        <option value="UPDATE_SYSTEM_LOGO">Logo Upload</option>
+                                                        <option value="SYSTEM_BACKUP_MANUAL">Manual Backup</option>
+                                                        <option value="UPDATE_PAYMENT_METHOD">Payment Method Update</option>
                                                     </select>
                                                 </div>
                                             </div>

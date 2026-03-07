@@ -2,6 +2,7 @@ const { PaymentMethod, SystemConfig } = require('../models');
 const fs = require('fs');
 const path = require('path');
 const backupService = require('../services/backupService');
+const { logAction } = require('../services/auditService');
 
 const getPaymentMethods = async (req, res) => {
     try {
@@ -40,6 +41,14 @@ const updatePaymentMethod = async (req, res) => {
         }
 
         res.json({ message: 'Payment method updated', method });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_PAYMENT_METHOD',
+            details: `Admin updated payment method: ${type} (${currency})`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -86,6 +95,14 @@ const updateSystemConfig = async (req, res) => {
         }
 
         res.json({ message: `System config ${key} updated`, config });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_SYSTEM_CONFIG',
+            details: `Admin updated system config: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -119,6 +136,14 @@ const uploadLogo = async (req, res) => {
         }
 
         res.json({ message: 'Logo updated successfully', logo_url: newLogoPath });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_SYSTEM_LOGO',
+            details: `Admin uploaded new system logo: ${newLogoPath}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -128,6 +153,14 @@ const manualBackup = async (req, res) => {
     try {
         const result = await backupService.createBackup();
         res.json({ message: 'Backup created successfully', filename: result.filename });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'SYSTEM_BACKUP_MANUAL',
+            details: `Admin triggered manual system backup: ${result.filename}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         console.error('Manual backup failed:', error);
         res.status(500).json({ error: 'System backup failed. Ensure pg_dump is installed and configured.' });

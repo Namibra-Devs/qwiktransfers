@@ -78,6 +78,14 @@ const updateRateSettings = async (req, res) => {
         await rateRecord.save();
 
         res.json({ message: 'Rate settings updated', settings: rateRecord });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_RATE_SETTINGS',
+            details: `Admin updated rate settings: API=${rateRecord.use_api}, Manual Rate=${rateRecord.manual_rate}, Spread=${rateRecord.spread}%`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         console.error('Update rate error:', error);
         res.status(500).json({ error: 'Failed to update rate settings' });

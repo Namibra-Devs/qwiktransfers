@@ -13,6 +13,14 @@ const toggleStatus = async (req, res) => {
         user.is_online = !user.is_online;
         await user.save();
 
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'VENDOR_TOGGLE_ONLINE',
+            details: `Vendor ${user.id} toggled status to ${user.is_online ? 'online' : 'offline'}`,
+            ipAddress: req.ip
+        });
+
         res.json({ is_online: user.is_online });
     } catch (error) {
         res.status(500).json({ error: error.message });

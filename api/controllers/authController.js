@@ -317,6 +317,14 @@ const updateKYCStatus = async (req, res) => {
         user.kyc_status = status;
         await user.save();
         res.json({ message: 'KYC status updated', kyc_status: status });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_KYC_STATUS',
+            details: `Admin updated KYC status for user ${userId} to ${status}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -452,6 +460,14 @@ const updateUserRole = async (req, res) => {
         await user.save();
 
         res.json({ message: 'User role updated successfully', role });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_USER_ROLE',
+            details: `Admin updated role for user ${userId} to ${role}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -506,6 +522,14 @@ const updateUserRegion = async (req, res) => {
         await user.save();
 
         res.json({ message: 'User region updated successfully', country });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_USER_REGION',
+            details: `Admin updated region for user ${userId} to ${country}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -521,6 +545,14 @@ const toggleUserStatus = async (req, res) => {
         await user.save();
 
         res.json({ message: `User account ${user.is_active ? 'enabled' : 'disabled'}`, is_active: user.is_active });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'TOGGLE_USER_STATUS',
+            details: `Admin ${user.is_active ? 'enabled' : 'disabled'} account for user ${userId}`,
+            ipAddress: req.ip
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
