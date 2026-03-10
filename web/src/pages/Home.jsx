@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import heroBg from '../dist/assets/bg-1.jpg';
-
 
 const Home = () => {
     const [rate, setRate] = useState(null);
@@ -68,7 +66,7 @@ const Home = () => {
             )}
 
             {/* Hero Section */}
-            <section className="section-padding content-grid" style={{ minHeight: '100vh', paddingTop: '160px', position: 'relative', backgroundImage: `url(${heroBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <section className="section-padding content-grid" style={{ minHeight: '100vh', paddingTop: '160px', position: 'relative', backgroundImage: "url('/bg-1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <div className="hero-text">
                     <span className="bold-tag">Trusted by 50,000+ Families</span>
                     <h1 className="giant-heading">Send Money Home, <span style={{ color: 'var(--primary)' }}>Fast.</span></h1>
