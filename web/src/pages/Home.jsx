@@ -2,6 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
+const FAQItem = ({ faq }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div className={`faq-item ${isOpen ? 'active' : ''}`}>
+            <button className="faq-question" onClick={() => setIsOpen(!isOpen)}>
+                {faq.q}
+                <span className="faq-icon">+</span>
+            </button>
+            <div className="faq-answer">
+                {faq.a}
+            </div>
+        </div>
+    );
+};
+
 const Home = () => {
     const [rate, setRate] = useState(null);
     const [systemName, setSystemName] = useState('Qwiktransfers');
@@ -234,6 +249,36 @@ const Home = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* FAQ Section */}
+            <section className="faq-section" id="faq">
+                <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                    <h2 style={{ fontSize: '3rem', color: 'var(--secondary)' }}>Got questions?</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We've got straightforward answers.</p>
+                </div>
+                <div className="faq-container">
+                    {[
+                        {
+                            q: "How fast will my money reach Ghana?",
+                            a: "Transfers to Mobile Money (MTN, Vodafone, AirtelTigo) are instant. Bank transfers typically complete within minutes but may take up to 24 hours depending on the receiving bank."
+                        },
+                        {
+                            q: "Are there any hidden fees?",
+                            a: "Absolutely not. The rate you see on our Live Pulse converter is exactly what you get. We charge a flat, transparent upfront fee clearly shown before you send."
+                        },
+                        {
+                            q: "Is Qwiktransfers safe and secure?",
+                            a: "Yes. We use bank-grade 256-bit encryption to protect your data. We are fully licensed and regulated to ensure your funds and identity are always protected."
+                        },
+                        {
+                            q: "How can I track my transfer?",
+                            a: "You can track your transfer in real-time through your dashboard. You will also receive instant email notifications the moment the funds hit your recipient's account."
+                        }
+                    ].map((faq, index) => (
+                        <FAQItem key={index} faq={faq} />
+                    ))}
                 </div>
             </section>
 
