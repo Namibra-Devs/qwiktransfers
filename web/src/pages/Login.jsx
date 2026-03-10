@@ -48,7 +48,7 @@ const Login = () => {
             } else if (res.user.role === 'vendor') {
                 navigate('/vendor');
             } else {
-                navigate('/');
+                navigate('/dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Invalid email or password');

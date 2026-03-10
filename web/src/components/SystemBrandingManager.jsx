@@ -10,7 +10,7 @@ const SystemBrandingManager = () => {
 
     const applyBranding = async () => {
         try {
-            const res = await api.get('/system/config');
+            const res = await api.get('/system/config/public');
             const { system_name, system_logo } = res.data;
 
             // Update Title

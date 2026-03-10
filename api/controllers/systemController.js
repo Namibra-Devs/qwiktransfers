@@ -191,6 +191,28 @@ const downloadBackup = async (req, res) => {
     }
 };
 
+const getPublicConfig = async (req, res) => {
+    try {
+        const publicKeys = ['system_name', 'system_logo'];
+        const configs = await SystemConfig.findAll({
+            where: {
+                key: publicKeys
+            }
+        });
+        const configMap = {};
+        configs.forEach(c => {
+            configMap[c.key] = c.value;
+        });
+
+        // Default tiered limits if not set (keeping these public for now if needed by landing page)
+        if (!configMap['system_name']) configMap['system_name'] = 'Qwiktransfers';
+
+        res.json(configMap);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     getPaymentMethods,
     updatePaymentMethod,
@@ -199,5 +221,6 @@ module.exports = {
     uploadLogo,
     manualBackup,
     getBackupsList,
-    downloadBackup
+    downloadBackup,
+    getPublicConfig
 };

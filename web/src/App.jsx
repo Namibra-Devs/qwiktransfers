@@ -16,11 +16,17 @@ import AdminDashboard from './pages/AdminDashboard';
 import VendorDashboard from './pages/VendorDashboard';
 import Profile from './pages/Profile';
 import KycVerification from './pages/KycVerification';
+import Home from './pages/Home';
+import DownloadRedirect from './pages/DownloadRedirect';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) return <Navigate to="/" />;
+  if (role && user.role !== role) {
+    if (user.role === 'admin') return <Navigate to="/admin" />;
+    if (user.role === 'vendor') return <Navigate to="/vendor" />;
+    return <Navigate to="/dashboard" />;
+  }
   return children;
 };
 
@@ -79,13 +85,16 @@ function App() {
             />
 
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <PrivateRoute>
                   <UserDashboard />
                 </PrivateRoute>
               }
             />
+
+            <Route path="/download" element={<DownloadRedirect />} />
+            <Route path="/" element={<Home />} />
           </Routes>
         </AuthProvider>
       </ThemeProvider>

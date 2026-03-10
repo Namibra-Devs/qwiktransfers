@@ -18,6 +18,7 @@ router.post('/rate-alerts', verifyToken, rateAlertController.createAlert);
 router.delete('/rate-alerts/:id', verifyToken, rateAlertController.deleteAlert);
 
 // System Settings Routes
+router.get('/config/public', systemController.getPublicConfig);
 router.get('/payment-methods', verifyToken, systemController.getPaymentMethods);
 router.post('/payment-methods', verifyToken, verifyAdmin, systemController.updatePaymentMethod);
 router.get('/config', verifyToken, verifyAdmin, systemController.getSystemConfig);
