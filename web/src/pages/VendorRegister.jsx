@@ -12,7 +12,7 @@ const countryCodes = {
     'Canada': '+1',
 };
 
-const Register = () => {
+const VendorRegister = () => {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -46,7 +46,7 @@ const Register = () => {
 
         const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         if (!isValidEmail(email)) {
-            setError('Please enter a valid email address');
+            setError('Please enter a valid business email');
             return;
         }
 
@@ -56,7 +56,7 @@ const Register = () => {
             return;
         }
         if (phone.length < 10) {
-            setError('Please enter a valid phone number');
+            setError('Please enter a valid business phone number');
             return;
         }
 
@@ -84,11 +84,12 @@ const Register = () => {
                 full_name: fullName,
                 phone,
                 country,
-                pin
+                pin,
+                role: 'vendor' // Explicitly set role for vendor registration
             });
-            navigate('/register-success', { state: { email } });
+            navigate('/register-success', { state: { email, role: 'vendor' } });
         } catch (err) {
-            setError(err.response?.data?.error || 'Registration failed. Try a different email.');
+            setError(err.response?.data?.error || 'Vendor registration failed. Try a different business email.');
         } finally {
             setLoading(false);
         }
@@ -96,17 +97,17 @@ const Register = () => {
 
     return (
         <div className="login-split-container">
-            {/* Visual Section (Left) */}
-            <div className="login-visual-section" style={{ backgroundImage: `url(${loginBg})` }}>
+            {/* Visual Section (Left) - Vendor Themed */}
+            <div className="login-visual-section" style={{ backgroundImage: `url(${loginBg})`, filter: 'hue-rotate(180deg)' }}>
                 <div className="login-visual-content">
-                    <h1>JOIN<br />QWIKTRANSFERS</h1>
-                    <p>Start your journey towards faster and cheaper international money transfers today.</p>
+                    <h1>GROW WITH<br />QWIKTRANSFERS</h1>
+                    <p>Join Ghana's most trusted payout network and start earning commissions on every movement you facilitate.</p>
 
                     {rate && (
                         <div className="rate-widget-floating">
-                            <span className="rate-label">Current Exchange Rate</span>
+                            <span className="rate-label">Global Market Access</span>
                             <span className="rate-value">1 CAD = {rate} GHS</span>
-                            <span className="rate-update-time">Move money more efficiently</span>
+                            <span className="rate-update-time">Facilitate high-volume movements</span>
                         </div>
                     )}
                 </div>
@@ -120,9 +121,10 @@ const Register = () => {
 
                 <div className="login-form-card" style={{ maxWidth: '460px' }}>
                     <div style={{ marginBottom: '32px' }}>
-                        <h2 style={{ fontSize: '2rem', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>Create account</h2>
+                        <div style={{ display: 'inline-block', padding: '4px 12px', background: 'var(--primary)', color: 'white', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, marginBottom: '12px', textTransform: 'uppercase' }}>Vendor Partner</div>
+                        <h2 style={{ fontSize: '2rem', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>Partner Registration</h2>
                         <p style={{ color: 'var(--text-muted)' }}>
-                            {step === 1 ? 'Step 1: Personal Details' : 'Step 2: Security Setup'}
+                            {step === 1 ? 'Step 1: Business Contact Details' : 'Step 2: Security & Authorization'}
                         </p>
                     </div>
 
@@ -148,22 +150,22 @@ const Register = () => {
                         {step === 1 ? (
                             <>
                                 <Input
-                                    label="Full Name"
+                                    label="Business/Full Name"
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Hamza Ibrahim"
+                                    placeholder="Abbey Payout Services"
                                     required
                                 />
                                 <Input
-                                    label="Email Address"
+                                    label="Business Email Address"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="email@example.com"
+                                    placeholder="partners@example.com"
                                     required
                                 />
                                 <div className="form-group">
-                                    <label>Country of Residence</label>
+                                    <label>Operating Region</label>
                                     <select value={country} onChange={(e) => {
                                         setCountry(e.target.value);
                                         setPhone(countryCodes[e.target.value]);
@@ -172,7 +174,7 @@ const Register = () => {
                                     </select>
                                 </div>
                                 <Input
-                                    label="Phone Number"
+                                    label="Business Phone Number"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
                                     placeholder={countryCodes[country]}
@@ -186,7 +188,7 @@ const Register = () => {
                         ) : (
                             <>
                                 <Input
-                                    label="Create Password"
+                                    label="Partner Portal Password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -195,7 +197,7 @@ const Register = () => {
                                 />
                                 <div style={{ marginBottom: '32px' }}>
                                     <Input
-                                        label="4-Digit Security PIN"
+                                        label="Payout Auth PIN (4 Digits)"
                                         type="password"
                                         maxLength="4"
                                         value={pin}
@@ -203,7 +205,7 @@ const Register = () => {
                                         placeholder="••••"
                                         required
                                     />
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-12px' }}>Used for authorizing transactions securely.</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-12px' }}>Required for authorizing payouts and withdrawals.</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px' }}>
                                     <Button
@@ -214,7 +216,7 @@ const Register = () => {
                                         Back
                                     </Button>
                                     <Button type="submit" loading={loading} style={{ flex: 2, height: '56px', fontSize: '1rem' }}>
-                                        Create Account
+                                        Registered as Partner
                                     </Button>
                                 </div>
                             </>
@@ -222,7 +224,7 @@ const Register = () => {
                     </form>
 
                     <p style={{ marginTop: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                        Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', marginLeft: '4px' }}>Sign in here</Link>
+                        Already a partner? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', marginLeft: '4px' }}>Sign in here</Link>
                     </p>
                     <p style={{ marginTop: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
                         By registering, you agree to our <Link to="/privacy-policy" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', marginLeft: '4px' }}>Privacy Policy</Link>
@@ -233,4 +235,4 @@ const Register = () => {
     );
 };
 
-export default Register;
+export default VendorRegister;

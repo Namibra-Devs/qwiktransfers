@@ -18,6 +18,10 @@ import Profile from './pages/Profile';
 import KycVerification from './pages/KycVerification';
 import Home from './pages/Home';
 import DownloadRedirect from './pages/DownloadRedirect';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import AboutVendor from './pages/AboutVendor';
+import ContactUs from './pages/ContactUs';
+import VendorRegister from './pages/VendorRegister';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -94,6 +98,10 @@ function App() {
             />
 
             <Route path="/download" element={<DownloadRedirect />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/about-vendor" element={<AboutVendor />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/vendor-register" element={<VendorRegister />} />
             <Route path="/" element={<Home />} />
           </Routes>
         </AuthProvider>
