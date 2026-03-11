@@ -65,7 +65,8 @@ const register = async (req, res) => {
             balance_cad: 0.0,
             verification_token: verificationToken,
             verification_token_expires: new Date(Date.now() + 86400000), // 24 hours
-            is_email_verified: false
+            is_email_verified: false,
+            is_active: role === 'vendor' ? false : true // Vendors require admin approval
         });
 
         // Send Communications (Non-blocking or catch errors)

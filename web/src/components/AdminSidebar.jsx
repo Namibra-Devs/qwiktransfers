@@ -6,12 +6,36 @@ import ThemeSwitcher from './ThemeSwitcher';
 const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
     const [systemLogo, setSystemLogo] = React.useState(null);
     const [systemName, setSystemName] = React.useState('QWIK Admin');
+    const [pendingCounts, setPendingCounts] = React.useState({ kyc: 0, inquiries: 0 });
 
     React.useEffect(() => {
         fetchSystemLogo();
+        fetchPendingCounts();
         window.addEventListener('system-config-updated', fetchSystemLogo);
-        return () => window.removeEventListener('system-config-updated', fetchSystemLogo);
+        
+        // Refresh counts every 30 seconds
+        const countInterval = setInterval(fetchPendingCounts, 30000);
+        
+        return () => {
+            window.removeEventListener('system-config-updated', fetchSystemLogo);
+            clearInterval(countInterval);
+        };
     }, []);
+
+    const fetchPendingCounts = async () => {
+        try {
+            const [kycRes, inquiryRes] = await Promise.all([
+                api.get('/auth/users?role=user&kycStatus=pending&limit=1'),
+                api.get('/support/inquiries?status=pending&limit=1')
+            ]);
+            setPendingCounts({
+                kyc: kycRes.data.total || 0,
+                inquiries: inquiryRes.data.total || 0
+            });
+        } catch (error) {
+            console.error('Failed to fetch pending counts');
+        }
+    };
 
     const fetchSystemLogo = async () => {
         try {
@@ -30,7 +54,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
     const menuItems = [
         { id: 'analytics', label: 'Analytics', icon: '📈' },
         { id: 'transactions', label: 'Transactions', icon: '📊' },
-        { id: 'kyc', label: 'KYC Review', icon: '🆔' },
+        { id: 'kyc', label: 'KYC Review', icon: '🆔', badge: pendingCounts.kyc },
+        { id: 'inquiries', label: 'Support Inquiries', icon: '📨', badge: pendingCounts.inquiries },
         { id: 'users', label: 'Users', icon: '👥' },
         { id: 'vendors', label: 'Vendors', icon: '🏢' },
         { id: 'audit', label: 'Audit Logs', icon: '📜' },
@@ -51,7 +76,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>QWIK Admin</h1>
             </div>
 
-            <nav style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <nav style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
                 {menuItems.map(item => (
                     <button
                         key={item.id}
@@ -70,11 +95,25 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
                             cursor: 'pointer',
                             textAlign: 'left',
                             width: '100%',
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.2s ease',
+                            position: 'relative'
                         }}
                     >
                         <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
-                        {item.label}
+                        <span style={{ flex: 1 }}>{item.label}</span>
+                        {item.badge > 0 && (
+                            <span style={{ 
+                                background: activeTab === item.id ? '#fff' : 'var(--primary)', 
+                                color: activeTab === item.id ? 'var(--primary)' : '#fff',
+                                padding: '2px 8px',
+                                borderRadius: '100px',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}>
+                                {item.badge}
+                            </span>
+                        )}
                     </button>
                 ))}
             </nav>

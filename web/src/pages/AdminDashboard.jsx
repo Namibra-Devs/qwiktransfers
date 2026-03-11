@@ -14,6 +14,7 @@ import VendorTable from '../components/admin/VendorTable';
 import AnalyticsContainer from '../components/admin/AnalyticsContainer';
 import HelpCenter from '../components/admin/HelpCenter';
 import SystemSettings from '../components/admin/SystemSettings';
+import InquiryTable from '../components/admin/InquiryTable';
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -25,7 +26,11 @@ const AdminDashboard = () => {
     const [auditPage, setAuditPage] = useState(1);
     const [auditSearch, setAuditSearch] = useState('');
     const [auditAction, setAuditAction] = useState('');
-    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help'
+    const [inquiries, setInquiries] = useState([]);
+    const [inquiryPage, setInquiryPage] = useState(1);
+    const [inquiryTotalPages, setInquiryTotalPages] = useState(1);
+    const [inquiryStatusFilter, setInquiryStatusFilter] = useState('pending');
+    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help', 'inquiries'
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [adminStats, setAdminStats] = useState({ pendingTransactions: 0, pendingKYC: 0, successVolume: 0 });
 
@@ -80,8 +85,10 @@ const AdminDashboard = () => {
             fetchVendors();
         } else if (tab === 'audit') {
             fetchAuditLogs();
+        } else if (tab === 'inquiries') {
+            fetchInquiries();
         }
-    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -166,6 +173,16 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchInquiries = async () => {
+        try {
+            const res = await api.get(`/support/inquiries?page=${inquiryPage}&limit=10&status=${inquiryStatusFilter === 'all' ? '' : inquiryStatusFilter}`);
+            setInquiries(res.data.inquiries);
+            setInquiryTotalPages(res.data.pages);
+        } catch (error) {
+            console.error('Fetch inquiries error:', error);
+        }
+    };
+
     const fetchAvailableUsers = async () => {
         // Obsolete as we separate flows
     };
@@ -246,21 +263,35 @@ const AdminDashboard = () => {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-peach)', transition: 'background-color 0.3s ease' }}>
-            {/* Mobile Header */}
-            <div className="mobile-header">
-                <button className="mobile-nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                    {sidebarOpen ? '✕' : '☰'}
-                </button>
-                <button
-                    onClick={() => setTab('help')}
-                    style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}
-                >
-                    ❓
-                </button>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--primary)', flex: 1, textAlign: 'center' }}>QWIK Admin</h1>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <NotificationPanel />
-                    <ThemeSwitcher />
+            {/* Mobile Sidebar Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="sidebar-overlay mobile-only" 
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 999,
+                        animation: 'fadeIn 0.3s ease'
+                    }}
+                />
+            )}
+
+            {/* Premium Mobile Header (Floating Pill) */}
+            <div className="mobile-header-fixed mobile-only">
+                <div className="mobile-header-pill">
+                    <button className="mobile-nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                        {sidebarOpen ? '✕' : '☰'}
+                    </button>
+                    
+                    <h1 className="mobile-brand-title">QWIK Admin</h1>
+                    
+                    <div className="mobile-header-actions">
+                        <NotificationPanel />
+                        <ThemeSwitcher />
+                    </div>
                 </div>
             </div>
 
@@ -295,7 +326,11 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                <main className="admin-main" style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+                <main className="admin-main" style={{
+                    padding: '40px',
+                    // maxWidth: '1200px', 
+                    margin: '0 auto'
+                }}>
                     {tab === 'transactions' && (
                         <section className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
                             <div className="card" style={{ padding: '24px', background: 'var(--text-deep-brown)', color: '#fff' }}>
@@ -314,13 +349,13 @@ const AdminDashboard = () => {
                     )}
 
                     <div className="fade-in">
-                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'system-settings'].includes(tab) && (
+                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'inquiries'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : 'Manage Users'}
+                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : 'User Management'}
                                             </h2>
                                             <button
                                                 onClick={() => setTab('help')}
@@ -329,83 +364,6 @@ const AdminDashboard = () => {
                                             >
                                                 ?
                                             </button>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '16px' }}>
-                                            {tab === 'audit' && (
-                                                <>
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                toast.loading('Exporting logs...', { id: 'audit-export' });
-                                                                const response = await api.get('/system/admin/audit-logs/export', { responseType: 'blob' });
-                                                                const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                                const link = document.createElement('a');
-                                                                link.href = url;
-                                                                link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
-                                                                link.click();
-                                                                toast.success('Audit logs exported!', { id: 'audit-export' });
-                                                            } catch (err) { toast.error('Export failed', { id: 'audit-export' }); }
-                                                        }}
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '10px',
-                                                            padding: '12px 24px',
-                                                            background: 'var(--text-deep-brown)',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '12px',
-                                                            fontWeight: 700,
-                                                            fontSize: '0.9rem',
-                                                            cursor: 'pointer',
-                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                            transition: 'all 0.2s ease'
-                                                        }}
-                                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                                    >
-                                                        <span style={{ fontSize: '1.2rem' }}>📂</span>
-                                                        Export Logs
-                                                    </button>
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
-                                                                const tid = toast.loading('Cleaning platform logs...');
-                                                                try {
-                                                                    const res = await api.delete('/system/admin/audit-logs/cleanup');
-                                                                    toast.success(res.data.message, { id: tid });
-                                                                    fetchAuditLogs();
-                                                                } catch (err) { toast.error('Cleanup failed', { id: tid }); }
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '10px',
-                                                            padding: '12px 24px',
-                                                            background: 'linear-gradient(135deg, rgba(216, 59, 1, 0.1) 0%, rgba(216, 59, 1, 0.05) 100%)',
-                                                            color: '#d83b01',
-                                                            border: '1.5px solid #d83b01',
-                                                            borderRadius: '12px',
-                                                            fontWeight: 700,
-                                                            fontSize: '0.9rem',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s ease'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)';
-                                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)';
-                                                            e.currentTarget.style.transform = 'translateY(0)';
-                                                        }}
-                                                    >
-                                                        <span style={{ fontSize: '1.2rem' }}>🧹</span>
-                                                        Pulse Clean (90d)
-                                                    </button>
-                                                </>
-                                            )}
                                         </div>
                                         {tab === 'transactions' ? (
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -436,16 +394,72 @@ const AdminDashboard = () => {
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <div style={{ position: 'relative' }}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search Users..."
-                                                        value={userSearch}
-                                                        onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
-                                                        style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                    />
-                                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
-                                                </div>
+                                                {tab === 'audit' && (
+                                                    <>
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    toast.loading('Exporting logs...', { id: 'audit-export' });
+                                                                    const response = await api.get('/system/admin/audit-logs/export', { responseType: 'blob' });
+                                                                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                                    const link = document.createElement('a');
+                                                                    link.href = url;
+                                                                    link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                                                    link.click();
+                                                                    toast.success('Audit logs exported!', { id: 'audit-export' });
+                                                                } catch (err) { toast.error('Export failed', { id: 'audit-export' }); }
+                                                            }}
+                                                            className="btn-primary"
+                                                            style={{
+                                                                padding: '10px 20px',
+                                                                borderRadius: '50px',
+                                                                fontSize: '0.8rem',
+                                                                width: 'auto'
+                                                            }}
+                                                        >
+                                                            📂 Export Logs
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
+                                                                    const tid = toast.loading('Cleaning platform logs...');
+                                                                    try {
+                                                                        const res = await api.delete('/system/admin/audit-logs/cleanup');
+                                                                        toast.success(res.data.message, { id: tid });
+                                                                        fetchAuditLogs();
+                                                                    } catch (err) { toast.error('Cleanup failed', { id: tid }); }
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                padding: '10px 20px',
+                                                                background: 'rgba(216, 59, 1, 0.1)',
+                                                                color: '#d83b01',
+                                                                border: '1.5px solid #d83b01',
+                                                                borderRadius: '50px',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.8rem',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)'}
+                                                        >
+                                                            🧹 Clean (90d)
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {tab !== 'audit' && (
+                                                    <div style={{ position: 'relative' }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search Users..."
+                                                            value={userSearch}
+                                                            onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                                                            style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                                        />
+                                                        <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
+                                                    </div>
+                                                )}
                                                 {tab === 'vendors' && (
                                                     <button
                                                         onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
@@ -453,6 +467,18 @@ const AdminDashboard = () => {
                                                     >
                                                         <span style={{ fontSize: '1.2rem' }}>+</span> Add Vendor
                                                     </button>
+                                                )}
+                                                {tab === 'inquiries' && (
+                                                    <select
+                                                        value={inquiryStatusFilter}
+                                                        onChange={(e) => { setInquiryStatusFilter(e.target.value); setInquiryPage(1); }}
+                                                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                                    >
+                                                        <option value="all">All Status</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="replied">Replied</option>
+                                                        <option value="closed">Closed</option>
+                                                    </select>
                                                 )}
                                             </div>
                                         )}
@@ -494,6 +520,14 @@ const AdminDashboard = () => {
                                             toggleStatus={toggleStatus}
                                             setSelectedUser={setSelectedUser}
                                             setShowUserModal={setShowUserModal}
+                                            updateRegion={updateRegion}
+                                        />
+                                    )}
+
+                                    {tab === 'inquiries' && (
+                                        <InquiryTable
+                                            inquiries={inquiries}
+                                            fetchInquiries={fetchInquiries}
                                         />
                                     )}
 
@@ -609,6 +643,24 @@ const AdminDashboard = () => {
                                                     border: '1px solid var(--border-color)',
                                                     background: auditPage === i + 1 ? 'var(--primary)' : '#fff',
                                                     color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    ) : tab === 'inquiries' ? (
+                                        Array.from({ length: inquiryTotalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setInquiryPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: inquiryPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: inquiryPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
                                                     fontWeight: 700,
                                                     cursor: 'pointer'
                                                 }}
