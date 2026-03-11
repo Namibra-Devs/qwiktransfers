@@ -17,6 +17,82 @@ const FAQItem = ({ faq }) => {
     );
 };
 
+const RateCalculator = ({ rate }) => {
+    const [sendAmount, setSendAmount] = useState('1000');
+
+    // Calculate receive amount based on rate
+    const receiveAmount = rate ? (parseFloat(sendAmount || 0) * rate).toFixed(2) : '0.00';
+
+    const handleSendChange = (e) => {
+        const val = e.target.value;
+        if (/^\d*\.?\d*$/.test(val)) {
+            setSendAmount(val);
+        }
+    };
+
+    return (
+        <div className="calculator-widget">
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'var(--secondary)' }}>Check our live rates</h3>
+
+            <div className="calc-input-group">
+                <label>You send</label>
+                <div className="calc-input-wrapper">
+                    <input
+                        type="text"
+                        value={sendAmount}
+                        onChange={handleSendChange}
+                        className="calc-input"
+                        placeholder="1000"
+                    />
+                    <div className="calc-currency">
+                        <span className="flag">🇨🇦</span> CAD
+                    </div>
+                </div>
+            </div>
+
+            <div className="calc-divider">
+                <div className="calc-divider-line"></div>
+                <div className="calc-switch-btn">
+                    ↓↑
+                </div>
+                <div className="calc-divider-line"></div>
+            </div>
+
+            <div className="calc-input-group">
+                <label>Recipient gets</label>
+                <div className="calc-input-wrapper">
+                    <input
+                        type="text"
+                        value={receiveAmount}
+                        readOnly
+                        className="calc-input readonly"
+                    />
+                    <div className="calc-currency">
+                        <span className="flag">🇬🇭</span> GHS
+                    </div>
+                </div>
+            </div>
+
+            <div className="calc-details">
+                <div className="calc-detail-row">
+                    <span>Exchange rate</span>
+                    <span style={{ fontWeight: 600, color: 'var(--success)' }}>
+                        1 CAD = {rate ? rate : '--'} GHS
+                    </span>
+                </div>
+                <div className="calc-detail-row">
+                    <span>Transfer fee</span>
+                    <span style={{ fontWeight: 600 }}>$0.00 CAD</span>
+                </div>
+            </div>
+
+            <Link to="/register" className="btn-primary" style={{ width: '100%', marginTop: '24px', padding: '16px', fontSize: '1.2rem', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                Get Started
+            </Link>
+        </div>
+    );
+};
+
 const Home = () => {
     const [rate, setRate] = useState(null);
     const [systemName, setSystemName] = useState('Qwiktransfers');
@@ -80,93 +156,132 @@ const Home = () => {
                 </div>
             )}
 
-            {/* Hero Section */}
-            <section className="section-padding content-grid" style={{ minHeight: '100vh', paddingTop: '160px', position: 'relative', backgroundImage: "url('/bg-1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div className="hero-text">
-                    <span className="bold-tag">Trusted by 50,000+ Families</span>
-                    <h1 className="giant-heading">Send Money Home, <span style={{ color: 'var(--primary)' }}>Fast.</span></h1>
-                    <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', margin: '32px 0 48px', maxWidth: '480px' }}>
-                        The most reliable way to send money between Canada and Ghana. High rates, zero hidden fees, and lightning speed.
-                    </p>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <Link to="/register" className="btn-primary" style={{ width: 'auto', padding: '16px 40px', fontSize: '1.1rem' }}>Get Started Now</Link>
-                        <a href="#how-it-works" className="btn-outline" style={{ width: 'auto', padding: '16px 40px', fontSize: '1.1rem' }}>See How It Works</a>
-                    </div>
+            {/* Editorial UI Hero Section */}
+            <section className="hero-editorial-section" id="hero">
+                {/* CSS Dashed Grid Background */}
+                <div className="editorial-grid-bg">
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
                 </div>
-                <div className="hero-image" style={{ position: 'relative' }}>
-                    <div style={{ width: '100%', aspectRatio: '1', borderRadius: '40px', overflow: 'hidden', border: '4px solid #FADED9', boxShadow: '20px 20px 0 var(--primary)' }}>
-                        <img
-                            src="https://images.pexels.com/photos/8525014/pexels-photo-8525014.jpeg?_gl=1*blnhka*_ga*MTk0NzczMjg1MC4xNzY1ODUwNDg4*_ga_8JE65Q40S6*czE3NzI5NDk0ODckbzMkZzEkdDE3NzI5NDk3NDQkajI1JGwwJGgw"
-                            alt="Happy family"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+
+                <div className="editorial-content-layer">
+                    {/* Giant Overlapping Text Block */}
+                    <div className="editorial-text-group">
+                        <div className="text-layer-back">QWIKTRANSFERS</div>
+                        <h1 className="text-layer-front signature-font">SEND MONEY</h1>
+                    </div>
+
+                    {/* Floating UI Cards Area */}
+                    <div className="editorial-cards-container">
+                        {/* Playful accents */}
+                        <div className="floating-accent face-green"><span>☺</span></div>
+                        <div className="floating-accent face-orange"><span>☺</span></div>
+
+                        {/* Card 1: Success Alert */}
+                        <div className="editorial-card card-success">
+                            <div className="card-header">
+                                <span className="icon">✓</span>
+                                <strong>Payment Sent</strong>
+                                <span className="view-link">View Receipt &gt;</span>
+                            </div>
+                            <div className="card-body">
+                                <div className="amount-row">
+                                    <span className="currency">🇨🇦 CAD</span>
+                                    <span className="value">1,000.00</span>
+                                </div>
+                                <div className="transfer-path">
+                                    <div className="dot"></div>
+                                    <div className="line"></div>
+                                    <div className="dot green"></div>
+                                </div>
+                                <div className="amount-row">
+                                    <span className="currency">🇬🇭 GHS</span>
+                                    <span className="value" style={{ color: 'var(--success)' }}>{rate ? (1000 * rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Card 2: Live Rate Status */}
+                        <div className="editorial-card card-rate">
+                            <div className="card-header">
+                                <span className="icon clock">⚡</span>
+                                <strong>Live Market Rate</strong>
+                            </div>
+                            <div className="card-body">
+                                <div className="rate-chart-mock">
+                                    <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+                                        <path d="M0,25 C20,10 40,30 60,15 C80,0 100,20 100,20 L100,30 L0,30 Z" fill="rgba(16, 124, 16, 0.1)" />
+                                        <path d="M0,25 C20,10 40,30 60,15 C80,0 100,20 100,20" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" />
+                                        <circle cx="100" cy="20" r="3" fill="var(--primary)" />
+                                    </svg>
+                                </div>
+                                <div className="rate-footer" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status: <strong>Locked</strong></span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary)', fontWeight: 800 }}>1 CAD = {rate ? rate : '--'} GHS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Editorial Footer */}
+                    <div className="editorial-footer">
+                        <p>Transforming cross-border payments with lightning-fast speeds and zero hidden fees.</p>
+                        <div className="editorial-actions">
+                            <Link to="/register" className="btn-primary" style={{ padding: '16px 32px', width: 'auto', textDecoration: 'none' }}>Get Started Today</Link>
+                            <a href="#how-it-works" className="btn-outline" style={{ padding: '16px 32px', width: 'auto', background: 'white', borderColor: 'var(--border-color)', color: 'var(--secondary)', textDecoration: 'none' }}>See How It Works</a>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* PayPal Style "Send Smarter" Impact Section */}
-            <section className="send-smarter-section">
-                <div className="giant-text-container">
-                    <h1 className="giant-text top">send</h1>
-                    <h1 className="giant-text bottom">smarter</h1>
+            {/* Premium Interactive Rate Calculator Section */}
+            <section className="premium-calc-section" id="calculator">
+                {/* Subtle Grid Background */}
+                <div className="editorial-grid-bg" style={{ opacity: 0.3 }}>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
                 </div>
 
-                {/* Smart QR Code Pill */}
-                <div className="impact-qr-container">
-                    <div
-                        className="qr-pill"
-                        onClick={() => window.location.href = '/download'}
-                    >
-                        <img
-                            src="/qwiktransfers_qr.png"
-                            alt="QR Code"
-                            className="qr-code-img"
-                        />
-                        <span className="qr-text">Get the Qwiktransfers app</span>
+                <div className="premium-calc-container">
+                    <div className="premium-calc-header">
+                        <h2 className="signature-font">Transparent Pricing, <br />No surprises.</h2>
+                        <p>We believe in complete transparency. See exactly how much your recipient will get in Ghana before you even sign up.</p>
+                    </div>
+
+                    <div className="premium-calc-glass-card">
+                        <RateCalculator rate={rate} />
+
+                        {/* Trust Badges under calculator */}
+                        <div className="calc-trust-badges">
+                            <div className="trust-badge"><span className="checkmark">✓</span> Guaranteed Exchange Rates</div>
+                            <div className="trust-badge"><span className="checkmark">✓</span> Zero Hidden Markup</div>
+                            <div className="trust-badge"><span className="checkmark">✓</span> Instant Payouts</div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Global Pulse Converter */}
-            <section className="pulse-section">
-                <div className="pulse-label left">CANADA</div>
-                <div className="pulse-label right">GHANA</div>
-
-                <h2 style={{ fontSize: '3rem', color: 'white', marginBottom: '16px' }}>Moving at the Speed of Life</h2>
-                <p style={{ fontSize: '1.2rem', opacity: 0.8, maxWidth: '600px' }}>
-                    Experience real-time heartbeat of the Canada-Ghana financial corridor.
-                </p>
-
-                <div className="pulse-globe-container">
-                    <div className="symbolic-globe"></div>
-
-                    <div className="conversion-pill-overlay">
-                        <div className="pill-currency-tag">
-                            <span style={{ fontSize: '1.8rem' }}>🇨🇦</span>
-                            <span>1 CAD</span>
-                        </div>
-                        <div className="pill-arrow">→</div>
-                        <div className="pill-rate-display">
-                            <span style={{ fontSize: '1.8rem', marginRight: '8px' }}>🇬🇭</span>
-                            {rate ? `${rate} GHS` : 'Calculating...'}
-                        </div>
-                    </div>
+            {/* Premium "Send Smarter" Impact Section */}
+            <section className="send-smarter-section premium-smarter-section">
+                {/* Subtle Grid Background for consistency */}
+                <div className="editorial-grid-bg" style={{ opacity: 0.2 }}>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
                 </div>
 
-                <div style={{ marginTop: '60px', display: 'flex', gap: '32px' }}>
-                    <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>$0.00</div>
-                        <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Hidden Fees</div>
-                    </div>
-                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
-                    <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>Instant</div>
-                        <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Payout Speed</div>
-                    </div>
-                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
-                    <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>Bank-Grade</div>
-                        <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Security</div>
+                <div className="smarter-content-layer">
+                    <div className="giant-text-container">
+                        <h1 className="giant-text top">SEND</h1>
+                        <h1 className="giant-text bottom">SMARTER</h1>
                     </div>
                 </div>
             </section>
@@ -180,85 +295,103 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* How It Works */}
-            <section id="how-it-works" className="section-padding" style={{ background: 'var(--bg-peach)' }}>
-                <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                    <h2 style={{ fontSize: '3rem', color: 'var(--secondary)' }}>Mission in 3 Simple Steps</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>No complexity. Just pure movement.</p>
+            {/* Premium Mission List (How It Works) */}
+            <section id="how-it-works" className="section-padding premium-mission-section" style={{ position: 'relative', background: 'white', borderBottom: '1px solid var(--border-color)' }}>
+                {/* Subtle Grid Background */}
+                <div className="editorial-grid-bg" style={{ opacity: 0.3 }}>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
+                    <div className="vertical-line"></div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
-                    <div className="sticker-card" style={{ background: 'white' }}>
-                        <div style={{ width: '64px', height: '64px', background: '#FADED9', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '24px' }}>🛡️</div>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>1. Secure Connection</h3>
-                        <p style={{ color: 'var(--text-muted)' }}>Sign up in seconds and complete our simple identity check to keep your funds safe.</p>
-                    </div>
-                    <div className="sticker-card" style={{ background: 'var(--primary)', color: 'white', border: 'none' }}>
-                        <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.2)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '24px' }}>💸</div>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'white' }}>2. Send Anywhere</h3>
-                        <p style={{ color: 'rgba(255,255,255,0.8)' }}>Enter the amount, select your recipient, and pay via Interac e-Transfer or Bank Transfer.</p>
-                    </div>
-                    <div className="sticker-card" style={{ background: 'white' }}>
-                        <div style={{ width: '64px', height: '64px', background: '#DFF6DD', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '24px' }}>🎉</div>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>3. Instant Payout</h3>
-                        <p style={{ color: 'var(--text-muted)' }}>Funds land instantly in Ghana via Mobile Money (MTN, Vodafone, AirtelTigo) or Bank Account.</p>
-                    </div>
-                </div>
-            </section>
 
-            {/* Success Wall */}
-            <section className="section-padding" style={{ background: 'white' }}>
-                <div className="content-grid">
-                    <div className="hero-image">
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div className="sticker-card">
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--pulse-green)' }}>✓ SUCCESS</div>
-                                <div style={{ fontStyle: 'italic', margin: '8px 0' }}>"Sent GH₵2.5k to Kumasi instantly."</div>
-                                <div style={{ fontWeight: 700 }}>A. Boateng</div>
-                            </div>
-                            <div className="sticker-card" style={{ marginTop: '40px' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--pulse-green)' }}>✓ SUCCESS</div>
-                                <div style={{ fontStyle: 'italic', margin: '8px 0' }}>"Best rates I've found in Toronto."</div>
-                                <div style={{ fontWeight: 700 }}>J. Mensah</div>
-                            </div>
-                            <div className="sticker-card" style={{ alignSelf: 'start' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--pulse-green)' }}>✓ SUCCESS</div>
-                                <div style={{ fontStyle: 'italic', margin: '8px 0' }}>"Support team is elite!"</div>
-                                <div style={{ fontWeight: 700 }}>K. Asare</div>
-                            </div>
-                            <div className="sticker-card" style={{ marginTop: '20px' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--pulse-green)' }}>✓ SUCCESS</div>
-                                <div style={{ fontStyle: 'italic', margin: '8px 0' }}>"Zero hidden charges as promised."</div>
-                                <div style={{ fontWeight: 700 }}>M. Osei</div>
-                            </div>
-                        </div>
+                <div className="mission-content-layer">
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)', marginBottom: '16px' }}>The Mission.</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem' }}>No complexity. Just pure cross-border movement in 3 steps.</p>
                     </div>
-                    <div>
-                        <h2 style={{ fontSize: '3rem', color: 'var(--secondary)' }}>Movement in Numbers</h2>
-                        <div style={{ display: 'grid', gap: '24px', marginTop: '40px' }}>
-                            <div>
-                                <div style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--primary)' }}>$20M+</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Transferred Yearly</div>
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--pulse-green)' }}>99.9%</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Success Rate</div>
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--secondary)' }}>Instant</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Payout Speed</div>
-                            </div>
+
+                    <div className="editorial-mission-grid">
+                        <div className="editorial-mission-box">
+                            <div className="box-number signature-font">01</div>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Secure Connection</h3>
+                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Sign up in seconds and complete our simple identity check. Bank-grade security keeps your funds and data totally safe.</p>
+                        </div>
+                        <div className="editorial-mission-box">
+                            <div className="box-number signature-font">02</div>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Send Anywhere</h3>
+                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Enter the amount, select your recipient, and pay via Interac e-Transfer or direct Bank Transfer from your Canadian account.</p>
+                        </div>
+                        <div className="editorial-mission-box">
+                            <div className="box-number signature-font">03</div>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Instant Payout</h3>
+                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Funds land instantly in Ghana via Mobile Money (MTN, Vodafone, AirtelTigo) or directly into their Bank Account.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* FAQ Section */}
-            <section className="faq-section" id="faq">
+            {/* Premium Success Wall (Rigid Grid) */}
+            <section className="section-padding premium-success-section" style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border-color)' }}>
+                <div className="content-grid" style={{ alignItems: 'start' }}>
+                    <div className="success-stats-col">
+                        <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)', marginBottom: '24px', lineHeight: '1.1' }}>Movement in Numbers.</h2>
+                        <div style={{ display: 'grid', gap: '32px', marginTop: '40px' }}>
+                            <div className="stat-block">
+                                <div className="stat-value">$20M+</div>
+                                <div className="stat-label">Transferred Yearly</div>
+                            </div>
+                            <div className="stat-block">
+                                <div className="stat-value" style={{ color: 'var(--success)' }}>99.9%</div>
+                                <div className="stat-label">Success Rate</div>
+                            </div>
+                            <div className="stat-block">
+                                <div className="stat-value" style={{ color: 'var(--primary)' }}>Instant</div>
+                                <div className="stat-label">Payout Speed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="editorial-success-grid">
+                        <div className="editorial-testimonial-card">
+                            <div className="test-header">
+                                <span className="test-status">✓ VERIFIED</span>
+                                <span className="test-author">A. Boateng</span>
+                            </div>
+                            <p className="test-quote">"Sent GH₵2.5k to Kumasi instantly. The live rate tracking feature gave me total peace of mind."</p>
+                        </div>
+                        <div className="editorial-testimonial-card">
+                            <div className="test-header">
+                                <span className="test-status">✓ VERIFIED</span>
+                                <span className="test-author">J. Mensah</span>
+                            </div>
+                            <p className="test-quote">"Best exchange rates I've found in Toronto. No hidden markup like the big banks."</p>
+                        </div>
+                        <div className="editorial-testimonial-card">
+                            <div className="test-header">
+                                <span className="test-status">✓ VERIFIED</span>
+                                <span className="test-author">K. Asare</span>
+                            </div>
+                            <p className="test-quote">"A truly beautiful app. The transfer was completely seamless."</p>
+                        </div>
+                        <div className="editorial-testimonial-card">
+                            <div className="test-header">
+                                <span className="test-status">✓ VERIFIED</span>
+                                <span className="test-author">M. Osei</span>
+                            </div>
+                            <p className="test-quote">"Zero hidden charges as promised. Support team is elite."</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ Section (Razor Sharp Editorial) */}
+            <section className="faq-section" id="faq" style={{ background: 'white', padding: '100px 40px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                    <h2 style={{ fontSize: '3rem', color: 'var(--secondary)' }}>Got questions?</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We've got straightforward answers.</p>
+                    <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)' }}>Stated Simply.</h2>
                 </div>
-                <div className="faq-container">
+                <div className="editorial-faq-container">
                     {[
                         {
                             q: "How fast will my money reach Ghana?",
@@ -277,29 +410,79 @@ const Home = () => {
                             a: "You can track your transfer in real-time through your dashboard. You will also receive instant email notifications the moment the funds hit your recipient's account."
                         }
                     ].map((faq, index) => (
-                        <FAQItem key={index} faq={faq} />
+                        <div className="editorial-faq-item" key={index} style={{ borderBottom: '1px solid var(--border-color)', padding: '24px 0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong style={{ fontSize: '1.25rem', color: 'var(--secondary)' }}>{faq.q}</strong>
+                                <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>+</span>
+                            </div>
+                            <p style={{ marginTop: '16px', color: 'var(--text-muted)', lineHeight: '1.6' }}>{faq.a}</p>
+                        </div>
                     ))}
                 </div>
             </section>
 
-            {/* CTA Footer */}
-            <footer className="section-padding" style={{ background: 'var(--secondary)', color: 'white', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '3.5rem', color: 'white', marginBottom: '24px' }}>Ready to make your move?</h2>
-                <p style={{ fontSize: '1.2rem', opacity: 0.7, marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
-                    Join thousands of Ghanaians and Canadians who trust Qwiktransfers for their daily financial movements.
-                </p>
-                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-                    <Link to="/register" className="btn-primary" style={{ border: 'none', background: 'white', color: 'var(--secondary)', width: 'auto', padding: '16px 48px', fontSize: '1.1rem' }}>Create Free Account</Link>
-                </div>
-                <div style={{ marginTop: '100px', paddingTop: '40px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ opacity: 0.5 }}>© {new Date().getFullYear()} {systemName}. Licensed and Secure.</span>
-                    <div style={{ display: 'flex', gap: '24px', opacity: 0.5 }}>
-                        <Link to="#" style={{ color: 'white' }}>Terms</Link>
-                        <Link to="#" style={{ color: 'white' }}>Privacy</Link>
-                        <Link to="#" style={{ color: 'white' }}>Help</Link>
+            {/* Vibrant Blue CTA Section (Image 1 Style) */}
+            <section className="vibrant-cta-section">
+                <div className="cta-content-grid">
+                    {/* Left Side: Floating Faces Graphic */}
+                    <div className="cta-visual-container">
+                        <div className="cta-main-circle">
+                            <div className="cta-receipt-icon">
+                                <strong>R</strong>
+                                <span className="cta-badge">+$</span>
+                            </div>
+                            <div className="cta-receipt-amount">$72.00</div>
+                            <div className="cta-receipt-desc">Website design<br /><span>Paid</span></div>
+                        </div>
+                        {/* Floating Face 1 */}
+                        <div className="cta-face-circle face-top-left">
+                            <img src="https://i.pravatar.cc/150?img=47" alt="User" />
+                        </div>
+                        {/* Floating Face 2 */}
+                        <div className="cta-face-circle face-bottom-left">
+                            <img src="https://i.pravatar.cc/150?img=11" alt="User" />
+                        </div>
+                        {/* Floating Face 3 */}
+                        <div className="cta-face-circle face-bottom-right">
+                            <img src="https://i.pravatar.cc/150?img=12" alt="User" />
+                        </div>
+                    </div>
+
+                    {/* Right Side: Text & Button */}
+                    <div className="cta-text-container">
+                        <h2>Make your move.<br />Qwikly.</h2>
+                        <p>Join thousands of Ghanaians and Canadians who trust Qwiktransfers for their cross-border payments.</p>
+                        <Link to="/register" className="btn-cta-white">Create Free Account</Link>
                     </div>
                 </div>
+            </section>
+
+            {/* Minimalist Giant Text Footer (Image 2 Style) */}
+            <footer className="minimal-giant-footer">
+                <div className="footer-top-row">
+                    <span>©{new Date().getFullYear()} All rights reserved</span>
+                    <span>info@qwiktransfers.com</span>
+                    <Link to="#">Privacy Policy</Link>
+                </div>
+                <div className="footer-giant-brand">
+                    Qwiktransfers
+                </div>
             </footer>
+
+            {/* Global Floating QR Pill */}
+            <div className="global-floating-qr">
+                <div
+                    className="qr-pill"
+                    onClick={() => window.location.href = '/download'}
+                >
+                    <img
+                        src="/qwiktransfers_qr.png"
+                        alt="QR Code"
+                        className="qr-code-img"
+                    />
+                    <span className="qr-text">Get the app</span>
+                </div>
+            </div>
         </div>
     );
 };
