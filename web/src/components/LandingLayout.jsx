@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 
 const LandingLayout = ({ children }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [systemName, setSystemName] = useState('Qwiktransfers');
+    const [config, setConfig] = useState({
+        system_name: 'Qwiktransfers',
+        system_logo: ''
+    });
 
     useEffect(() => {
         const fetchConfig = async () => {
             try {
                 const configRes = await api.get('/system/config/public');
-                if (configRes.data.system_name) {
-                    setSystemName(configRes.data.system_name);
-                }
+                setConfig({
+                    system_name: configRes.data.system_name || 'Qwiktransfers',
+                    system_logo: configRes.data.system_logo || ''
+                });
             } catch (error) {
                 console.error('Config fetch error:', error);
             }
@@ -20,15 +24,38 @@ const LandingLayout = ({ children }) => {
         fetchConfig();
     }, []);
 
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+        // Prevent scroll when menu is open
+        if (!isMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+    };
+
+    const closeMenu = () => {
+        setIsMenuOpen(false);
+        document.body.style.overflow = 'unset';
+    };
+
     return (
-        <div className="landing-layout">
+        <div className={`landing-layout ${isMenuOpen ? 'menu-is-open' : ''}`}>
             {/* Chowdeck Style Segmented Navbar */}
             <nav className="landing-navbar">
                 {/* Segment 1: Brand */}
                 <div className="nav-segment nav-brand-pill">
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
-                        <div style={{ width: '28px', height: '28px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 900, fontSize: '0.9rem' }}>Q</div>
-                        <span>{systemName}</span>
+                        {config.system_logo ? (
+                            <img 
+                                src={getImageUrl(`/${config.system_logo}`)} 
+                                alt="Logo" 
+                                style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px' }} 
+                            />
+                        ) : (
+                            <div style={{ width: '28px', height: '28px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 900, fontSize: '0.9rem' }}>Q</div>
+                        )}
+                        <span>{config.system_name}</span>
                     </Link>
                 </div>
 
@@ -46,21 +73,66 @@ const LandingLayout = ({ children }) => {
                 </div>
 
                 {/* Mobile Trigger */}
-                <button className="nav-mobile-trigger" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                <button className={`nav-mobile-trigger ${isMenuOpen ? 'active' : ''}`} onClick={toggleMenu}>
                     {isMenuOpen ? '✕' : '☰'}
                 </button>
             </nav>
 
-            {/* Mobile Menu Overlay */}
-            {isMenuOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.98)', zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '32px' }}>
-                    <Link to="/" className="giant-heading" style={{ fontSize: '2.5rem' }} onClick={() => setIsMenuOpen(false)}>Home</Link>
-                    <Link to="/about-vendor" className="giant-heading" style={{ fontSize: '2.5rem' }} onClick={() => setIsMenuOpen(false)}>Vendors</Link>
-                    <Link to="/contact-us" className="giant-heading" style={{ fontSize: '2.5rem' }} onClick={() => setIsMenuOpen(false)}>Contact Us</Link>
-                    <Link to="/login" className="btn-primary" style={{ width: '240px' }} onClick={() => setIsMenuOpen(false)}>Log in</Link>
-                    <Link to="/register" className="btn-secondary" style={{ width: '240px', background: 'var(--secondary)', color: 'white' }} onClick={() => setIsMenuOpen(false)}>Join Now</Link>
+            {/* Premium Mobile Menu Overlay (Chowdeck Style) */}
+            <div className={`premium-mobile-menu ${isMenuOpen ? 'open' : ''}`}>
+                <div className="mobile-menu-header">
+                    <div className="mobile-menu-logo">
+                        {config.system_logo ? (
+                            <img src={getImageUrl(`/${config.system_logo}`)} alt="Logo" />
+                        ) : (
+                            <span className="signature-font">Q</span>
+                        )}
+                    </div>
+                    <button className="mobile-close-btn" onClick={closeMenu}>✕</button>
                 </div>
-            )}
+
+                <div className="mobile-menu-links">
+                    <Link to="/" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">🏠</span>
+                        <span className="mobile-nav-text">Home</span>
+                    </Link>
+                    <a href="/#how-it-works" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">🚀</span>
+                        <span className="mobile-nav-text">Movement</span>
+                    </a>
+                    <Link to="/about-vendor" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">🤝</span>
+                        <span className="mobile-nav-text">Vendors</span>
+                    </Link>
+                    <Link to="/contact-us" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">📞</span>
+                        <span className="mobile-nav-text">Contact</span>
+                    </Link>
+                    <Link to="/privacy-policy" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">📄</span>
+                        <span className="mobile-nav-text">Privacy</span>
+                    </Link>
+                    
+                    <div className="mobile-menu-divider"></div>
+
+                    <Link to="/login" className="mobile-nav-item" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">👤</span>
+                        <span className="mobile-nav-text">Log in</span>
+                    </Link>
+                    <Link to="/register" className="mobile-nav-item highlight" onClick={closeMenu}>
+                        <span className="mobile-nav-icon">✨</span>
+                        <span className="mobile-nav-text">Join Qwiktransfers</span>
+                    </Link>
+                </div>
+
+                <div className="mobile-menu-footer">
+                    <p>© {new Date().getFullYear()} {config.system_name}</p>
+                    <div className="mobile-socials">
+                        <span>Twitter</span>
+                        <span>Instagram</span>
+                    </div>
+                </div>
+            </div>
 
             <main>
                 {children}

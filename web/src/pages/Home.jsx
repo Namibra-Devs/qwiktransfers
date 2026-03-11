@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import LandingLayout from '../components/LandingLayout';
@@ -33,6 +33,10 @@ const RateCalculator = ({ rate }) => {
 
     return (
         <div className="calculator-widget">
+            <div className="live-badge">
+                <span className="pulse-indicator"></span>
+                Live Market Rate
+            </div>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'var(--secondary)' }}>Check our live rates</h3>
 
             <div className="calc-input-group">
@@ -97,6 +101,14 @@ const RateCalculator = ({ rate }) => {
 const Home = () => {
     const [rate, setRate] = useState(null);
     const [systemName, setSystemName] = useState('Qwiktransfers');
+    const revealRefs = useRef([]);
+    revealRefs.current = [];
+
+    const addToRefs = (el) => {
+        if (el && !revealRefs.current.includes(el)) {
+            revealRefs.current.push(el);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -105,7 +117,6 @@ const Home = () => {
                     api.get('/rates'),
                     api.get('/system/config/public')
                 ]);
-                // The API might return CAD->GHS or GHS->CAD. We want to show CAD->GHS (usually > 1)
                 const rawRate = rateRes.data.rate;
                 const displayRate = rawRate < 1 ? (1 / rawRate) : rawRate;
                 setRate(displayRate.toFixed(2));
@@ -117,6 +128,19 @@ const Home = () => {
             }
         };
         fetchData();
+
+        // Reveal on scroll logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealRefs.current.forEach(ref => observer.observe(ref));
+
+        return () => observer.disconnect();
     }, []);
 
     return (
@@ -124,8 +148,7 @@ const Home = () => {
             <div className="landing-layout-inner">
 
             {/* Editorial UI Hero Section */}
-            <section className="hero-editorial-section" id="hero">
-                {/* CSS Dashed Grid Background */}
+            <section className="hero-editorial-section reveal-on-scroll" id="hero" ref={addToRefs}>
                 <div className="editorial-grid-bg">
                     <div className="vertical-line"></div>
                     <div className="vertical-line"></div>
@@ -135,19 +158,15 @@ const Home = () => {
                 </div>
 
                 <div className="editorial-content-layer">
-                    {/* Giant Overlapping Text Block */}
                     <div className="editorial-text-group">
-                        <div className="text-layer-back">QWIKTRANSFERS</div>
+                        <div className="text-layer-back">{systemName.toUpperCase()}</div>
                         <h1 className="text-layer-front signature-font">MAKE MONEY MOVE</h1>
                     </div>
 
-                    {/* Floating UI Cards Area */}
                     <div className="editorial-cards-container">
-                        {/* Playful accents */}
                         <div className="floating-accent face-green"><span>☺</span></div>
                         <div className="floating-accent face-orange"><span>☺</span></div>
 
-                        {/* Card 1: Success Alert */}
                         <div className="editorial-card card-success">
                             <div className="card-header">
                                 <span className="icon">✓</span>
@@ -171,7 +190,6 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Card 2: Live Rate Status */}
                         <div className="editorial-card card-rate">
                             <div className="card-header">
                                 <span className="icon clock">⚡</span>
@@ -193,7 +211,6 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Editorial Footer */}
                     <div className="editorial-footer">
                         <p>Transforming cross-border payments with lightning-fast speeds and zero hidden fees.</p>
                         <div className="editorial-actions">
@@ -205,8 +222,7 @@ const Home = () => {
             </section>
 
             {/* Premium Interactive Rate Calculator Section */}
-            <section className="premium-calc-section" id="calculator">
-                {/* Subtle Grid Background */}
+            <section className="premium-calc-section reveal-on-scroll" id="calculator" ref={addToRefs}>
                 <div className="editorial-grid-bg" style={{ opacity: 0.3 }}>
                     <div className="vertical-line"></div>
                     <div className="vertical-line"></div>
@@ -224,7 +240,6 @@ const Home = () => {
                     <div className="premium-calc-glass-card">
                         <RateCalculator rate={rate} />
 
-                        {/* Trust Badges under calculator */}
                         <div className="calc-trust-badges">
                             <div className="trust-badge"><span className="checkmark">✓</span> Guaranteed Exchange Rates</div>
                             <div className="trust-badge"><span className="checkmark">✓</span> Zero Hidden Markup</div>
@@ -235,8 +250,7 @@ const Home = () => {
             </section>
 
             {/* Premium "Send Smarter" Impact Section */}
-            <section className="send-smarter-section premium-smarter-section">
-                {/* Subtle Grid Background for consistency */}
+            <section className="send-smarter-section premium-smarter-section reveal-on-scroll" ref={addToRefs}>
                 <div className="editorial-grid-bg" style={{ opacity: 0.2 }}>
                     <div className="vertical-line"></div>
                     <div className="vertical-line"></div>
@@ -262,45 +276,44 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* Premium Mission List (How It Works) */}
-            <section id="how-it-works" className="section-padding premium-mission-section" style={{ position: 'relative', background: 'white', borderBottom: '1px solid var(--border-color)' }}>
-                {/* Subtle Grid Background */}
-                <div className="editorial-grid-bg" style={{ opacity: 0.3 }}>
-                    <div className="vertical-line"></div>
-                    <div className="vertical-line"></div>
-                    <div className="vertical-line"></div>
-                    <div className="vertical-line"></div>
-                    <div className="vertical-line"></div>
+            {/* Premium Mission List (How It Works) - DARK THEME */}
+            <section id="how-it-works" className="section-padding premium-mission-section dark-theme reveal-on-scroll" ref={addToRefs} style={{ position: 'relative' }}>
+                <div className="editorial-grid-bg" style={{ opacity: 0.1 }}>
+                    <div className="vertical-line" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+                    <div className="vertical-line" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+                    <div className="vertical-line" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+                    <div className="vertical-line" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+                    <div className="vertical-line" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
                 </div>
 
                 <div className="mission-content-layer">
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)', marginBottom: '16px' }}>The Mission.</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem' }}>No complexity. Just pure cross-border movement in 3 steps.</p>
+                        <h2 className="signature-font" style={{ fontSize: '4rem', marginBottom: '16px' }}>The Mission.</h2>
+                        <p style={{ fontSize: '1.25rem' }}>No complexity. Just pure cross-border movement in 3 steps.</p>
                     </div>
 
                     <div className="editorial-mission-grid">
                         <div className="editorial-mission-box">
                             <div className="box-number signature-font">01</div>
-                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Secure Connection</h3>
-                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Sign up in seconds and complete our simple identity check. Bank-grade security keeps your funds and data totally safe.</p>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Secure Connection</h3>
+                            <p style={{ lineHeight: '1.6' }}>Sign up in seconds and complete our simple identity check. Bank-grade security keeps your funds and data totally safe.</p>
                         </div>
                         <div className="editorial-mission-box">
                             <div className="box-number signature-font">02</div>
-                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Send Anywhere</h3>
-                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Enter the amount, select your recipient, and pay via Interac e-Transfer or direct Bank Transfer from your Canadian account.</p>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Send Anywhere</h3>
+                            <p style={{ lineHeight: '1.6' }}>Enter the amount, select your recipient, and pay via Interac e-Transfer or direct Bank Transfer from your Canadian account.</p>
                         </div>
                         <div className="editorial-mission-box">
                             <div className="box-number signature-font">03</div>
-                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--secondary)' }}>Instant Payout</h3>
-                            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>Funds land instantly in Ghana via Mobile Money (MTN, Vodafone, AirtelTigo) or directly into their Bank Account.</p>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Instant Payout</h3>
+                            <p style={{ lineHeight: '1.6' }}>Funds land instantly in Ghana via Mobile Money (MTN, Vodafone, AirtelTigo) or directly into their Bank Account.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Premium Success Wall (Rigid Grid) */}
-            <section className="section-padding premium-success-section" style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border-color)' }}>
+            <section className="section-padding premium-success-section reveal-on-scroll" ref={addToRefs} style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border-color)' }}>
                 <div className="content-grid" style={{ alignItems: 'start' }}>
                     <div className="success-stats-col">
                         <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)', marginBottom: '24px', lineHeight: '1.1' }}>Movement in Numbers.</h2>
@@ -321,28 +334,28 @@ const Home = () => {
                     </div>
 
                     <div className="editorial-success-grid">
-                        <div className="editorial-testimonial-card">
+                        <div className="editorial-testimonial-card editorial-card">
                             <div className="test-header">
                                 <span className="test-status">✓ VERIFIED</span>
                                 <span className="test-author">A. Boateng</span>
                             </div>
                             <p className="test-quote">"Sent GH₵2.5k to Kumasi instantly. The live rate tracking feature gave me total peace of mind."</p>
                         </div>
-                        <div className="editorial-testimonial-card">
+                        <div className="editorial-testimonial-card editorial-card">
                             <div className="test-header">
                                 <span className="test-status">✓ VERIFIED</span>
                                 <span className="test-author">J. Mensah</span>
                             </div>
                             <p className="test-quote">"Best exchange rates I've found in Toronto. No hidden markup like the big banks."</p>
                         </div>
-                        <div className="editorial-testimonial-card">
+                        <div className="editorial-testimonial-card editorial-card">
                             <div className="test-header">
                                 <span className="test-status">✓ VERIFIED</span>
                                 <span className="test-author">K. Asare</span>
                             </div>
                             <p className="test-quote">"A truly beautiful app. The transfer was completely seamless."</p>
                         </div>
-                        <div className="editorial-testimonial-card">
+                        <div className="editorial-testimonial-card editorial-card">
                             <div className="test-header">
                                 <span className="test-status">✓ VERIFIED</span>
                                 <span className="test-author">M. Osei</span>
@@ -354,7 +367,7 @@ const Home = () => {
             </section>
 
             {/* FAQ Section (Razor Sharp Editorial) */}
-            <section className="faq-section" id="faq" style={{ background: 'white', padding: '100px 40px' }}>
+            <section className="faq-section reveal-on-scroll" id="faq" ref={addToRefs} style={{ background: 'white', padding: '100px 40px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '60px' }}>
                     <h2 className="signature-font" style={{ fontSize: '4rem', color: 'var(--secondary)' }}>Stated Simply.</h2>
                 </div>
@@ -389,9 +402,8 @@ const Home = () => {
             </section>
 
             {/* Vibrant Blue CTA Section (Image 1 Style) */}
-            <section className="vibrant-cta-section">
+            <section className="vibrant-cta-section reveal-on-scroll" ref={addToRefs}>
                 <div className="cta-content-grid">
-                    {/* Left Side: Floating Faces Graphic */}
                     <div className="cta-visual-container">
                         <div className="cta-main-circle">
                             <div className="cta-receipt-icon">
@@ -401,21 +413,17 @@ const Home = () => {
                             <div className="cta-receipt-amount">2,500.00</div>
                             <div className="cta-receipt-desc">Pocket Money<br /><span>Sent</span></div>
                         </div>
-                        {/* Floating Face 1 */}
                         <div className="cta-face-circle face-top-left">
                             <img src="https://i.pravatar.cc/150?img=47" alt="User" />
                         </div>
-                        {/* Floating Face 2 */}
                         <div className="cta-face-circle face-bottom-left">
                             <img src="https://i.pravatar.cc/150?img=11" alt="User" />
                         </div>
-                        {/* Floating Face 3 */}
                         <div className="cta-face-circle face-bottom-right">
                             <img src="https://i.pravatar.cc/150?img=12" alt="User" />
                         </div>
                     </div>
 
-                    {/* Right Side: Text & Button */}
                     <div className="cta-text-container">
                         <h2>Make your move<br />Qwikly.</h2>
                         <p>Join thousands of Ghanaians and Canadians who trust Qwiktransfers for their cross-border payments.</p>
