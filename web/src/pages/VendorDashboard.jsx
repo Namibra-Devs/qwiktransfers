@@ -14,6 +14,8 @@ const VendorDashboard = () => {
     const [pool, setPool] = useState([]);
     const [myTransactions, setMyTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [poolLoading, setPoolLoading] = useState(false);
+    const [myTxLoading, setMyTxLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('pool');
 
     const [config, setConfig] = useState({
@@ -88,22 +90,91 @@ const VendorDashboard = () => {
     };
 
     const fetchPool = async () => {
+        setPoolLoading(true);
         try {
             const res = await api.get('/vendor/pool');
             setPool(res.data);
         } catch (error) {
             console.error('Pool fetch error:', error);
+        } finally {
+            setPoolLoading(false);
         }
     };
 
     const fetchMyTransactions = async () => {
+        setMyTxLoading(true);
         try {
             const res = await api.get('/vendor/transactions');
             setMyTransactions(res.data);
         } catch (error) {
             console.error('My transactions fetch error:', error);
+        } finally {
+            setMyTxLoading(false);
         }
     };
+
+    const formatTimeAgo = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return 'just now';
+
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}h ago`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        return `${diffInDays}d ago`;
+    };
+
+    const getCountryBadge = (country) => {
+        if (!country) return null;
+        
+        const countryMap = {
+            'Ghana': { flag: '🇬🇭', label: 'Ghana' },
+            'Canada': { flag: '🇨🇦', label: 'Canada' },
+            'Nigeria': { flag: '🇳🇬', label: 'Nigeria' },
+            'UK': { flag: '🇬🇧', label: 'UK' },
+            'USA': { flag: '🇺🇸', label: 'USA' }
+        };
+        
+        const cData = countryMap[country] || { flag: '🌍', label: country };
+        
+        return (
+            <span style={{ 
+                background: 'rgba(183, 71, 42, 0.1)', 
+                color: 'var(--primary)', 
+                padding: '4px 10px', 
+                borderRadius: '8px', 
+                fontSize: '0.8rem', 
+                fontWeight: 800, 
+                marginLeft: '12px',
+                verticalAlign: 'middle',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+            }}>
+                {cData.flag} {cData.label} Region
+            </span>
+        );
+    };
+
+    const TableSkeleton = ({ rows = 5, cols = 5 }) => (
+        <>
+            {[...Array(rows)].map((_, i) => (
+                <tr key={i} className="skeleton-row">
+                    {[...Array(cols)].map((_, j) => (
+                        <td key={j}>
+                            <div className="skeleton-box" style={{ height: '24px', width: j === 0 ? '150px' : '100px', borderRadius: '4px' }}></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
 
     const toggleStatus = async () => {
         try {
@@ -384,7 +455,10 @@ const VendorDashboard = () => {
                     <div className="card editorial-card">
                         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <div>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Dispatch Pool</h2>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+                                    Dispatch Pool
+                                    {getCountryBadge(user?.country)}
+                                </h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                                     First come, first served. Claim transactions quickly!
                                 </p>
@@ -406,7 +480,9 @@ const VendorDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pool.length === 0 ? (
+                                    {poolLoading ? (
+                                        <TableSkeleton rows={5} cols={5} />
+                                    ) : pool.length === 0 ? (
                                         <tr>
                                             <td colSpan="5" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
                                                 No pending transactions in the pool right now.
@@ -418,7 +494,19 @@ const VendorDashboard = () => {
                                                 <td>
                                                     <div className="user-info">
                                                         <span className="name">{tx.user?.full_name || 'Customer'}</span>
-                                                        <span className="acc">{tx.user?.phone || `#${String(tx.transaction_id).toUpperCase()}`}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span className="acc" style={{ fontSize: '0.75rem' }}>{tx.user?.phone || `#${String(tx.transaction_id).toUpperCase()}`}</span>
+                                                            <span style={{
+                                                                fontSize: '0.7rem',
+                                                                color: 'var(--primary)',
+                                                                background: 'rgba(183, 71, 42, 0.08)',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '10px',
+                                                                fontWeight: 700
+                                                            }}>
+                                                                {formatTimeAgo(tx.createdAt)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -440,7 +528,11 @@ const VendorDashboard = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className="status-badge pending">Available</span>
+                                                    {tx.proof_url ? (
+                                                        <span className="status-badge completed">Proof Attached</span>
+                                                    ) : (
+                                                        <span className="status-badge pending">Awaiting Proof</span>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <button
@@ -474,14 +566,16 @@ const VendorDashboard = () => {
                                 <thead>
                                     <tr>
                                         <th>Reference</th>
-                                        <th>Amount to Pay</th>
-                                        <th>Receiver Details</th>
+                                        <th>User</th>
+                                        <th>Amount</th>
                                         <th>Status</th>
                                         <th>Verification</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {myTransactions.filter(tx => tx.status === 'processing').length === 0 ? (
+                                    {myTxLoading ? (
+                                        <TableSkeleton rows={3} cols={5} />
+                                    ) : myTransactions.filter(tx => tx.status === 'processing').length === 0 ? (
                                         <tr>
                                             <td colSpan="5" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
                                                 You have no active operations. Claim a task from the pool!
@@ -492,23 +586,35 @@ const VendorDashboard = () => {
                                             <tr key={tx.id} className="table-row" onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
                                                 <td>
                                                     <div className="user-info">
-                                                        <span className="name">#{String(tx.id).split('-')[0].toUpperCase()}</span>
-                                                        <span className="acc">{new Date(tx.createdAt).toLocaleString()}</span>
+                                                        <span className="name">#{tx.transaction_id}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span className="acc" style={{ fontSize: '0.75rem' }}>{new Date(tx.createdAt).toLocaleDateString()}</span>
+                                                            <span style={{
+                                                                fontSize: '0.7rem',
+                                                                color: 'var(--primary)',
+                                                                background: 'rgba(183, 71, 42, 0.08)',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '10px',
+                                                                fontWeight: 700
+                                                            }}>
+                                                                {formatTimeAgo(tx.createdAt)}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 700 }}>{tx.user?.full_name}</div>
                                                 </td>
                                                 <td>
                                                     <div className="amount-col" style={{ color: 'var(--success)' }}>
-                                                        {tx.type?.split('-')[1] || 'GHS'} {parseFloat(tx.amount_received || 0).toLocaleString()}
+                                                        {tx.type?.split('-')[0] || 'GHS'} {parseFloat(tx.amount_sent || 0).toLocaleString()}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                                                        {tx.amount_received} {tx.type?.split('-')[1] || 'CAD'}
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className="user-info">
-                                                        <span className="name">{tx.recipient_details?.name || 'Recipient'}</span>
-                                                        <span className="acc">{tx.recipient_details?.bank_name} - {tx.recipient_details?.account_number}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="status-badge processing">Processing</span>
+                                                    <span className={`status-badge ${tx.status}`}>{tx.status}</span>
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -557,7 +663,7 @@ const VendorDashboard = () => {
                                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)' }}>Transaction Breakdown</h1>
                                 <button onClick={() => setShowTxModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
                             </div>
-                            
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>User</label>
@@ -586,10 +692,10 @@ const VendorDashboard = () => {
 
                         <div className="modal-body" style={{ padding: '24px 32px 32px' }}>
                             {/* Financial Summary Card */}
-                            <div style={{ 
-                                background: 'white', 
-                                border: '1px solid var(--border-color)', 
-                                borderRadius: '16px', 
+                            <div style={{
+                                background: 'white',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '16px',
                                 padding: '24px',
                                 marginBottom: '24px'
                             }}>
@@ -617,10 +723,10 @@ const VendorDashboard = () => {
                             </div>
 
                             {/* Recipient Details Card */}
-                            <div style={{ 
-                                background: 'var(--bg-main)', 
-                                border: '1px solid var(--border-color)', 
-                                borderRadius: '16px', 
+                            <div style={{
+                                background: 'var(--bg-main)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '16px',
                                 padding: '24px',
                                 marginBottom: '24px',
                                 position: 'relative',
@@ -628,19 +734,19 @@ const VendorDashboard = () => {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                     <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Recipient Details</h4>
-                                    <span style={{ 
-                                        background: 'var(--secondary)', 
-                                        color: 'white', 
-                                        padding: '4px 12px', 
-                                        borderRadius: '6px', 
-                                        fontSize: '0.7rem', 
-                                        fontWeight: 800, 
-                                        textTransform: 'uppercase' 
+                                    <span style={{
+                                        background: 'var(--secondary)',
+                                        color: 'white',
+                                        padding: '4px 12px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        textTransform: 'uppercase'
                                     }}>
                                         {selectedTx.recipient_details?.type || 'Bank'}
                                     </span>
                                 </div>
-                                
+
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
                                         <span style={{ color: 'var(--text-muted)' }}>Full Name:</span>
@@ -699,10 +805,10 @@ const VendorDashboard = () => {
                             {selectedTx.recipient_details?.note && (
                                 <div style={{ marginBottom: '24px' }}>
                                     <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>User Note</h4>
-                                    <div style={{ 
-                                        padding: '16px 20px', 
-                                        borderRadius: '12px', 
-                                        border: '1px dashed var(--border-color)', 
+                                    <div style={{
+                                        padding: '16px 20px',
+                                        borderRadius: '12px',
+                                        border: '1px dashed var(--border-color)',
                                         background: 'rgba(0,0,0,0.01)',
                                         fontStyle: 'italic',
                                         color: 'var(--secondary)'
