@@ -50,7 +50,11 @@ function App() {
   return (
     <Router>
       <SystemBrandingManager />
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        containerStyle={{ zIndex: 99999 }}
+      />
       <ThemeProvider>
         <AuthProvider>
           <Routes>
