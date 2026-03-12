@@ -7,6 +7,29 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 import NotificationPanel from '../components/NotificationPanel';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
 
 const RateLockTimer = ({ lockedUntil }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -134,9 +157,126 @@ const RateWatchCard = () => {
     );
 };
 
+const TransactionAnalytics = ({ data, loading }) => {
+    if (loading) {
+        return (
+            <div className="analytics-container" style={{ opacity: 0.7 }}>
+                <div className="analytics-header">
+                    <div>
+                        <div className="skeleton-box" style={{ height: '24px', width: '180px', marginBottom: '8px' }}></div>
+                        <div className="skeleton-box" style={{ height: '14px', width: '120px' }}></div>
+                    </div>
+                    <div className="analytics-kpis">
+                        <div className="kpi-item">
+                            <div className="skeleton-box" style={{ height: '12px', width: '60px', marginBottom: '6px' }}></div>
+                            <div className="skeleton-box" style={{ height: '20px', width: '80px' }}></div>
+                        </div>
+                        <div className="kpi-item">
+                            <div className="skeleton-box" style={{ height: '12px', width: '60px', marginBottom: '6px' }}></div>
+                            <div className="skeleton-box" style={{ height: '20px', width: '40px' }}></div>
+                        </div>
+                        <div className="kpi-item">
+                            <div className="skeleton-box" style={{ height: '12px', width: '60px', marginBottom: '6px' }}></div>
+                            <div className="skeleton-box" style={{ height: '20px', width: '40px' }}></div>
+                        </div>
+                    </div>
+                </div>
+                <div className="chart-wrapper">
+                    <div className="skeleton-box" style={{ height: '100%', width: '100%', borderRadius: '12px' }}></div>
+                </div>
+            </div>
+        );
+    }
+
+    const chartData = {
+        labels: data?.history?.volume?.map(h => new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) || [],
+        datasets: [
+            {
+                fill: true,
+                label: 'Transaction Volume',
+                data: data?.history?.volume?.map(h => h.total_sent) || [],
+                borderColor: '#B7472A',
+                backgroundColor: 'rgba(183, 71, 42, 0.1)',
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#B7472A',
+                borderWidth: 3,
+            }
+        ]
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#1E1B18',
+                titleColor: '#FFD700',
+                bodyColor: '#fff',
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: false
+            }
+        },
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 600 }, color: '#888' } },
+            y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10, weight: 600 }, color: '#888' } }
+        }
+    };
+
+    return (
+        <div className="analytics-container fade-in">
+            <div className="analytics-header">
+                <div>
+                    <h3 className="analytics-title">Transaction Insights</h3>
+                    <p className="analytics-subtitle">Past 30 days activity</p>
+                </div>
+                <div className="analytics-kpis">
+                    <div className="kpi-item">
+                        <span className="kpi-label">Vol. Success</span>
+                        <span className="kpi-value">${data.successVolume?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="kpi-item">
+                        <span className="kpi-label">Transfers</span>
+                        <span className="kpi-value">{data.totalSentCount || 0}</span>
+                    </div>
+                    <div className="kpi-item">
+                        <span className="kpi-label">Pending</span>
+                        <span className="kpi-value">{data.pendingCount || 0}</span>
+                    </div>
+                </div>
+            </div>
+            <div className="chart-wrapper">
+                <Line data={chartData} options={options} />
+            </div>
+        </div>
+    );
+};
+
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
+
+    const [config, setConfig] = useState({
+        system_name: 'QWIK',
+        system_logo: ''
+    });
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const configRes = await api.get('/system/config/public');
+                setConfig({
+                    system_name: configRes.data.system_name || 'QWIK',
+                    system_logo: configRes.data.system_logo || ''
+                });
+            } catch (error) {
+                console.error('Config fetch error:', error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     useEffect(() => {
         if (user && user.role === 'admin') {
@@ -206,9 +346,26 @@ const UserDashboard = () => {
     const [ghsPaymentMethod, setGhsPaymentMethod] = useState(null);
     const [cadPaymentMethod, setCadPaymentMethod] = useState(null);
 
+    // Analytics State
+    const [userStats, setUserStats] = useState(null);
+    const [statsLoading, setStatsLoading] = useState(true);
+
     useEffect(() => {
         fetchPaymentMethods();
+        fetchUserStats();
     }, []);
+
+    const fetchUserStats = async () => {
+        setStatsLoading(true);
+        try {
+            const res = await api.get('/transactions/user/stats');
+            setUserStats(res.data);
+        } catch (error) {
+            console.error('Failed to fetch user stats');
+        } finally {
+            setStatsLoading(false);
+        }
+    };
 
     const fetchPaymentMethods = async () => {
         try {
@@ -496,61 +653,64 @@ const UserDashboard = () => {
                 </div>
             )}
 
-            <header>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK</h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                        <Link to="/kyc" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none' }}>
-                            {user?.kyc_status === 'verified' ? '✓ Verified' : 'Verify ID'}
+            <header className="dashboard-header">
+                <div className="dashboard-brand">
+                    <Link to="/" className="brand-link">
+                        {config.system_logo ? (
+                            <img 
+                                src={getImageUrl(`/${config.system_logo}`)} 
+                                alt="Logo" 
+                                className="nav-logo"
+                            />
+                        ) : (
+                            <div className="nav-logo-placeholder">Q</div>
+                        )}
+                        <span className="brand-name">{config.system_name}</span>
+                    </Link>
+                </div>
+
+                <div className="dashboard-actions">
+                    <nav className="dashboard-nav-links">
+                        <Link to="/kyc" className="kyc-badge-link">
+                            {user?.kyc_status === 'verified' ? (
+                                <span className="kyc-status verified">✓ Verified</span>
+                            ) : (
+                                <span className="kyc-status unverified">Verify ID</span>
+                            )}
                         </Link>
                     </nav>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+
+                    <div className="header-utilities">
                         <NotificationPanel />
                         <ThemeSwitcher />
-                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {user?.profile_picture && (
+                        
+                        <Link to="/profile" className="user-profile-pill">
+                            <div className="profile-details">
+                                <span className="user-name">{user?.full_name || user?.email?.split('@')[0]}</span>
+                                <span className="user-acc">{user?.account_number || 'ID: QT-USER'}</span>
+                            </div>
+                            {user?.profile_picture ? (
                                 <img
                                     src={getImageUrl(user.profile_picture)}
                                     alt="Avatar"
-                                    style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)' }}
+                                    className="user-avatar"
                                 />
+                            ) : (
+                                <div className="user-avatar-placeholder">
+                                    {(user?.full_name || user?.email || 'Q')[0].toUpperCase()}
+                                </div>
                             )}
-                            <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right', display: 'none' }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
-                                <div style={{
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
-                                    color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    {user?.kyc_status || 'Unverified'}
-                                </div>
-                            </Link>
-                            {/* Mobile profile link - icon only or simpler */}
-                            <Link to="/profile" className="desktop-only" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right' }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800 }}>{user?.account_number || 'N/A'}</div>
-                                <div style={{
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
-                                    color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    {user?.kyc_status || 'Unverified'}
-                                </div>
-                            </Link>
-                        </div>
+                        </Link>
+
+                        <button onClick={logout} className="sign-out-btn">
+                            <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span className="text">Sign Out</span>
+                        </button>
                     </div>
-                    <Button
-                        onClick={logout}
-                        variant="outline"
-                        style={{
-                            padding: '8px 20px',
-                            width: 'auto'
-                        }}
-                    >
-                        Sign Out
-                    </Button>
                 </div>
             </header>
 
@@ -936,6 +1096,8 @@ const UserDashboard = () => {
                 </aside>
 
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
+                    <TransactionAnalytics data={userStats} loading={statsLoading} />
+                    
                     <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

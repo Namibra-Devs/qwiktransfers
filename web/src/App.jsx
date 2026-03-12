@@ -34,6 +34,16 @@ const PrivateRoute = ({ children, role }) => {
   return children;
 };
 
+const GuestRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user) {
+    if (user.role === 'admin') return <Navigate to="/admin" />;
+    if (user.role === 'vendor') return <Navigate to="/vendor" />;
+    return <Navigate to="/dashboard" />;
+  }
+  return children;
+};
+
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -44,13 +54,13 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+            <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/register-success" element={<RegisterSuccess />} />
             <Route path="/verify-email" element={<EmailVerified />} />
             <Route path="/resend-verification" element={<ResendVerification />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+            <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
 
             <Route
               path="/admin"

@@ -519,4 +519,61 @@ const exportStats = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats, exportStats };
+const getUserStats = async (req, res) => {
+    try {
+        const { Op, fn, col } = require('sequelize');
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+        const userId = req.user.id;
+
+        // Current KPIs (User Specific)
+        const totalSentCount = await Transaction.count({ where: { userId, status: 'sent' } });
+        const pendingCount = await Transaction.count({ where: { userId, status: 'pending' } });
+        const successVolume = await Transaction.sum('amount_sent', { where: { userId, status: 'sent' } });
+
+        // Time-series Volume (User Specific) - Group by day
+        const volumeHistory = await Transaction.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('SUM', col('amount_sent')), 'total_sent'],
+                'status'
+            ],
+            where: {
+                userId,
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt')), 'status'],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        // Time-series Transaction count (User Specific)
+        const txHistory = await Transaction.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('COUNT', col('id')), 'count']
+            ],
+            where: {
+                userId,
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt'))],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        res.json({
+            pendingCount,
+            totalSentCount,
+            successVolume: successVolume || 0,
+            history: {
+                volume: volumeHistory,
+                transactions: txHistory
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats, getUserStats, exportStats };

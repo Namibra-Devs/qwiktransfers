@@ -12,6 +12,7 @@ router.get('/admin/stats/export', verifyToken, verifyAdmin, transactionControlle
 router.patch('/:id/status', verifyToken, verifyAdmin, transactionController.updateStatus);
 router.patch('/:id/cancel', verifyToken, transactionController.cancelTransaction);
 router.post('/:id/upload-proof', verifyToken, upload.single('proof'), transactionController.uploadProof);
+router.get('/user/stats', verifyToken, transactionController.getUserStats);
 router.get('/:id', verifyToken, transactionController.getTransactionById);
 
 module.exports = router;
