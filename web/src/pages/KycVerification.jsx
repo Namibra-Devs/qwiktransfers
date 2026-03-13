@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const KycVerification = () => {
     const { user, refreshProfile } = useAuth();
@@ -58,6 +59,29 @@ const KycVerification = () => {
         }
     };
 
+    const [config, setConfig] = useState({ system_name: 'QWIKTRANSFERS', system_logo: null });
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await api.get('/system/config/public');
+                if (response.data) {
+                    setConfig(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch public config:", error);
+            }
+        };
+        fetchConfig();
+    }, []);
+
+    const getImageUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+        return `${api.defaults.baseURL.replace('/api', '')}/${cleanPath}`;
+    };
+
     if (user?.kyc_status === 'verified') {
         return (
             <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -86,17 +110,34 @@ const KycVerification = () => {
 
     return (
         <div className="dashboard-container">
-            <header>
-                <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK<span style={{ fontWeight: 400, opacity: 0.6 }}>VERIFY</span></h1>
-                </Link>
-                <Link to="/" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none' }}>Dashboard</Link>
+            <header className="dashboard-header">
+                <div className="dashboard-brand">
+                    <Link to="/" className="brand-link">
+                        {config.system_logo ? (
+                            <img
+                                src={getImageUrl(`/${config.system_logo}`)}
+                                alt="Logo"
+                                className="nav-logo"
+                            />
+                        ) : (
+                            <div className="nav-logo-placeholder">Q</div>
+                        )}
+                        <span className="brand-name">{config.system_name}</span>
+                    </Link>
+                </div>
+                
+                <div className="dashboard-actions">
+                    <div className="header-utilities">
+                        <ThemeSwitcher />
+                        <Link to="/" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none', marginLeft: '16px' }}>Dashboard</Link>
+                    </div>
+                </div>
             </header>
 
-            <main style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <main style={{ maxWidth: '850px', width: '95%', margin: '40px auto' }}>
                 <div style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Identity Verification</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Complete your KYC to increase your daily limit to $5,000.</p>
+                    <h2 style={{ fontSize: '2.5rem', marginBottom: '8px', letterSpacing: '-1px' }}>Identity Verification</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Complete your KYC to unlock full transfer capabilities and high limits.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="card">

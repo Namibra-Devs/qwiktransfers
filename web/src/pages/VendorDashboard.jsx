@@ -50,15 +50,20 @@ const VendorDashboard = () => {
     // PIN Verification States
     const [showPinModal, setShowPinModal] = useState(false);
     const [pinToVerify, setPinToVerify] = useState('');
-    const [pendingAction, setPendingAction] = useState(null); // { type: 'accept' | 'complete', id: string }
+    const [pendingAction, setPendingAction] = useState(null); // { type: 'accept' | 'complete' | 'reject', id: string }
+
+    // Rejection Modal States
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [targetTxForRejection, setTargetTxForRejection] = useState(null);
 
     useEffect(() => {
-        if (showTxModal || showPreviewModal || showPinModal) {
+        if (showTxModal || showPreviewModal || showPinModal || showRejectModal) {
             document.body.classList.add('no-scroll');
         } else {
             document.body.classList.remove('no-scroll');
         }
-    }, [showTxModal, showPreviewModal, showPinModal]);
+    }, [showTxModal, showPreviewModal, showPinModal, showRejectModal]);
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -245,10 +250,40 @@ const VendorDashboard = () => {
                 await executeAcceptedTransaction(pendingAction.id);
             } else if (pendingAction.type === 'complete') {
                 await executeCompletedTransaction(pendingAction.id);
+            } else if (pendingAction.type === 'reject') {
+                setShowRejectModal(true);
+                setTargetTxForRejection(pendingAction.id);
             }
-            setPendingAction(null);
+            if (pendingAction.type !== 'reject') {
+                setPendingAction(null);
+            }
         } catch (error) {
             toast.error(error.response?.data?.error || "Invalid PIN");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRejectSubmit = async (e) => {
+        e.preventDefault();
+        if (!rejectionReason.trim()) {
+            return toast.error("Please provide a reason for rejection");
+        }
+
+        setLoading(true);
+        try {
+            await api.post('/vendor/reject', {
+                transactionId: targetTxForRejection,
+                reason: rejectionReason
+            });
+            toast.success("Transaction rejected and returned to pool");
+            setShowRejectModal(false);
+            setRejectionReason('');
+            setTargetTxForRejection(null);
+            setPendingAction(null);
+            fetchData();
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Failed to reject transaction");
         } finally {
             setLoading(false);
         }
@@ -528,11 +563,18 @@ const VendorDashboard = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    {tx.proof_url ? (
-                                                        <span className="status-badge completed">Proof Attached</span>
-                                                    ) : (
-                                                        <span className="status-badge pending">Awaiting Proof</span>
-                                                    )}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        {tx.rejection_reason && (
+                                                            <span className="status-badge pending" style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)' }}>
+                                                                Returned
+                                                            </span>
+                                                        )}
+                                                        {tx.proof_url ? (
+                                                            <span className="status-badge completed">Proof Attached</span>
+                                                        ) : (
+                                                            <span className="status-badge pending">Awaiting Proof</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <button
@@ -618,6 +660,22 @@ const VendorDashboard = () => {
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (!user?.transaction_pin) {
+                                                                    toast.error("Please set a security PIN in Profile Settings before rejecting transfers.");
+                                                                    return;
+                                                                }
+                                                                setPendingAction({ type: 'reject', id: tx.id });
+                                                                setShowPinModal(true);
+                                                            }}
+                                                            className="sign-out-btn"
+                                                            style={{ padding: '8px 12px', color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem' }}
+                                                            title="Reject Claim"
+                                                        >
+                                                            Reject
+                                                        </button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -833,7 +891,7 @@ const VendorDashboard = () => {
                                             background: 'var(--bg-main)'
                                         }}
                                     >
-                                        <img src={getImageUrl(selectedTx.proof_url.startsWith('http') ? selectedTx.proof_url : `/${selectedTx.proof_url}`)} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                                        <img src={getImageUrl(selectedTx.proof_url.startsWith('http') ? selectedTx.proof_url : `${selectedTx.proof_url}`)} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4))', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '16px', color: 'white', fontWeight: 700 }}>
                                             <span style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: '30px', fontSize: '0.8rem' }}>Click to View Full Receipt ↗</span>
                                         </div>
@@ -869,7 +927,7 @@ const VendorDashboard = () => {
                             <button onClick={() => setShowPreviewModal(false)} style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontWeight: 800 }}>×</button>
                         </div>
                         <img
-                            src={getImageUrl(previewImage.startsWith('http') ? previewImage : `/${previewImage}`)}
+                            src={getImageUrl(previewImage.startsWith('http') ? previewImage : `${previewImage}`)}
                             alt="Payment Proof Preview"
                             style={{ borderRadius: '12px', maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                         />
@@ -903,8 +961,9 @@ const VendorDashboard = () => {
                                         fontSize: '2.5rem',
                                         letterSpacing: '16px',
                                         width: '100%',
-                                        background: 'rgba(0,0,0,0.03)',
+                                        background: 'var(--bg-main)',
                                         border: '1px solid var(--border-color)',
+                                        color: 'var(--text-deep-brown)',
                                         borderRadius: '16px',
                                         padding: '20px 0'
                                     }}
@@ -920,6 +979,63 @@ const VendorDashboard = () => {
                                 </Button>
                                 <Button type="submit" loading={loading} style={{ flex: 1 }}>
                                     {loading ? 'Verifying...' : 'Authorize'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Rejection Reason Modal */}
+            {showRejectModal && (
+                <div className="modal-overlay" style={{ zIndex: 13000 }}>
+                    <div className="card fade-in" style={{ maxWidth: '450px', width: '90%', padding: '32px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🚫</div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Reject Transaction</h2>
+                            <p style={{ color: 'var(--text-muted)' }}>
+                                Please provide a reason for returning this transaction to the pool. The user will see this reason.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleRejectSubmit}>
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                    Reason for Rejection
+                                </label>
+                                <textarea
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    placeholder="e.g., Momo number does not match account name, Proof is unclear/missing..."
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '120px',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-color)',
+                                        background: 'var(--bg-peach)',
+                                        color: 'var(--text-deep-brown)',
+                                        fontFamily: 'inherit',
+                                        fontSize: '0.95rem',
+                                        resize: 'none'
+                                    }}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowRejectModal(false);
+                                        setPendingAction(null);
+                                    }}
+                                    className="sign-out-btn"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <Button type="submit" disabled={loading} style={{ width: '100%' }}>
+                                    {loading ? 'Processing...' : 'Confirm Reject'}
                                 </Button>
                             </div>
                         </form>

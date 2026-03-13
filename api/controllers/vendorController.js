@@ -173,10 +173,56 @@ const completeTransaction = async (req, res) => {
     }
 };
 
+const rejectTransaction = async (req, res) => {
+    try {
+        const { transactionId, reason } = req.body;
+        if (!reason || reason.trim() === '') {
+            return res.status(400).json({ error: 'Rejection reason is required' });
+        }
+
+        const transaction = await Transaction.findOne({
+            where: {
+                id: transactionId,
+                vendorId: req.user.id,
+                status: 'processing'
+            }
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ error: 'Transaction not found or not currently assigned to you' });
+        }
+
+        transaction.status = 'pending';
+        transaction.vendorId = null;
+        transaction.rejection_reason = reason;
+        await transaction.save();
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'VENDOR_REJECT_TRANSACTION',
+            details: `Vendor rejected transaction ${transaction.id}. Reason: ${reason}`,
+            ipAddress: req.ip
+        });
+
+        // Notification for User
+        await createNotification({
+            userId: transaction.userId,
+            type: 'TRANSACTION_UPDATE',
+            message: `Your transaction #${transaction.id} was returned to the pool by the vendor. Reason: ${reason}`
+        });
+
+        res.json({ message: 'Transaction rejected successfully', transaction });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     toggleStatus,
     getAvailablePool,
     getHandledTransactions,
     acceptTransaction,
-    completeTransaction
+    completeTransaction,
+    rejectTransaction
 };

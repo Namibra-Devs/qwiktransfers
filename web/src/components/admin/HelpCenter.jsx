@@ -65,7 +65,7 @@ const HelpCenter = () => {
 
                     <div className="help-box">
                         <h4>Audit Log Export</h4>
-                        <p>In the Audit Logs tab, click <strong>"Export XLSX"</strong>. This provides a complete history of all administrative actions, user logins, and system changes across the platform.</p>
+                        <p>In the Audit Logs tab, click <strong>"Export XLSX"</strong>. This provides a complete history of all administrative actions, including logo updates, system backups, configuration changes, and user logins.</p>
                     </div>
                 </div>
             )
@@ -166,6 +166,59 @@ const HelpCenter = () => {
                     <div className="help-box">
                         <h4>Performance Tracking</h4>
                         <p>The vendor modal shows individual success rates and total volume handled. Use this to identify your most reliable partners.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'inquiries',
+            title: 'Support Inquiries',
+            icon: '📩',
+            content: (
+                <div className="help-content">
+                    <h3>Support & Ticket Management</h3>
+                    <p>Users can send messages via the Contact Us page. These appear in the Inquiries tab for administrative review.</p>
+
+                    <div className="help-box">
+                        <h4>Status Filtering</h4>
+                        <ul>
+                            <li><strong>Pending:</strong> New messages requiring attention.</li>
+                            <li><strong>Replied:</strong> Messages that have received an administrative response.</li>
+                            <li><strong>Closed:</strong> Resolved issues hidden from the active list.</li>
+                        </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Action Buttons</h4>
+                        <p>You can mark an inquiry as <strong>Replied</strong> to track progress, or <strong>Close</strong> it once the user's issue is fully resolved.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'system-mgmt',
+            title: 'System Management',
+            icon: '⚙️',
+            content: (
+                <div className="help-content">
+                    <h3>Global Configuration & Safety</h3>
+                    <p>The System Settings page controls the core identity and security of the Qwiktransfers platform.</p>
+
+                    <div className="help-box">
+                        <h4>Branding & Identity</h4>
+                        <ul>
+                            <li><strong>System Name:</strong> Updates the name shown in emails, the dashboard, and the browser tab.</li>
+                            <li><strong>Logo Management:</strong> Upload a high-resolution transparent PNG. The system automatically performs cleanup of older versions.</li>
+                        </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Security & Backups</h4>
+                        <ul>
+                            <li><strong>Manual Backup:</strong> Instantly trigger a full database dump to the server's secure storage.</li>
+                            <li><strong>Auto-Backup:</strong> If enabled, the system performs a rollover backup every 24 hours.</li>
+                            <li><strong>Maintenance Mode:</strong> Toggles a fallback screen for users during critical updates or security patches.</li>
+                        </ul>
                     </div>
                 </div>
             )

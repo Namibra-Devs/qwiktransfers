@@ -29,7 +29,8 @@ module.exports = (sequelize, DataTypes) => {
     vendorId: DataTypes.INTEGER,
     transaction_id: DataTypes.STRING,
     market_rate: DataTypes.DECIMAL,
-    base_currency_profit: DataTypes.DECIMAL
+    base_currency_profit: DataTypes.DECIMAL,
+    rejection_reason: DataTypes.TEXT
   }, {
     sequelize,
     modelName: 'Transaction',

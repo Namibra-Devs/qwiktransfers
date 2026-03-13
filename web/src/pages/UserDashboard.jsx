@@ -1140,6 +1140,7 @@ const UserDashboard = () => {
                         <table style={{ marginTop: '0' }}>
                             <thead>
                                 <tr>
+                                    <th>Reference</th>
                                     <th>Recipient</th>
                                     <th>Amount</th>
                                     <th>Status</th>
@@ -1149,6 +1150,12 @@ const UserDashboard = () => {
                             <tbody>
                                 {transactions.map((tx) => (
                                     <tr key={tx.id} onClick={() => openDetails(tx)} style={{ cursor: 'pointer' }}>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{tx.transaction_id}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {tx.createdAt}
+                                            </div>
+                                        </td>
                                         <td>
                                             <div style={{ fontWeight: 600 }}>{tx.recipient_details?.name}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -1160,9 +1167,15 @@ const UserDashboard = () => {
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.amount_sent} {tx.type.split('-')[0]}</div>
                                         </td>
                                         <td>
-                                            <span className={`badge badge-${tx.status}`}>
-                                                {tx.status}
-                                            </span>
+                                            {tx.rejection_reason ? (
+                                                <span className="status-badge pending" style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)' }}>
+                                                    Rejected
+                                                </span>
+                                            ) : (
+                                                <span className={`badge badge-${tx.status}`}>
+                                                    {tx.status}
+                                                </span>
+                                            )}
                                         </td>
                                         <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                             {tx.status === 'pending' && !tx.proof_url && (
@@ -1242,8 +1255,8 @@ const UserDashboard = () => {
                             <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🛡️</div>
                             <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>Security Verification</h3>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-                                {pinAction?.type === 'cancel' 
-                                    ? 'Authorize the cancellation of this transfer.' 
+                                {pinAction?.type === 'cancel'
+                                    ? 'Authorize the cancellation of this transfer.'
                                     : 'Enter your 4-digit security PIN to proceed.'}
                             </p>
                         </div>
@@ -1260,8 +1273,9 @@ const UserDashboard = () => {
                                         fontSize: '2.5rem',
                                         letterSpacing: '16px',
                                         width: '100%',
-                                        background: 'rgba(0,0,0,0.03)',
+                                        background: 'var(--bg-main)',
                                         border: '1px solid var(--border-color)',
+                                        color: 'var(--text-deep-brown)',
                                         borderRadius: '16px',
                                         padding: '20px 0'
                                     }}
@@ -1317,6 +1331,27 @@ const UserDashboard = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {selectedTx.rejection_reason && (
+                                <div style={{
+                                    marginTop: '24px',
+                                    background: 'rgba(220, 38, 38, 0.05)',
+                                    border: '1px dashed #dc2626',
+                                    borderRadius: '12px',
+                                    padding: '16px 20px',
+                                    display: 'flex',
+                                    gap: '12px',
+                                    alignItems: 'center'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', marginBottom: '2px' }}>Vendor Feedback</label>
+                                        <p style={{ color: 'var(--text-deep-brown)', fontWeight: 600, fontSize: '0.9rem', lineHeight: 1.4 }}>
+                                            {selectedTx.rejection_reason}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="modal-body" style={{ padding: '24px 32px 32px' }}>
