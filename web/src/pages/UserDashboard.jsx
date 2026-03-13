@@ -1481,7 +1481,7 @@ const UserDashboard = () => {
                             )}
 
                             {/* Vendor Proof Section */}
-                            {selectedTx.status === 'completed' && selectedTx.vendor_proof_url && (
+                            {selectedTx.status === 'sent' && selectedTx.vendor_proof_url && (
                                 <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(34, 197, 94, 0.05)', border: '1px dashed var(--success)', borderRadius: '12px', textAlign: 'center' }}>
                                     <p style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '12px', fontSize: '0.9rem' }}>Vendor has uploaded proof of payment.</p>
                                     <Button 

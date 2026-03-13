@@ -518,7 +518,7 @@ select:focus {
   border-color: rgba(66, 153, 225, 0.2);
 }
 
-.status-badge.completed {
+.status-badge.completed, .status-badge.sent {
   background: rgba(56, 161, 105, 0.1);
   color: var(--success);
   border-color: rgba(56, 161, 105, 0.2);

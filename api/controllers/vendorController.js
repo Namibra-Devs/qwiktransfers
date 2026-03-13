@@ -140,7 +140,7 @@ const completeTransaction = async (req, res) => {
             return res.status(400).json({ error: 'Vendor payment proof is required to complete transaction' });
         }
 
-        transaction.status = 'completed';
+        transaction.status = 'sent';
         transaction.vendor_proof_url = finalProof;
         await transaction.save();
 
@@ -148,7 +148,7 @@ const completeTransaction = async (req, res) => {
         await logAction({
             userId: req.user.id,
             action: 'VENDOR_COMPLETE_TRANSACTION',
-            details: `Vendor completed transaction ${transaction.id} and uploaded proof.`,
+            details: `Vendor sent transaction ${transaction.id} and uploaded proof.`,
             ipAddress: req.ip
         });
 
@@ -171,7 +171,7 @@ const completeTransaction = async (req, res) => {
             sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
         }
 
-        res.json({ message: 'Transaction completed successfully', transaction });
+        res.json({ message: 'Transaction sent successfully', transaction });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -226,10 +226,10 @@ const VendorDashboard = () => {
         }
     };
 
-    const executeCompletedTransaction = async (transactionId, proofUrl) => {
+    const executeSentTransaction = async (transactionId, proofUrl) => {
         try {
             await api.post('/vendor/complete', { transactionId, proof_url: proofUrl });
-            toast.success("Transaction marked as completed and proof uploaded");
+            toast.success("Transaction marked as sent and proof uploaded");
             setShowFulfillmentModal(false);
             setFulfillmentFile(null);
             setTargetTxForFulfillment(null);
@@ -266,7 +266,7 @@ const VendorDashboard = () => {
             const proofUrl = uploadRes.data.proof_url;
 
             // Step 2: Complete the transaction with the proof URL
-            await executeCompletedTransaction(targetTxForFulfillment, proofUrl);
+            await executeSentTransaction(targetTxForFulfillment, proofUrl);
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to finalize fulfillment");
             setIsGlobalLoading(false);
@@ -297,7 +297,7 @@ const VendorDashboard = () => {
             toast.error(error.response?.data?.error || "Invalid PIN");
         } finally {
             setLoading(false);
-            // Note: isGlobalLoading is turned off in executeCompletedTransaction or finalizeFulfillment error
+            // Note: isGlobalLoading is turned off in executeSentTransaction or finalizeFulfillment error
         }
     };
 
@@ -481,7 +481,7 @@ const VendorDashboard = () => {
                 <div className="vendor-stats-grid">
                     <div className="stat-card">
                         <span className="label">Successful Payouts</span>
-                        <span className="value">{myTransactions.filter(tx => tx.status === 'completed').length}</span>
+                        <span className="value">{myTransactions.filter(tx => tx.status === 'sent').length}</span>
                         <div className="accent-bar green"></div>
                     </div>
                     <div className="stat-card">
@@ -513,7 +513,7 @@ const VendorDashboard = () => {
                         onClick={() => setActiveTab('history')}
                         className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
                     >
-                        History ({myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).length})
+                        History ({myTransactions.filter(tx => tx.status === 'sent').length})
                     </button>
                 </div>
 
@@ -620,7 +620,7 @@ const VendorDashboard = () => {
                                                             </span>
                                                         )}
                                                         {tx.proof_url ? (
-                                                            <span className="status-badge completed">Proof Attached</span>
+                                                            <span className="status-badge sent">Proof Attached</span>
                                                         ) : (
                                                             <span className="status-badge pending">Awaiting Proof</span>
                                                         )}
@@ -707,7 +707,9 @@ const VendorDashboard = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className={`status-badge ${tx.status}`}>{tx.status}</span>
+                                                    <span className={`status-badge ${tx.status}`}>
+                                                        {tx.status === 'sent' ? 'Sent' : tx.status}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -737,11 +739,12 @@ const VendorDashboard = () => {
                                                         >
                                                             Verify Payment
                                                         </button>
-                                                        {(tx.proof_url || tx.vendor_proof_url) && (
+                                                        {/* {(tx.proof_url || tx.vendor_proof_url) && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setPreviewImage(tx.vendor_proof_url || tx.proof_url);
+                                                                    setPreviewDate(tx.vendor_proof_url ? tx.updatedAt : tx.createdAt);
                                                                     setShowPreviewModal(true);
                                                                 }}
                                                                 className="sign-out-btn"
@@ -750,7 +753,7 @@ const VendorDashboard = () => {
                                                             >
                                                                 📄
                                                             </button>
-                                                        )}
+                                                        )} */}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -766,7 +769,7 @@ const VendorDashboard = () => {
                     <div className="card editorial-card">
                         <div className="card-header" style={{ marginBottom: '32px' }}>
                             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Fulfillment History</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your successfully completed transactions.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your successfully sent transactions.</p>
                         </div>
 
                         <div className="table-responsive">
@@ -783,14 +786,14 @@ const VendorDashboard = () => {
                                 <tbody>
                                     {myTxLoading ? (
                                         <TableSkeleton rows={3} cols={5} />
-                                    ) : myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).length === 0 ? (
+                                    ) : myTransactions.filter(tx => tx.status === 'sent').length === 0 ? (
                                         <tr>
                                             <td colSpan="5" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
                                                 Your fulfillment history is empty. Complete a task to see it here!
                                             </td>
                                         </tr>
                                     ) : (
-                                        myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).map(tx => (
+                                        myTransactions.filter(tx => tx.status === 'sent').map(tx => (
                                             <tr key={tx.id} className="table-row" onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
                                                 <td>
                                                     <div className="user-info">
@@ -810,7 +813,9 @@ const VendorDashboard = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className={`status-badge ${tx.status}`} style={{ background: '#22c55e', color: 'white' }}>{tx.status}</span>
+                                                    <span className={`status-badge ${tx.status}`} style={{ background: '#22c55e', color: 'white' }}>
+                                                        {tx.status === 'sent' ? 'Sent' : tx.status}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     {(tx.proof_url || tx.vendor_proof_url) && (
@@ -818,6 +823,7 @@ const VendorDashboard = () => {
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setPreviewImage(tx.vendor_proof_url || tx.proof_url);
+                                                                setPreviewDate(tx.vendor_proof_url ? tx.updatedAt : tx.createdAt);
                                                                 setShowPreviewModal(true);
                                                             }}
                                                             className="btn btn-sm btn-outline"
@@ -1006,7 +1012,11 @@ const VendorDashboard = () => {
                                 <div style={{ marginBottom: '32px' }}>
                                     <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Payment Verification Proof</h4>
                                     <div
-                                        onClick={() => { setPreviewImage(selectedTx.proof_url); setShowPreviewModal(true); }}
+                                        onClick={() => {
+                                            setPreviewImage(selectedTx.proof_url);
+                                            setPreviewDate(selectedTx.proof_uploaded_at);
+                                            setShowPreviewModal(true);
+                                        }}
                                         style={{
                                             cursor: 'pointer',
                                             borderRadius: '16px',
@@ -1058,6 +1068,18 @@ const VendorDashboard = () => {
                             alt="Payment Proof Preview"
                             style={{ borderRadius: '12px', maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                         />
+                        {previewDate && (
+                            <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '16px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
