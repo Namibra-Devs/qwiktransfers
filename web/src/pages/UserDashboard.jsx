@@ -1454,9 +1454,9 @@ const UserDashboard = () => {
                                             type="file"
                                             accept="image/*,.pdf"
                                             onChange={(e) => handleUploadProof(selectedTx.id, e.target.files[0])}
-                                            style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%', top: 0, left: 0 }}
+                                            style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%', top: 0, left: 0, zIndex: 10 }}
                                         />
-                                        <Button style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
+                                        <Button type="button" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
                                             Upload Payment Proof
                                         </Button>
                                     </div>
