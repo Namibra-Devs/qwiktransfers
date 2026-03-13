@@ -120,7 +120,8 @@ const acceptTransaction = async (req, res) => {
 
 const completeTransaction = async (req, res) => {
     try {
-        const { transactionId } = req.body;
+        const { transactionId, proof_url } = req.body;
+        
         const transaction = await Transaction.findOne({
             where: {
                 id: transactionId,
@@ -130,44 +131,60 @@ const completeTransaction = async (req, res) => {
         });
 
         if (!transaction) {
-            return res.status(404).json({ error: 'Transaction not found or not assigned to you' });
+            return res.status(404).json({ error: 'Transaction not found or not currently assigned to you' });
         }
 
-        transaction.status = 'sent';
-        transaction.sent_at = new Date();
+        // Check if proof exists (either already saved or provided in request)
+        const finalProof = proof_url || transaction.vendor_proof_url;
+        if (!finalProof) {
+            return res.status(400).json({ error: 'Vendor payment proof is required to complete transaction' });
+        }
+
+        transaction.status = 'completed';
+        transaction.vendor_proof_url = finalProof;
         await transaction.save();
 
         // Audit log
         await logAction({
             userId: req.user.id,
             action: 'VENDOR_COMPLETE_TRANSACTION',
-            details: `Vendor marked transaction ${transaction.id} as completed/sent`,
+            details: `Vendor completed transaction ${transaction.id} and uploaded proof.`,
             ipAddress: req.ip
         });
 
         // Notification for User
         await createNotification({
             userId: transaction.userId,
-            type: 'TRANSACTION_UPDATE',
-            message: `Good news! Your transaction #${transaction.id} has been fully processed and sent to the recipient.`
+            type: 'TRANSACTION_COMPLETE',
+            message: `Your transaction #${transaction.id} has been completed! You can view the payment proof in your dashboard.`
         });
 
         // Fetch user for notifications
         const user = await User.findByPk(transaction.userId);
-
-        // Async Notifications
         if (user) {
-            // Email
-            sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
-
             // SMS
             if (user.phone) {
                 const toCurr = transaction.type?.split('-')[1] || 'CAD';
-                await sendSMS(user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`);
+                await sendSMS(user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`).catch(err => console.error("Vendor completion SMS failed:", err));
             }
+            // Email
+            sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
         }
 
-        res.json({ message: 'Transaction marked as sent', transaction });
+        res.json({ message: 'Transaction completed successfully', transaction });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const uploadVendorProof = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const proof_url = `/uploads/proofs/${req.file.filename}`;
+        res.json({ proof_url });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -224,5 +241,6 @@ module.exports = {
     getHandledTransactions,
     acceptTransaction,
     completeTransaction,
+    uploadVendorProof,
     rejectTransaction
 };

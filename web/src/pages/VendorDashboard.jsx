@@ -14,6 +14,7 @@ const VendorDashboard = () => {
     const [pool, setPool] = useState([]);
     const [myTransactions, setMyTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isGlobalLoading, setIsGlobalLoading] = useState(false);
     const [poolLoading, setPoolLoading] = useState(false);
     const [myTxLoading, setMyTxLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('pool');
@@ -47,6 +48,12 @@ const VendorDashboard = () => {
         confirm: ''
     });
 
+    // Fulfillment Proof States (Vendor Proof)
+    const [showFulfillmentModal, setShowFulfillmentModal] = useState(false);
+    const [fulfillmentFile, setFulfillmentFile] = useState(null);
+    const [fulfillmentPreview, setFulfillmentPreview] = useState(null);
+    const [targetTxForFulfillment, setTargetTxForFulfillment] = useState(null);
+
     // PIN Verification States
     const [showPinModal, setShowPinModal] = useState(false);
     const [pinToVerify, setPinToVerify] = useState('');
@@ -58,12 +65,12 @@ const VendorDashboard = () => {
     const [targetTxForRejection, setTargetTxForRejection] = useState(null);
 
     useEffect(() => {
-        if (showTxModal || showPreviewModal || showPinModal || showRejectModal) {
+        if (showTxModal || showPreviewModal || showPinModal || showRejectModal || showFulfillmentModal) {
             document.body.classList.add('no-scroll');
         } else {
             document.body.classList.remove('no-scroll');
         }
-    }, [showTxModal, showPreviewModal, showPinModal, showRejectModal]);
+    }, [showTxModal, showPreviewModal, showPinModal, showRejectModal, showFulfillmentModal]);
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -208,15 +215,6 @@ const VendorDashboard = () => {
         }
     };
 
-    const completeTransaction = async (transactionId) => {
-        if (!user?.transaction_pin) {
-            toast.error("Please set a security PIN in Profile Settings before completing transfers.");
-            return;
-        }
-
-        setPendingAction({ type: 'complete', id: transactionId });
-        setShowPinModal(true);
-    };
 
     const executeAcceptedTransaction = async (transactionId) => {
         try {
@@ -228,13 +226,50 @@ const VendorDashboard = () => {
         }
     };
 
-    const executeCompletedTransaction = async (transactionId) => {
+    const executeCompletedTransaction = async (transactionId, proofUrl) => {
         try {
-            await api.post('/vendor/complete', { transactionId });
-            toast.success("Transaction marked as completed");
+            await api.post('/vendor/complete', { transactionId, proof_url: proofUrl });
+            toast.success("Transaction marked as completed and proof uploaded");
+            setShowFulfillmentModal(false);
+            setFulfillmentFile(null);
+            setTargetTxForFulfillment(null);
+            setPendingAction(null);
             fetchData();
         } catch (error) {
-            toast.error("Failed to complete transaction");
+            toast.error(error.response?.data?.error || "Failed to complete transaction");
+        } finally {
+            setIsGlobalLoading(false);
+        }
+    };
+
+    const handleFulfillmentSubmit = async (e) => {
+        e.preventDefault();
+        if (!fulfillmentFile) {
+            return toast.error("Please upload the payment proof to continue");
+        }
+
+        // Instead of uploading right away, we now trigger the PIN modal
+        setShowFulfillmentModal(false);
+        setPendingAction({ type: 'complete', id: targetTxForFulfillment });
+        setShowPinModal(true);
+    };
+
+    const finalizeFulfillment = async () => {
+        const formData = new FormData();
+        formData.append('proof', fulfillmentFile);
+
+        try {
+            // Step 1: Upload the file
+            const uploadRes = await api.post('/vendor/upload-proof', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const proofUrl = uploadRes.data.proof_url;
+
+            // Step 2: Complete the transaction with the proof URL
+            await executeCompletedTransaction(targetTxForFulfillment, proofUrl);
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Failed to finalize fulfillment");
+            setIsGlobalLoading(false);
         }
     };
 
@@ -249,18 +284,20 @@ const VendorDashboard = () => {
             if (pendingAction.type === 'accept') {
                 await executeAcceptedTransaction(pendingAction.id);
             } else if (pendingAction.type === 'complete') {
-                await executeCompletedTransaction(pendingAction.id);
+                setIsGlobalLoading(true); // Trigger processing overlay
+                await finalizeFulfillment();
             } else if (pendingAction.type === 'reject') {
                 setShowRejectModal(true);
                 setTargetTxForRejection(pendingAction.id);
             }
-            if (pendingAction.type !== 'reject') {
+            if (pendingAction.type !== 'reject' && pendingAction.type !== 'complete') {
                 setPendingAction(null);
             }
         } catch (error) {
             toast.error(error.response?.data?.error || "Invalid PIN");
         } finally {
             setLoading(false);
+            // Note: isGlobalLoading is turned off in executeCompletedTransaction or finalizeFulfillment error
         }
     };
 
@@ -373,6 +410,13 @@ const VendorDashboard = () => {
 
     return (
         <div className="dashboard-container">
+            {isGlobalLoading && (
+                <div className="processing-overlay">
+                    <div className="spinner"></div>
+                    <h2 style={{ fontSize: '1.2rem', color: 'var(--text-deep-brown)' }}>Processing your request...</h2>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Please do not refresh the page.</p>
+                </div>
+            )}
             <header className="dashboard-header">
                 <div className="dashboard-brand">
                     <Link to="/" className="brand-link">
@@ -463,7 +507,13 @@ const VendorDashboard = () => {
                         onClick={() => setActiveTab('my')}
                         className={`tab-btn ${activeTab === 'my' ? 'active' : ''}`}
                     >
-                        My Operations ({myTransactions.filter(tx => tx.status === 'processing').length})
+                        Active Operations ({myTransactions.filter(tx => tx.status === 'processing').length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('history')}
+                        className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+                    >
+                        History ({myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).length})
                     </button>
                 </div>
 
@@ -600,7 +650,8 @@ const VendorDashboard = () => {
                 {isOnline && activeTab === 'my' && (
                     <div className="card editorial-card">
                         <div className="card-header" style={{ marginBottom: '32px' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>My Operations</h2>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Active Operations</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tasks you are currently processing.</p>
                         </div>
 
                         <div className="table-responsive">
@@ -677,19 +728,20 @@ const VendorDashboard = () => {
                                                             Reject
                                                         </button>
                                                         <button
+                                                            className="btn btn-sm btn-primary"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                completeTransaction(tx.id);
+                                                                setTargetTxForFulfillment(tx.id);
+                                                                setShowFulfillmentModal(true);
                                                             }}
-                                                            className="complete-cta"
                                                         >
                                                             Verify Payment
                                                         </button>
-                                                        {tx.proof_url && (
+                                                        {(tx.proof_url || tx.vendor_proof_url) && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    setPreviewImage(tx.proof_url);
+                                                                    setPreviewImage(tx.vendor_proof_url || tx.proof_url);
                                                                     setShowPreviewModal(true);
                                                                 }}
                                                                 className="sign-out-btn"
@@ -700,6 +752,80 @@ const VendorDashboard = () => {
                                                             </button>
                                                         )}
                                                     </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {isOnline && activeTab === 'history' && (
+                    <div className="card editorial-card">
+                        <div className="card-header" style={{ marginBottom: '32px' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Fulfillment History</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your successfully completed transactions.</p>
+                        </div>
+
+                        <div className="table-responsive">
+                            <table className="editorial-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>User</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Receipt</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {myTxLoading ? (
+                                        <TableSkeleton rows={3} cols={5} />
+                                    ) : myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                                                Your fulfillment history is empty. Complete a task to see it here!
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        myTransactions.filter(tx => ['completed', 'sent'].includes(tx.status)).map(tx => (
+                                            <tr key={tx.id} className="table-row" onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
+                                                <td>
+                                                    <div className="user-info">
+                                                        <span className="name">#{tx.transaction_id}</span>
+                                                        <span className="acc" style={{ fontSize: '0.75rem' }}>{new Date(tx.updatedAt).toLocaleDateString()}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 700 }}>{tx.user?.full_name}</div>
+                                                </td>
+                                                <td>
+                                                    <div className="amount-col" style={{ color: 'var(--success)' }}>
+                                                        {tx.type?.split('-')[0] || 'GHS'} {parseFloat(tx.amount_sent || 0).toLocaleString()}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                                                        {tx.amount_received} {tx.type?.split('-')[1] || 'CAD'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`status-badge ${tx.status}`} style={{ background: '#22c55e', color: 'white' }}>{tx.status}</span>
+                                                </td>
+                                                <td>
+                                                    {(tx.proof_url || tx.vendor_proof_url) && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPreviewImage(tx.vendor_proof_url || tx.proof_url);
+                                                                setShowPreviewModal(true);
+                                                            }}
+                                                            className="btn btn-sm btn-outline"
+                                                            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                                                        >
+                                                            View Proof
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))
@@ -906,7 +1032,8 @@ const VendorDashboard = () => {
                                     <Button
                                         onClick={() => {
                                             setShowTxModal(false);
-                                            completeTransaction(selectedTx.id);
+                                            setTargetTxForFulfillment(selectedTx.id);
+                                            setShowFulfillmentModal(true);
                                         }}
                                         style={{ flex: 1.5, height: '54px', fontWeight: 800, background: 'var(--success)' }}
                                     >
@@ -1036,6 +1163,102 @@ const VendorDashboard = () => {
                                 </button>
                                 <Button type="submit" disabled={loading} style={{ width: '100%' }}>
                                     {loading ? 'Processing...' : 'Confirm Reject'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Vendor Fulfillment Proof Modal */}
+            {showFulfillmentModal && (
+                <div className="modal-overlay" style={{ zIndex: 13000 }}>
+                    <div className="card fade-in" style={{ maxWidth: '450px', width: '90%', padding: '32px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧾</div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Upload Payment Proof</h2>
+                            <p style={{ color: 'var(--text-muted)' }}>
+                                You must upload a screenshot or PDF of the transfer receipt to complete this transaction.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleFulfillmentSubmit}>
+                            <div style={{
+                                marginBottom: '24px',
+                                padding: '16px',
+                                border: '2px dashed var(--border-color)',
+                                borderRadius: '16px',
+                                textAlign: 'center',
+                                background: 'rgba(0,0,0,0.02)',
+                                transition: 'all 0.3s ease',
+                                position: 'relative',
+                                minHeight: '200px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                {fulfillmentFile ? (
+                                    <div className="fade-in" style={{ width: '100%' }}>
+                                        {fulfillmentPreview ? (
+                                            <div style={{ position: 'relative', margin: '0 auto', width: 'fit-content' }}>
+                                                <img src={fulfillmentPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                            </div>
+                                        ) : (
+                                            <div style={{ fontSize: '3rem', marginBottom: '8px' }}>📄</div>
+                                        )}
+                                        <div style={{ fontWeight: 700, color: 'var(--secondary)', margin: '12px 0 4px', fontSize: '0.9rem', wordBreak: 'break-all' }}>{fulfillmentFile.name}</div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFulfillmentFile(null);
+                                                setFulfillmentPreview(null);
+                                            }}
+                                            style={{ color: '#dc2626', background: 'none', border: 'none', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                                        >
+                                            Change File
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) => {
+                                                const file = e.target.files[0];
+                                                setFulfillmentFile(file);
+                                                if (file && file.type.startsWith('image/')) {
+                                                    setFulfillmentPreview(URL.createObjectURL(file));
+                                                } else {
+                                                    setFulfillmentPreview(null);
+                                                }
+                                            }}
+                                            style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', top: 0, left: 0, cursor: 'pointer', zIndex: 10 }}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.5 }}>📸</div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Click to select receipt</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>PNG, JPG or PDF up to 10MB</div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowFulfillmentModal(false);
+                                        setFulfillmentFile(null);
+                                        setFulfillmentPreview(null);
+                                        setTargetTxForFulfillment(null);
+                                    }}
+                                    className="sign-out-btn"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <Button type="submit" disabled={!fulfillmentFile} style={{ width: '100%' }}>
+                                    Confirm & Verify PIN
                                 </Button>
                             </div>
                         </form>

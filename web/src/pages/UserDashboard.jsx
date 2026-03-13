@@ -1480,6 +1480,25 @@ const UserDashboard = () => {
                                 </div>
                             )}
 
+                            {/* Vendor Proof Section */}
+                            {selectedTx.status === 'completed' && selectedTx.vendor_proof_url && (
+                                <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(34, 197, 94, 0.05)', border: '1px dashed var(--success)', borderRadius: '12px', textAlign: 'center' }}>
+                                    <p style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '12px', fontSize: '0.9rem' }}>Vendor has uploaded proof of payment.</p>
+                                    <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        onClick={() => {
+                                            setPreviewImage(selectedTx.vendor_proof_url);
+                                            setPreviewDate(selectedTx.updatedAt);
+                                            setShowPreviewModal(true);
+                                        }}
+                                        style={{ padding: '10px 24px', fontSize: '0.9rem' }}
+                                    >
+                                        View Fulfillment Proof
+                                    </Button>
+                                </div>
+                            )}
+
                             {/* User Proof Section */}
                             {selectedTx.status === 'pending' && !selectedTx.proof_url && (
                                 <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(183, 71, 42, 0.05)', border: '1px dashed var(--primary)', borderRadius: '12px', textAlign: 'center' }}>
