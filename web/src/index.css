@@ -39,6 +39,7 @@
   /* Deep, dark maroon/red base */
   --bg-main: #1A0A09;
   --text-deep-brown: #FADED9;
+  --secondary: #FADED9;
   /* Soft peach-white for high contrast */
   --accent-peach: rgba(183, 71, 42, 0.08);
   /* Transparent cool red */
@@ -3235,10 +3236,10 @@ body.no-scroll {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Fix for top cutoff */
   justify-content: center;
   z-index: 10000;
-  padding: 24px;
+  padding: 40px 24px;
   overflow-y: auto; /* Enable scrolling for long content */
   -webkit-overflow-scrolling: touch;
 }

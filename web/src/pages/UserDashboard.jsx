@@ -342,6 +342,16 @@ const UserDashboard = () => {
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportDates, setExportDates] = useState({ start: '', end: '' });
 
+    // Body scroll lock for modals
+    useEffect(() => {
+        if (showDetailsModal || showPreviewModal || showPinModal || showExportModal) {
+            document.body.classList.add('no-scroll');
+        } else {
+            document.body.classList.remove('no-scroll');
+        }
+        return () => document.body.classList.remove('no-scroll');
+    }, [showDetailsModal, showPreviewModal, showPinModal, showExportModal]);
+
     // Payment Methods State
     const [ghsPaymentMethod, setGhsPaymentMethod] = useState(null);
     const [cadPaymentMethod, setCadPaymentMethod] = useState(null);
@@ -545,6 +555,7 @@ const UserDashboard = () => {
         try {
             await api.post('/auth/verify-pin', { pin });
             setShowPinModal(false);
+            setShowDetailsModal(false); // Hide details modal so processing UI covers screen
             setPin('');
             setIsGlobalLoading(true); // Start processing loader AFTER pin vanishes
 
@@ -657,9 +668,9 @@ const UserDashboard = () => {
                 <div className="dashboard-brand">
                     <Link to="/" className="brand-link">
                         {config.system_logo ? (
-                            <img 
-                                src={getImageUrl(`/${config.system_logo}`)} 
-                                alt="Logo" 
+                            <img
+                                src={getImageUrl(`/${config.system_logo}`)}
+                                alt="Logo"
                                 className="nav-logo"
                             />
                         ) : (
@@ -683,7 +694,7 @@ const UserDashboard = () => {
                     <div className="header-utilities">
                         <NotificationPanel />
                         <ThemeSwitcher />
-                        
+
                         <Link to="/profile" className="user-profile-pill">
                             <div className="profile-details">
                                 <span className="user-name">{user?.full_name || user?.email?.split('@')[0]}</span>
@@ -1097,7 +1108,7 @@ const UserDashboard = () => {
 
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
                     <TransactionAnalytics data={userStats} loading={statsLoading} />
-                    
+
                     <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -1223,25 +1234,47 @@ const UserDashboard = () => {
                 </section>
             </main>
 
+            {/* PIN Verification Modal */}
             {showPinModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div className="card" style={{ maxWidth: '360px', width: '90%', textAlign: 'center' }}>
-                        <h3 style={{ marginBottom: '16px' }}>Verify Transaction</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>Enter your 4-digit security PIN to proceed.</p>
+                <div className="modal-overlay" style={{ zIndex: 12000 }}>
+                    <div className="modal-content glass" style={{ maxWidth: '400px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🛡️</div>
+                            <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>Security Verification</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
+                                {pinAction?.type === 'cancel' 
+                                    ? 'Authorize the cancellation of this transfer.' 
+                                    : 'Enter your 4-digit security PIN to proceed.'}
+                            </p>
+                        </div>
+
                         <form onSubmit={handlePinSubmit}>
-                            <Input
-                                type="password"
-                                maxLength="4"
-                                value={pin}
-                                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                                style={{ textAlign: 'center', fontSize: '2rem', letterSpacing: '12px', marginBottom: '24px' }}
-                                placeholder="••••"
-                                autoFocus
-                                required
-                            />
+                            <div style={{ position: 'relative', marginBottom: '32px' }}>
+                                <input
+                                    type="password"
+                                    maxLength="4"
+                                    value={pin}
+                                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                    style={{
+                                        textAlign: 'center',
+                                        fontSize: '2.5rem',
+                                        letterSpacing: '16px',
+                                        width: '100%',
+                                        background: 'rgba(0,0,0,0.03)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '16px',
+                                        padding: '20px 0'
+                                    }}
+                                    placeholder="••••"
+                                    autoFocus
+                                    required
+                                />
+                            </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <Button variant="outline" onClick={() => setShowPinModal(false)} style={{ flex: 1 }}>Cancel</Button>
-                                <Button type="submit" loading={loading} style={{ flex: 1 }}>
+                                <Button type="button" variant="outline" onClick={() => setShowPinModal(false)} style={{ flex: 1, padding: '16px' }}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" loading={loading} style={{ flex: 1, padding: '16px' }}>
                                     Verify
                                 </Button>
                             </div>
@@ -1250,122 +1283,207 @@ const UserDashboard = () => {
                 </div>
             )}
 
+            {/* Transaction Details Modal (Premium Redesign) */}
             {showDetailsModal && selectedTx && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-                    <div className="card fade-in" style={{ maxWidth: '440px', width: '90%', padding: '0', overflow: 'hidden' }}>
-                        <div style={{ padding: '24px', background: 'var(--text-deep-brown)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0, fontSize: '1rem' }}>Transaction Details</h3>
-                            <button onClick={() => setShowDetailsModal(false)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+                    <div className="card fade-in" style={{ padding: '0', maxWidth: '650px', width: '95%', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+                        {/* Modal Header/Upper Section */}
+                        <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)' }}>Transaction Breakdown</h1>
+                                <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Reference</label>
+                                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px' }}>#{selectedTx.transaction_id.toUpperCase()}</h2>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Status</label>
+                                    <span className={`status-badge ${selectedTx.status}`} style={{ margin: 0, padding: '8px 20px', borderRadius: '30px' }}>{selectedTx.status}</span>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Initiated At</label>
+                                    <p style={{ fontWeight: 700, fontSize: '1rem' }}>{new Date(selectedTx.createdAt).toLocaleString()}</p>
+                                </div>
+                                {selectedTx.status === 'sent' && (
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--success)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Sent Date</label>
+                                        <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--success)' }}>{new Date(selectedTx.updatedAt).toLocaleString()}</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div style={{ padding: '32px' }}>
-                            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-deep-brown)', wordBreak: 'break-all' }}>
-                                    {selectedTx.amount_received} {selectedTx.type.split('-')[1]}
+                        <div className="modal-body" style={{ padding: '24px 32px 32px' }}>
+                            {/* Financial Summary Card */}
+                            <div style={{
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                marginBottom: '24px'
+                            }}>
+                                <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '20px' }}>Financial Summary</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Currency Pair</label>
+                                        <p style={{ fontWeight: 800, fontSize: '1.2rem' }}>{selectedTx.type?.split('-')[0]} → {selectedTx.type?.split('-')[1]}</p>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Exchange Rate</label>
+                                        <p style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                                            1 {selectedTx.type?.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type?.split('-')[1]}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Amount Sent</label>
+                                        <p style={{ fontWeight: 800, fontSize: '1.4rem' }}>{selectedTx.amount_sent} {selectedTx.type?.split('-')[0]}</p>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>To Recipient</label>
+                                        <p style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--primary)' }}>{selectedTx.amount_received} {selectedTx.type?.split('-')[1]}</p>
+                                    </div>
                                 </div>
-                                <div style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{selectedTx.amount_sent} {selectedTx.type.split('-')[0]} Sent</div>
-                                <span className={`badge badge-${selectedTx.status}`} style={{ marginTop: '12px', display: 'inline-block' }}>{selectedTx.status}</span>
                             </div>
 
-                            <div style={{ display: 'grid', gap: '16px', fontSize: '0.9rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Transaction ID</span>
-                                    <span style={{ fontWeight: 700 }}>{selectedTx.transaction_id}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Recipient</span>
-                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Method</span>
-                                    <span style={{ fontWeight: 700, textTransform: 'capitalize' }}>{selectedTx.recipient_details?.type.replace('_', ' ')}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>{selectedTx.recipient_details?.type === 'bank' ? 'Account' : 'Wallet / Email'}</span>
-                                    <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.account || selectedTx.recipient_details?.interac_email}</span>
-                                </div>
-                                {selectedTx.recipient_details?.momo_provider && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Provider</span>
-                                        <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.momo_provider}</span>
-                                    </div>
-                                )}
-                                {selectedTx.recipient_details?.bank_name && (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Bank</span>
-                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.bank_name}</span>
-                                        </div>
-                                        {selectedTx.recipient_details.transit_number && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>Transit #</span>
-                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.transit_number}</span>
-                                            </div>
-                                        )}
-                                        {selectedTx.recipient_details.institution_number && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>Institution #</span>
-                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.institution_number}</span>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                                {selectedTx.recipient_details?.note && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Note</span>
-                                        <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details.note}</span>
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Initiated At</span>
-                                    <span style={{ fontWeight: 700 }}>
-                                        {new Date(selectedTx.createdAt).toLocaleString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric',
-                                            hour: 'numeric',
-                                            minute: 'numeric',
-                                            hour12: true
-                                        })}
+                            {/* Recipient Details Card */}
+                            <div style={{
+                                background: 'rgba(0,0,0,0.015)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                marginBottom: '24px',
+                                position: 'relative'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Recipient Details</h4>
+                                    <span style={{
+                                        background: 'var(--secondary)',
+                                        color: 'white',
+                                        padding: '4px 12px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {selectedTx.recipient_details?.type || 'Bank'}
                                     </span>
                                 </div>
-                                {selectedTx.sent_at && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Sent Date</span>
-                                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>
-                                            {new Date(selectedTx.sent_at).toLocaleString('en-US', {
-                                                month: 'short',
-                                                day: 'numeric',
-                                                year: 'numeric',
-                                                hour: 'numeric',
-                                                minute: 'numeric',
-                                                hour12: true
-                                            })}
-                                        </span>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Full Name:</span>
+                                        <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name || 'N/A'}</span>
                                     </div>
-                                )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Rate</span>
-                                    <span style={{ fontWeight: 700 }}>1 {selectedTx.type.split('-')[0]} = {(selectedTx.amount_received / selectedTx.amount_sent).toFixed(4)} {selectedTx.type.split('-')[1]}</span>
-                                </div>
-                                <div style={{ marginTop: '16px', padding: '16px', background: 'var(--accent-peach)', borderRadius: '8px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-deep-brown)', opacity: 0.7, marginBottom: '4px' }}>Admin Payment Reference</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-deep-brown)', letterSpacing: '1px' }}>
-                                        {selectedTx.recipient_details?.admin_reference || 'N/A'}
+
+                                    {selectedTx.recipient_details?.type === 'momo' && (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Provider:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.momo_provider || 'N/A'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Wallet / Phone:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.account || selectedTx.recipient_details?.phone || 'N/A'}</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {selectedTx.recipient_details?.type === 'bank' && (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Bank Name:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.bank_name || 'N/A'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Account Number:</span>
+                                                <span style={{ fontWeight: 700, letterSpacing: '1px' }}>{selectedTx.recipient_details?.account || 'N/A'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Transit Number:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.transit_number || 'N/A'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Institution:</span>
+                                                <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.institution_number || 'N/A'}</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {selectedTx.recipient_details?.type === 'interac' && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Interac Email:</span>
+                                            <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.interac_email || 'N/A'}</span>
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Admin Payment Reference:</span>
+                                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedTx.admin_reference || selectedTx.recipient_details?.admin_reference || 'N/A'}</span>
                                     </div>
                                 </div>
                             </div>
 
+                            {selectedTx.recipient_details?.note && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Your Note</h4>
+                                    <div style={{
+                                        padding: '16px 20px',
+                                        borderRadius: '12px',
+                                        border: '1px dashed var(--border-color)',
+                                        background: 'rgba(0,0,0,0.01)',
+                                        fontStyle: 'italic',
+                                        color: 'var(--secondary)'
+                                    }}>
+                                        "{selectedTx.recipient_details.note}"
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* User Proof Section */}
+                            {selectedTx.status === 'pending' && !selectedTx.proof_url && (
+                                <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(183, 71, 42, 0.05)', border: '1px dashed var(--primary)', borderRadius: '12px', textAlign: 'center' }}>
+                                    <p style={{ color: 'var(--text-deep-brown)', fontWeight: 700, marginBottom: '12px', fontSize: '0.9rem' }}>Awaiting your payment proof to process this transfer.</p>
+                                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                                        <input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) => handleUploadProof(selectedTx.id, e.target.files[0])}
+                                            style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%', top: 0, left: 0 }}
+                                        />
+                                        <Button style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
+                                            Upload Payment Proof
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* User Actions */}
                             <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
-                                <Button variant="outline" onClick={() => setShowDetailsModal(false)} style={{ flex: 1 }}>Close</Button>
+                                <Button variant="outline" onClick={() => setShowDetailsModal(false)} style={{ flex: 1 }}>Close Modal</Button>
                                 {selectedTx.status === 'pending' && !selectedTx.proof_url && (
-                                    <Button
+                                    <button
                                         onClick={() => handleCancelTransaction(selectedTx.id)}
-                                        variant="danger" // Variant isn't in button.jsx but we can use style for now or just stick to standard
-                                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none', flex: 1.5 }}
+                                        style={{
+                                            background: '#fee2e2',
+                                            color: '#dc2626',
+                                            border: 'none',
+                                            flex: 1,
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                        }}
+                                        onMouseOver={e => e.target.style.background = '#fef2f2'}
+                                        onMouseOut={e => e.target.style.background = '#fee2e2'}
                                     >
                                         Cancel Transaction
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         </div>

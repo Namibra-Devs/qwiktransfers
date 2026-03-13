@@ -132,7 +132,7 @@ const VendorDashboard = () => {
 
     const getCountryBadge = (country) => {
         if (!country) return null;
-        
+
         const countryMap = {
             'Ghana': { flag: '🇬🇭', label: 'Ghana' },
             'Canada': { flag: '🇨🇦', label: 'Canada' },
@@ -140,17 +140,17 @@ const VendorDashboard = () => {
             'UK': { flag: '🇬🇧', label: 'UK' },
             'USA': { flag: '🇺🇸', label: 'USA' }
         };
-        
+
         const cData = countryMap[country] || { flag: '🌍', label: country };
-        
+
         return (
-            <span style={{ 
-                background: 'rgba(183, 71, 42, 0.1)', 
-                color: 'var(--primary)', 
-                padding: '4px 10px', 
-                borderRadius: '8px', 
-                fontSize: '0.8rem', 
-                fontWeight: 800, 
+            <span style={{
+                background: 'rgba(183, 71, 42, 0.1)',
+                color: 'var(--primary)',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 800,
                 marginLeft: '12px',
                 verticalAlign: 'middle',
                 display: 'inline-flex',
@@ -656,7 +656,7 @@ const VendorDashboard = () => {
             {/* Transaction Details Modal */}
             {showTxModal && selectedTx && (
                 <div className="modal-overlay" onClick={() => setShowTxModal(false)}>
-                    <div className="modal-content glass" style={{ maxWidth: '650px', width: '95%', padding: '0', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+                    <div className="card fade-in" style={{ padding: '0', maxWidth: '650px', width: '95%', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
                         {/* Modal Header/Upper Section */}
                         <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -693,7 +693,7 @@ const VendorDashboard = () => {
                         <div className="modal-body" style={{ padding: '24px 32px 32px' }}>
                             {/* Financial Summary Card */}
                             <div style={{
-                                background: 'white',
+                                background: 'var(--card-bg)',
                                 border: '1px solid var(--border-color)',
                                 borderRadius: '16px',
                                 padding: '24px',
@@ -724,13 +724,12 @@ const VendorDashboard = () => {
 
                             {/* Recipient Details Card */}
                             <div style={{
-                                background: 'var(--bg-main)',
+                                background: 'rgba(0,0,0,0.015)',
                                 border: '1px solid var(--border-color)',
                                 borderRadius: '16px',
                                 padding: '24px',
                                 marginBottom: '24px',
-                                position: 'relative',
-                                background: 'rgba(0,0,0,0.015)'
+                                position: 'relative'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                     <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Recipient Details</h4>
@@ -795,7 +794,7 @@ const VendorDashboard = () => {
                                     )}
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Reference:</span>
+                                        <span style={{ color: 'var(--text-muted)' }}>Admin Payment Reference:</span>
                                         <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedTx.recipient_details?.admin_reference || 'N/A'}</span>
                                     </div>
                                 </div>
