@@ -1488,7 +1488,8 @@ const UserDashboard = () => {
                                         type="button" 
                                         variant="outline"
                                         onClick={() => {
-                                            setPreviewImage(selectedTx.vendor_proof_url);
+                                            const url = selectedTx.vendor_proof_url;
+                                            setPreviewImage(url.startsWith('http') ? url : getImageUrl(url));
                                             setPreviewDate(selectedTx.updatedAt);
                                             setShowPreviewModal(true);
                                         }}
@@ -1545,7 +1546,7 @@ const UserDashboard = () => {
                 </div>
             )}
             {showPreviewModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20000, backdropFilter: 'blur(10px)' }}>
                     <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
                         <button
                             onClick={() => setShowPreviewModal(false)}
