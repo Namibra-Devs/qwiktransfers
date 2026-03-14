@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import SystemBrandingManager from './components/SystemBrandingManager';
+import ConnectivityManager from './components/ConnectivityManager';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -50,6 +51,7 @@ function App() {
   return (
     <Router>
       <SystemBrandingManager />
+      <ConnectivityManager />
       <Toaster 
         position="top-center" 
         reverseOrder={false} 
