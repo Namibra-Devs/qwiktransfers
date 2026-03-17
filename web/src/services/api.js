@@ -36,8 +36,11 @@ export default api;
 export const getImageUrl = (path) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL
-        ? import.meta.env.VITE_API_URL.replace(/\/api$/, '')
-        : 'http://localhost:5000';
-    return `${baseUrl}${path}`;
+    const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const baseUrl = rawBaseUrl.replace(/\/api$/, '');
+    
+    // Ensure one slash between baseUrl and path
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    return `${cleanBase}${cleanPath}`;
 };

@@ -6,6 +6,9 @@ import { toast } from 'react-hot-toast';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import NotificationPanel from '../components/NotificationPanel';
 import Button from '../components/Button';
+import VendorRegister from './VendorRegister';
+import { generateReceiptPDF } from '../utils/ReceiptGenerator';
+import Home from './Home';
 import Input from '../components/Input';
 import {
     Chart as ChartJS,
@@ -276,7 +279,75 @@ const UserDashboard = () => {
             }
         };
         fetchConfig();
+        fetchNotifications();
+        fetchSystemBranding();
     }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            const res = await api.get('/system/notifications');
+            setNotifications(res.data);
+        } catch (error) {
+            console.error('Failed to fetch notifications');
+        }
+    };
+
+    const fetchSystemBranding = async () => {
+        try {
+            const res = await api.get('/system/config/public');
+            const { system_name, system_logo } = res.data;
+            let base64 = null;
+            
+            if (system_logo) {
+                try {
+                    const logoUrl = getImageUrl(system_logo);
+                    base64 = await urlToBase64(logoUrl);
+                } catch (logoErr) {
+                    console.warn('Could not convert logo to base64 (CORS or path issue), continuing without logo in PDF:', logoErr);
+                }
+            }
+
+            setSystemBranding({
+                name: system_name || 'QWIK TRANSFERS',
+                logo: system_logo,
+                base64Logo: base64
+            });
+        } catch (error) {
+            console.error('Failed to fetch system branding info:', error);
+        }
+    };
+
+    const urlToBase64 = (url) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            // Timeout after 5 seconds to avoid hanging
+            const timeout = setTimeout(() => {
+                img.src = ''; 
+                reject(new Error('Image load timeout'));
+            }, 5000);
+
+            img.setAttribute('crossOrigin', 'anonymous');
+            img.onload = () => {
+                clearTimeout(timeout);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const dataURL = canvas.toDataURL('image/png');
+                    resolve(dataURL);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = (err) => {
+                clearTimeout(timeout);
+                reject(err);
+            };
+            img.src = url;
+        });
+    };
 
     useEffect(() => {
         if (user && user.role === 'admin') {
@@ -285,6 +356,8 @@ const UserDashboard = () => {
     }, [user, navigate]);
 
     const [transactions, setTransactions] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [systemBranding, setSystemBranding] = useState({ name: 'QWIK TRANSFERS', logo: null, base64Logo: null });
     const [amount, setAmount] = useState('');
     const [recipientType, setRecipientType] = useState('momo');
     const [recipientName, setRecipientName] = useState('');
@@ -669,7 +742,7 @@ const UserDashboard = () => {
                     <Link to="/" className="brand-link">
                         {config.system_logo ? (
                             <img
-                                src={getImageUrl(`/${config.system_logo}`)}
+                                src={getImageUrl(config.system_logo)}
                                 alt="Logo"
                                 className="nav-logo"
                             />
@@ -1305,7 +1378,28 @@ const UserDashboard = () => {
                         <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)' }}>Transaction Breakdown</h1>
-                                <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <button 
+                                        onClick={async () => await generateReceiptPDF(selectedTx, systemBranding.name, systemBranding.base64Logo)}
+                                        className="btn btn-sm"
+                                        style={{ 
+                                            background: 'var(--primary)', 
+                                            color: 'white', 
+                                            border: 'none', 
+                                            padding: '8px 16px', 
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 700,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        <span>Download Receipt</span>
+                                        <span>📄</span>
+                                    </button>
+                                    <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
+                                </div>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
