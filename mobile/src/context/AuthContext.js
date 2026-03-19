@@ -8,6 +8,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAppLocked, setIsAppLocked] = useState(true);
 
     useEffect(() => {
         checkAuth();
@@ -20,6 +21,8 @@ export const AuthProvider = ({ children }) => {
                 const response = await api.get('/auth/profile');
                 setUser(response.data);
                 await syncPushToken();
+            } else {
+                setIsAppLocked(false); // No session, no lock
             }
         } catch (error) {
             console.error('Auth check failed:', error);
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         setUser(response.data.user);
+        setIsAppLocked(false); // Unlock upon successful login
         await syncPushToken();
     };
 
@@ -69,6 +73,7 @@ export const AuthProvider = ({ children }) => {
         if (options.autoLogin) {
             await AsyncStorage.setItem('token', response.data.token);
             setUser(response.data.user);
+            setIsAppLocked(false);
             await syncPushToken();
         }
 
@@ -78,12 +83,34 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         await AsyncStorage.removeItem('token');
         setUser(null);
+        setIsAppLocked(false);
+    };
+
+    const verifyAppPin = async (pin) => {
+        try {
+            await api.post('/auth/verify-pin', { pin: pin.toString() });
+            setIsAppLocked(false);
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.response?.data?.error || 'PIN Verification Failed' };
+        }
     };
 
     const refreshProfile = () => checkAuth();
 
     return (
-        <AuthContext.Provider value={{ user, login, loginWithBiometrics, register, logout, loading, refreshProfile }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            login, 
+            loginWithBiometrics, 
+            register, 
+            logout, 
+            loading, 
+            refreshProfile,
+            isAppLocked,
+            setIsAppLocked,
+            verifyAppPin
+        }}>
             {children}
         </AuthContext.Provider>
     );

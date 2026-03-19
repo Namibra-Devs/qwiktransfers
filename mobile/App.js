@@ -16,8 +16,9 @@ import TransferScreen from './src/screens/TransferScreen';
 import TransactionDetailsScreen from './src/screens/TransactionDetailsScreen';
 import TransactionsScreen from './src/screens/TransactionsScreen';
 import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
-import { ActivityIndicator, View, Text, Platform } from 'react-native';
+import { ActivityIndicator, View, Text, Platform, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import AppLock from './src/components/AppLock';
 import {
   useFonts,
   Outfit_300Light,
@@ -169,6 +170,7 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <StatusBar style="auto" hidden={false} translucent={true} animated={true} />
+          <AppLock />
           <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
             <Navigation />
           </View>
