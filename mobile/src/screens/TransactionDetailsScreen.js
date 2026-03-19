@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateAsync } from '../services/biometrics';
 import Button from '../components/Button';
+import { generateReceiptPDF } from '../services/ReceiptService';
 
 const TransactionDetailsScreen = ({ route, navigation }) => {
     const { transactionId, initialData } = route.params || {};
@@ -209,6 +210,14 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
         return 0; // Initiated
     };
 
+    const handleDownloadReceipt = async () => {
+        try {
+            await generateReceiptPDF(transaction);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to generate receipt. Please try again.');
+        }
+    };
+
     const renderTimeline = () => {
         if (!transaction) return null;
 
@@ -322,12 +331,27 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 <Text style={[styles.headerTitle, { color: theme.text }]}>
                     {transaction?.transaction_id || 'Transaction Details'}
                 </Text>
-                <View style={{ width: 24 }} />
+                <TouchableOpacity onPress={handleDownloadReceipt}>
+                    <Ionicons name="download-outline" size={24} color={theme.primary} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* Timeline */}
                 {renderTimeline()}
+
+                {/* Rejection Reason (If Returned/Cancelled with reason) */}
+                {transaction.status === 'returned' && transaction.rejection_reason && (
+                    <View style={[styles.card, { backgroundColor: '#fff7ed', borderColor: '#fdba74' }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                            <Ionicons name="warning-outline" size={20} color="#ea580c" />
+                            <Text style={{ color: '#ea580c', fontFamily: 'Outfit_700Bold', fontSize: 14 }}>Vendor Feedback</Text>
+                        </View>
+                        <Text style={{ color: '#9a3412', fontFamily: 'Outfit_400Regular', fontSize: 14, lineHeight: 20 }}>
+                            {transaction.rejection_reason}
+                        </Text>
+                    </View>
+                )}
 
                 {/* Main Details */}
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -436,8 +460,27 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                         onPress={handleViewProof}
                     >
                         <Ionicons name="document-text-outline" size={40} color={theme.primary} />
-                        <Text style={[styles.detailValue, { color: theme.text, marginTop: 8 }]}>Proof Uploaded</Text>
+                        <Text style={[styles.detailValue, { color: theme.text, marginTop: 8 }]}>Your Payment Proof</Text>
                         <Text style={[styles.detailLabel, { color: theme.textMuted, fontSize: 12 }]}>Tap to view proof</Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* Vendor Fulfillment Proof (The receipt the vendor uploaded) */}
+                {transaction.vendor_receipt && (
+                    <TouchableOpacity
+                        style={[styles.card, { backgroundColor: '#f0fdf4', borderColor: '#86efac', alignItems: 'center' }]}
+                        onPress={() => {
+                            const baseUrl = api.defaults.baseURL.replace('/api', '');
+                            const url = transaction.vendor_receipt.startsWith('http')
+                                ? transaction.vendor_receipt
+                                : `${baseUrl}${transaction.vendor_receipt}`;
+                            setPreviewImage(url);
+                            setShowPreviewModal(true);
+                        }}
+                    >
+                        <Ionicons name="checkmark-done-circle-outline" size={40} color="#16a34a" />
+                        <Text style={[styles.detailValue, { color: '#16a34a', marginTop: 8 }]}>Fulfillment Proof</Text>
+                        <Text style={[styles.detailLabel, { color: '#15803d', fontSize: 12 }]}>Official Vendor Receipt Available</Text>
                     </TouchableOpacity>
                 )}
 

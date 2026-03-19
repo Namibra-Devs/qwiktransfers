@@ -20,10 +20,11 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import TransactionCard from '../components/TransactionCard';
+import TransactionChart from '../components/TransactionChart';
 
 const ActionButton = ({ icon, label, onPress, theme, color }) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
@@ -43,6 +44,8 @@ const DashboardScreen = ({ navigation }) => {
     const [totalSent, setTotalSent] = useState(0);
 
     const [rate, setRate] = useState(null);
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
     useFocusEffect(
         useCallback(() => {
@@ -86,8 +89,28 @@ const DashboardScreen = ({ navigation }) => {
         if (transactions.length === 0) {
             setLoading(true);
         }
-        await Promise.all([fetchTransactions(), refreshProfile?.()]);
+        await Promise.all([
+            fetchTransactions(), 
+            fetchAnalytics(),
+            refreshProfile?.()
+        ]);
         setLoading(false);
+    };
+
+    const fetchAnalytics = async () => {
+        setAnalyticsLoading(true);
+        try {
+            const res = await api.get('/transactions/user/stats');
+            setAnalyticsData(res.data);
+            AsyncStorage.setItem('cachedAnalytics', JSON.stringify(res.data));
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error);
+            // Load from cache if offline
+            const cached = await AsyncStorage.getItem('cachedAnalytics');
+            if (cached) setAnalyticsData(JSON.parse(cached));
+        } finally {
+            setAnalyticsLoading(false);
+        }
     };
 
     const fetchTransactions = async () => {
@@ -134,7 +157,24 @@ const DashboardScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.appHeader}>
-                <View>
+                <TouchableOpacity 
+                    onPress={() => navigation.navigate('Profile')}
+                    style={styles.avatarContainer}
+                >
+                    {user?.profile_picture ? (
+                        <Image 
+                            source={{ uri: getImageUrl(user.profile_picture) }} 
+                            style={styles.avatarImage} 
+                        />
+                    ) : (
+                        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary + '20' }]}>
+                            <Text style={[styles.avatarText, { color: theme.primary }]}>
+                                {(user?.full_name || user?.firstName || 'U').charAt(0).toUpperCase()}
+                            </Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+                <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={{ fontSize: 13, color: theme.textMuted, fontFamily: 'Outfit_400Regular' }}>{getGreeting()}</Text>
                     <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, fontFamily: 'Outfit_700Bold' }}>{(user?.full_name || user?.firstName || 'User').split(' ')[0]}</Text>
                 </View>
@@ -185,6 +225,12 @@ const DashboardScreen = ({ navigation }) => {
                     <ActionButton icon="swap-horizontal" label="Rate" onPress={() => navigation.navigate('Watcher')} theme={theme} color={theme.primary} />
                     <ActionButton icon="shield-half-outline" label="KYC" onPress={() => navigation.navigate('KYC')} theme={theme} color={theme.primary} />
                 </View>
+
+                {/* Transaction Analytics Chart */}
+                <TransactionChart 
+                    data={analyticsData} 
+                    loading={analyticsLoading} 
+                />
 
                 {/* Verification / Limits Card */}
                 <TouchableOpacity
@@ -269,10 +315,36 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     appHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 10,
+    },
+    avatarContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: '#fff',
+        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+    },
+    avatarPlaceholder: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarText: {
+        fontSize: 18,
+        fontFamily: 'Outfit_700Bold',
     },
     headerActions: {
         flexDirection: 'row',
