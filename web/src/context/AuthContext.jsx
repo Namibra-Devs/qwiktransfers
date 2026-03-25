@@ -37,8 +37,8 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         const response = await api.post('/auth/register', userData);
-        localStorage.setItem('token', response.data.token);
-        setUser(response.data.user);
+        // Removed auto-login (setting token/user) to allow Registration Success flow to control user experience.
+        return response.data;
     };
 
     const logout = () => {

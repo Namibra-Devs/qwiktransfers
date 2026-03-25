@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
         return false;
     };
 
-    const register = async (userData, options = { autoLogin: true }) => {
+    const register = async (userData, options = { autoLogin: false }) => {
         const response = await api.post('/auth/register', userData);
 
         if (options.autoLogin) {

@@ -99,8 +99,10 @@ const register = async (req, res) => {
             ipAddress: req.ip
         });
 
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.status(201).json({ user, token });
+        res.status(201).json({ 
+            message: 'Registration successful. Please check your email for a verification link.',
+            user 
+        });
     } catch (error) {
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(400).json({ error: 'This phone number is already registered' });
