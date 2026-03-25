@@ -11,7 +11,7 @@ const TransactionChart = ({ data, loading }) => {
 
     if (loading || !data) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.header}>
                     <ShimmerPlaceholder style={{ width: 140, height: 18, marginBottom: 8 }} />
                     <ShimmerPlaceholder style={{ width: 100, height: 12 }} />

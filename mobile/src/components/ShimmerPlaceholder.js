@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
-const ShimmerPlaceholder = ({ style }) => {
+const ShimmerPlaceholder = ({ style, duration = 1000 }) => {
     const theme = useTheme();
     const shimmerValue = useRef(new Animated.Value(0)).current;
 
@@ -13,9 +13,7 @@ const ShimmerPlaceholder = ({ style }) => {
             shimmerValue.setValue(0);
             Animated.timing(shimmerValue, {
                 toValue: 1,
-                duration: 1000,
-                // Do not use native driver for color interpolation if not supported, but we'll use it for translateX if we used a mask.
-                // For a simpler version, we'll just pulse the opacity.
+                duration: duration,
                 useNativeDriver: true,
             }).start(() => startShimmer());
         };

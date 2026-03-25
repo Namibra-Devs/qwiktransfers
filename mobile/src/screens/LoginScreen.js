@@ -27,20 +27,7 @@ import Input from '../components/Input';
 const { width, height } = Dimensions.get('window');
 
 // Resilient Glassmorphism fallback
-const GlassContainer = ({ intensity, tint, style, children }) => {
-    return (
-        <View style={[
-            style, 
-            { 
-                backgroundColor: tint === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.1)',
-                overflow: 'hidden' 
-            }
-        ]}>
-            <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
-            {children}
-        </View>
-    );
-};
+// GlassContainer removed - using standard themed Views now
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -124,129 +111,106 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <ImageBackground
-                source={require('../../assets/images/login_bg_premium.png')}
-                style={styles.backgroundImage}
-                resizeMode="cover"
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.flex}
             >
-                <StatusBar barStyle="light-content" />
-                <SafeAreaView style={styles.safeArea}>
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        style={styles.flex}
-                    >
-                        <Animated.View 
-                            style={[
-                                styles.content, 
-                                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-                            ]}
-                        >
-                            {/* Floating Rate Badge */}
-                            {rate && (
-                                <GlassContainer intensity={30} tint="light" style={styles.rateBadge}>
-                                    <View style={styles.rateInner}>
-                                        <Ionicons name="trending-up" size={14} color="#fff" style={styles.rateIcon} />
-                                        <Text style={styles.rateText}>
-                                            1 CAD = <Text style={styles.rateHighlight}>{rate} GHS</Text>
-                                        </Text>
-                                    </View>
-                                </GlassContainer>
-                            )}
+                <Animated.View
+                    style={[
+                        styles.content,
+                        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                    ]}
+                >
+                    {/* Floating Rate Badge */}
+                    {rate && (
+                        <View style={[styles.rateBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+                            <View style={styles.rateInner}>
+                                <Ionicons name="trending-up" size={14} color={theme.primary} style={styles.rateIcon} />
+                                <Text style={[styles.rateText, { color: theme.text }]}>
+                                    1 CAD = <Text style={[styles.rateHighlight, { color: theme.primary }]}>{rate} GHS</Text>
+                                </Text>
+                            </View>
+                        </View>
+                    )}
 
-                            {/* Logo Section */}
-                            <View style={styles.logoContainer}>
-                                <Image 
-                                    source={require('../../assets/logo-white.png')} 
-                                    style={styles.logo} 
-                                    resizeMode="contain"
+                    {/* Logo Section */}
+                    <View style={styles.logoContainer}>
+                        <Image
+                            source={theme.isDark ? require('../../assets/logo-white.png') : require('../../assets/logo-red.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+                        <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>Fast. Secure. Worldwide.</Text>
+                    </View>
+
+                    {/* Login Card */}
+                    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <View style={styles.cardHeader}>
+                            <Text style={[styles.cardTitle, { color: theme.text }]}>Welcome Back</Text>
+                            <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>Sign in to your account</Text>
+                        </View>
+
+                        <View style={styles.form}>
+                            <View style={styles.inputContainer}>
+                                <Input
+                                    placeholder="Email Address"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
                                 />
-                                <Text style={styles.brandSubtitle}>Fast. Secure. Worldwide.</Text>
                             </View>
 
-                            {/* Login Card */}
-                            <GlassContainer intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={styles.glassCard}>
-                                <View style={styles.cardHeader}>
-                                    <Text style={styles.cardTitle}>Welcome Back</Text>
-                                    <Text style={styles.cardSubtitle}>Sign in to your account</Text>
-                                </View>
-
-                                <View style={styles.form}>
-                                    <View style={styles.inputContainer}>
-                                        <Input
-                                            placeholder="Email Address"
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                            containerStyle={styles.glassInput}
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            style={{ color: '#fff' }}
-                                        />
-                                    </View>
-
-                                    <View style={styles.inputContainer}>
-                                        <Input
-                                            placeholder="Password"
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            secureTextEntry={true}
-                                            containerStyle={styles.glassInput}
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            style={{ color: '#fff' }}
-                                        />
-                                        <TouchableOpacity style={styles.forgotBtn}>
-                                            <Text style={styles.forgotText}>Forgot?</Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    <Button
-                                        label="Login"
-                                        onPress={handleLogin}
-                                        loading={loading}
-                                        style={styles.loginBtn}
-                                        textStyle={styles.loginBtnText}
-                                    />
-
-                                    {canUseBiometrics && (
-                                        <TouchableOpacity 
-                                            style={styles.bioBtn} 
-                                            onPress={handleBiometricLogin}
-                                            disabled={loading}
-                                        >
-                                            <GlassContainer intensity={20} tint="light" style={styles.bioBlur}>
-                                                <Ionicons name="finger-print" size={32} color="#fff" />
-                                            </GlassContainer>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            </GlassContainer>
-
-                            {/* Footer */}
-                            <View style={styles.footer}>
-                                <Text style={styles.footerText}>Don't have an account?</Text>
-                                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                                    <Text style={styles.linkText}>Create Account</Text>
+                            <View style={styles.inputContainer}>
+                                <Input
+                                    placeholder="Password"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={true}
+                                />
+                                <TouchableOpacity style={styles.forgotBtn}>
+                                    <Text style={[styles.forgotText, { color: theme.primary }]}>Forgot?</Text>
                                 </TouchableOpacity>
                             </View>
-                        </Animated.View>
-                    </KeyboardAvoidingView>
-                </SafeAreaView>
-            </ImageBackground>
-        </View>
+
+                            <Button
+                                label="Login"
+                                onPress={handleLogin}
+                                loading={loading}
+                                style={styles.loginBtn}
+                            />
+
+                            {canUseBiometrics && (
+                                <TouchableOpacity
+                                    style={styles.bioBtn}
+                                    onPress={handleBiometricLogin}
+                                    disabled={loading}
+                                >
+                                    <View style={[styles.bioCircle, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+                                        <Ionicons name="finger-print" size={32} color={theme.primary} />
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                            <Text style={[styles.linkText, { color: theme.primary }]}>Create Account</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-    },
-    backgroundImage: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-    },
-    safeArea: {
         flex: 1,
     },
     flex: {
@@ -263,9 +227,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 20,
         marginBottom: 30,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1.5,
     },
     rateInner: {
         flexDirection: 'row',
@@ -276,11 +238,9 @@ const styles = StyleSheet.create({
     },
     rateText: {
         fontSize: 14,
-        color: '#fff',
         fontFamily: 'Outfit_500Medium',
     },
     rateHighlight: {
-        color: '#4ade80', // Soft green for the rate
         fontFamily: 'Outfit_700Bold',
     },
     logoContainer: {
@@ -292,33 +252,38 @@ const styles = StyleSheet.create({
         height: 60,
     },
     brandSubtitle: {
-        color: 'rgba(255,255,255,0.6)',
         fontSize: 14,
         fontFamily: 'Outfit_400Regular',
         marginTop: 8,
         letterSpacing: 2,
     },
-    glassCard: {
+    card: {
         width: '100%',
         borderRadius: 32,
         padding: 24,
-        overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        ...Platform.select({
+            ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.1,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 5,
+            },
+        }),
     },
     cardHeader: {
         marginBottom: 24,
     },
     cardTitle: {
         fontSize: 32,
-        color: '#fff',
         fontFamily: 'Outfit_700Bold',
         marginBottom: 4,
     },
     cardSubtitle: {
         fontSize: 16,
-        color: 'rgba(255,255,255,0.6)',
         fontFamily: 'Outfit_400Regular',
     },
     form: {
@@ -328,46 +293,31 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         position: 'relative',
     },
-    glassInput: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        marginBottom: 0,
-    },
     forgotBtn: {
         position: 'absolute',
         right: 16,
         top: 18,
     },
     forgotText: {
-        color: '#fff',
         fontSize: 13,
         fontFamily: 'Outfit_600SemiBold',
-        opacity: 0.7,
     },
     loginBtn: {
-        backgroundColor: '#fff',
         height: 60,
-        borderRadius: 20,
+        borderRadius: 30,
         marginTop: 10,
-    },
-    loginBtnText: {
-        color: '#1a1a1a',
-        fontSize: 18,
-        fontFamily: 'Outfit_700Bold',
     },
     bioBtn: {
         alignSelf: 'center',
         marginTop: 20,
     },
-    bioBlur: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+    bioCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1.5,
     },
     footer: {
         flexDirection: 'row',
@@ -375,12 +325,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footerText: {
-        color: 'rgba(255,255,255,0.6)',
         fontSize: 16,
         fontFamily: 'Outfit_400Regular',
     },
     linkText: {
-        color: '#fff',
         fontSize: 16,
         fontFamily: 'Outfit_700Bold',
         marginLeft: 8,

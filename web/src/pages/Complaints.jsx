@@ -33,6 +33,10 @@ const Complaints = () => {
     const [editId, setEditId] = useState(null);
     const [viewAttachmentUrl, setViewAttachmentUrl] = useState(null);
 
+    // Cancellation Modal State
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [complaintToCancel, setComplaintToCancel] = useState(null);
+
     const handleAttachmentChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -132,14 +136,22 @@ const Complaints = () => {
         setShowModal(true);
     };
 
-    const handleCancelComplaint = async (id) => {
-        if (!window.confirm('Are you sure you want to cancel this complaint?')) return;
+    const handleCancelComplaint = (id) => {
+        setComplaintToCancel(id);
+        setShowCancelConfirm(true);
+    };
+
+    const confirmCancel = async () => {
+        if (!complaintToCancel) return;
         try {
-            await api.delete(`/complaints/${id}`);
+            await api.delete(`/complaints/${complaintToCancel}`);
             toast.success('Complaint cancelled successfully');
             fetchComplaints();
         } catch (error) {
             toast.error('Failed to cancel complaint');
+        } finally {
+            setShowCancelConfirm(false);
+            setComplaintToCancel(null);
         }
     };
 
@@ -483,6 +495,34 @@ const Complaints = () => {
                             <a href={getImageUrl(viewAttachmentUrl)} download target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', padding: '8px 24px', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem' }}>
                                 Download File
                             </a>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Cancellation Confirmation Modal */}
+            {showCancelConfirm && (
+                <div className="modal-overlay" style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                    <div className="card scale-in" style={{ maxWidth: '400px', width: '90%', padding: '32px', textAlign: 'center', border: 'none', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
+                        <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>⚠️</div>
+                        <h3 style={{ fontSize: '1.5rem', color: 'var(--text-deep-brown)', marginBottom: '12px' }}>Cancel Complaint?</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', lineHeight: '1.6' }}>
+                            Are you sure you want to cancel this complaint? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => { setShowCancelConfirm(false); setComplaintToCancel(null); }} 
+                                style={{ flex: 1 }}
+                            >
+                                Keep it
+                            </Button>
+                            <Button 
+                                onClick={confirmCancel} 
+                                style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff' }}
+                            >
+                                Yes, Cancel
+                            </Button>
                         </div>
                     </div>
                 </div>

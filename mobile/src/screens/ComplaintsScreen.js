@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import * as DocumentPicker from 'expo-document-picker';
 import TransactionPicker from '../components/TransactionPicker';
+import ConfirmationModal from '../components/ConfirmationModal';
 import Button from '../components/Button';
 
 const ComplaintsScreen = ({ navigation }) => {
@@ -41,6 +42,10 @@ const ComplaintsScreen = ({ navigation }) => {
     const [viewAttachmentUrl, setViewAttachmentUrl] = useState(null);
     const [transactionPickerVisible, setTransactionPickerVisible] = useState(false);
     const [existingAttachmentUrl, setExistingAttachmentUrl] = useState(null);
+    
+    // Cancellation Modal State
+    const [cancelConfirmVisible, setCancelConfirmVisible] = useState(false);
+    const [complaintToCancel, setComplaintToCancel] = useState(null);
 
     useEffect(() => {
         fetchComplaints();
@@ -139,26 +144,22 @@ const ComplaintsScreen = ({ navigation }) => {
     };
 
     const handleCancelComplaint = (id) => {
-        Alert.alert(
-            'Cancel Complaint',
-            'Are you sure you want to cancel this complaint?',
-            [
-                { text: 'No', style: 'cancel' },
-                { 
-                    text: 'Yes, Cancel', 
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await api.delete(`/complaints/${id}`);
-                            Alert.alert('Success', 'Complaint cancelled');
-                            fetchComplaints();
-                        } catch (error) {
-                            Alert.alert('Error', 'Failed to cancel complaint');
-                        }
-                    }
-                }
-            ]
-        );
+        setComplaintToCancel(id);
+        setCancelConfirmVisible(true);
+    };
+
+    const confirmCancel = async () => {
+        if (!complaintToCancel) return;
+        try {
+            await api.delete(`/complaints/${complaintToCancel}`);
+            Alert.alert('Success', 'Complaint cancelled');
+            fetchComplaints();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to cancel complaint');
+        } finally {
+            setCancelConfirmVisible(false);
+            setComplaintToCancel(null);
+        }
     };
 
     const closeModal = () => {
@@ -393,6 +394,18 @@ const ComplaintsScreen = ({ navigation }) => {
                     )}
                 </View>
             </Modal>
+
+            <ConfirmationModal 
+                visible={cancelConfirmVisible === true}
+                onClose={() => setCancelConfirmVisible(false)}
+                onConfirm={confirmCancel}
+                title="Cancel Complaint"
+                message="Are you sure you want to cancel this complaint? This action cannot be undone."
+                confirmText="Yes, Cancel"
+                cancelText="Keep Complaint"
+                type="danger"
+                icon="alert-circle-outline"
+            />
         </SafeAreaView>
     );
 };

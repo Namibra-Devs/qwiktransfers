@@ -207,7 +207,13 @@ const DashboardScreen = ({ navigation }) => {
                         <View>
                             <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Total Sent</Text>
                             <Text style={[styles.portfolioValue, { color: theme.text }]}>
-                                ₵{totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {loading && transactions.length === 0 ? (
+                                    <View style={{ paddingTop: 8 }}>
+                                        <ShimmerPlaceholder duration={800} style={{ width: 180, height: 32, borderRadius: 8 }} />
+                                    </View>
+                                ) : (
+                                    `₵${totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                )}
                             </Text>
                         </View>
                         <View style={styles.sparklineContainer}>
@@ -280,11 +286,17 @@ const DashboardScreen = ({ navigation }) => {
                 <View style={styles.listContainer}>
                     {loading && transactions.length === 0 ? (
                         [1, 2, 3].map(i => (
-                            <View key={i} style={[styles.txRow, { borderBottomColor: theme.border }]}>
+                            <View key={i} style={[styles.txRowShimmer, { borderBottomColor: theme.border }]}>
                                 <ShimmerPlaceholder style={styles.txIconShimmer} />
-                                <View style={styles.txInfo}>
-                                    <ShimmerPlaceholder style={{ width: 120, height: 16, marginBottom: 6 }} />
-                                    <ShimmerPlaceholder style={{ width: 80, height: 12 }} />
+                                <View style={styles.txInfoShimmer}>
+                                    <View style={styles.txMainShimmer}>
+                                        <ShimmerPlaceholder style={{ width: 140, height: 16, borderRadius: 4 }} />
+                                        <ShimmerPlaceholder style={{ width: 80, height: 16, borderRadius: 4 }} />
+                                    </View>
+                                    <View style={styles.txSubShimmer}>
+                                        <ShimmerPlaceholder style={{ width: 100, height: 12, borderRadius: 3 }} />
+                                        <ShimmerPlaceholder style={{ width: 60, height: 12, borderRadius: 3 }} />
+                                    </View>
                                 </View>
                             </View>
                         ))
@@ -513,7 +525,28 @@ const styles = StyleSheet.create({
         height: 44,
         borderRadius: 22,
         marginRight: 16,
-    }
+    },
+    txRowShimmer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+    },
+    txInfoShimmer: {
+        flex: 1,
+    },
+    txMainShimmer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    txSubShimmer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
 });
 
 export default DashboardScreen;
