@@ -29,7 +29,9 @@ const ProfileScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
 
     // Form State
-    const [fullName, setFullName] = useState(user?.full_name || '');
+    const [firstName, setFirstName] = useState(user?.first_name || '');
+    const [middleName, setMiddleName] = useState(user?.middle_name || '');
+    const [lastName, setLastName] = useState(user?.last_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -44,7 +46,9 @@ const ProfileScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (user) {
-            setFullName(user.full_name || '');
+            setFirstName(user.first_name || '');
+            setMiddleName(user.middle_name || '');
+            setLastName(user.last_name || '');
             setPhone(user.phone || '');
         }
     }, [user]);
@@ -77,13 +81,18 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     const handleUpdateProfile = async () => {
-        if (!fullName || !phone) {
-            Alert.alert('Error', 'Full name and phone are required');
+        if (!firstName || !lastName || !phone) {
+            Alert.alert('Error', 'First name, last name and phone are required');
             return;
         }
         setLoading(true);
         try {
-            await api.patch('/auth/profile', { full_name: fullName, phone });
+            await api.patch('/auth/profile', { 
+                first_name: firstName, 
+                middle_name: middleName, 
+                last_name: lastName, 
+                phone 
+            });
             await refreshProfile();
             Alert.alert('Success', 'Profile updated successfully!');
         } catch (error) {
@@ -232,10 +241,22 @@ const ProfileScreen = ({ navigation }) => {
                 {renderSection('Personal Information', 'person-outline', (
                     <View style={styles.cardContent}>
                         <Input
-                            label="Full Name"
-                            value={fullName}
-                            onChangeText={setFullName}
-                            placeholder="Enter your full name"
+                            label="First Name"
+                            value={firstName}
+                            onChangeText={setFirstName}
+                            placeholder="Enter your first name"
+                        />
+                        <Input
+                            label="Middle Name (Optional)"
+                            value={middleName}
+                            onChangeText={setMiddleName}
+                            placeholder="Enter your middle name"
+                        />
+                        <Input
+                            label="Last Name"
+                            value={lastName}
+                            onChangeText={setLastName}
+                            placeholder="Enter your last name"
                         />
                         <Input
                             label="Phone Number"

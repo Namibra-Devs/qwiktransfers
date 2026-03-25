@@ -8,7 +8,9 @@ import Input from '../components/Input';
 
 const Profile = () => {
     const { user, logout, refreshProfile } = useAuth();
-    const [fullName, setFullName] = useState(user?.full_name || '');
+    const [firstName, setFirstName] = useState(user?.first_name || '');
+    const [middleName, setMiddleName] = useState(user?.middle_name || '');
+    const [lastName, setLastName] = useState(user?.last_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -38,7 +40,9 @@ const Profile = () => {
 
     useEffect(() => {
         if (user) {
-            setFullName(user.full_name || '');
+            setFirstName(user.first_name || '');
+            setMiddleName(user.middle_name || '');
+            setLastName(user.last_name || '');
             setPhone(user.phone || '');
         }
     }, [user]);
@@ -47,7 +51,12 @@ const Profile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.patch('/auth/profile', { full_name: fullName, phone });
+            await api.patch('/auth/profile', { 
+                first_name: firstName, 
+                middle_name: middleName, 
+                last_name: lastName, 
+                phone 
+            });
             setMsg({ type: 'success', text: 'Profile updated successfully!' });
             if (refreshProfile) await refreshProfile();
         } catch (error) {
@@ -296,11 +305,25 @@ const Profile = () => {
                                     readOnly
                                     style={{ background: 'var(--accent-peach)', cursor: 'not-allowed', opacity: 0.8, fontWeight: 700 }}
                                 />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <Input
+                                        label="First Name"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        placeholder="Your first name"
+                                    />
+                                    <Input
+                                        label="Last Name"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        placeholder="Your last name"
+                                    />
+                                </div>
                                 <Input
-                                    label="Full Name"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Your full name"
+                                    label="Middle Name (Optional)"
+                                    value={middleName}
+                                    onChange={(e) => setMiddleName(e.target.value)}
+                                    placeholder="Your middle name"
                                 />
                                 <Input
                                     label="Phone Number"

@@ -16,14 +16,16 @@ const getAuditLogs = async (req, res) => {
         if (search) {
             where[Op.or] = [
                 { details: { [Op.like]: `%${search}%` } },
-                { '$user.full_name$': { [Op.like]: `%${search}%` } },
+                { '$user.first_name$': { [Op.like]: `%${search}%` } },
+                { '$user.middle_name$': { [Op.like]: `%${search}%` } },
+                { '$user.last_name$': { [Op.like]: `%${search}%` } },
                 { '$user.email$': { [Op.like]: `%${search}%` } }
             ];
         }
 
         const { count, rows: logs } = await AuditLog.findAndCountAll({
             where,
-            include: [{ model: User, as: 'user', attributes: ['full_name', 'email', 'role'] }],
+            include: [{ model: User, as: 'user', attributes: ['first_name', 'middle_name', 'last_name', 'email', 'role'] }],
             order: [['createdAt', 'DESC']],
             limit: parseInt(limit),
             offset: parseInt(offset)
@@ -42,7 +44,7 @@ const getAuditLogs = async (req, res) => {
 const exportAuditLogs = async (req, res) => {
     try {
         const logs = await AuditLog.findAll({
-            include: [{ model: User, as: 'user', attributes: ['full_name', 'email'] }],
+            include: [{ model: User, as: 'user', attributes: ['first_name', 'middle_name', 'last_name', 'email'] }],
             order: [['createdAt', 'DESC']],
             limit: 5000 // Upper limit for safety
         });

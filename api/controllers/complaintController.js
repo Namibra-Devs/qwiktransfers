@@ -141,7 +141,7 @@ exports.getAllComplaints = async (req, res) => {
         const complaints = await Complaint.findAll({
             order: [['createdAt', 'DESC']],
             include: [
-                { model: User, as: 'user', attributes: ['id', 'full_name', 'email'] },
+                { model: User, as: 'user', attributes: ['id', 'first_name', 'middle_name', 'last_name', 'email'] },
                 { model: Transaction, as: 'transaction', attributes: ['transaction_id', 'amount_sent', 'status'] }
             ]
         });

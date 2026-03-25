@@ -60,7 +60,7 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
-    const [newVendor, setNewVendor] = useState({ email: '', full_name: '', phone: '', password: '', country: 'All' });
+    const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
 
     // Preview Modal States
     const [previewImage, setPreviewImage] = useState('');
@@ -219,11 +219,19 @@ const AdminDashboard = () => {
     const handleCreateVendor = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/auth/create-vendor', newVendor);
+            await api.post('/auth/create-vendor', {
+                email: newVendor.email,
+                first_name: newVendor.firstName,
+                middle_name: newVendor.middleName,
+                last_name: newVendor.lastName,
+                phone: newVendor.phone,
+                password: newVendor.password,
+                country: newVendor.country
+            });
             toast.success('Vendor created successfully');
             fetchVendors();
             setShowAddVendorModal(false);
-            setNewVendor({ email: '', full_name: '', phone: '', password: '', country: 'All' });
+            setNewVendor({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to create vendor');
         }
@@ -1061,17 +1069,40 @@ const AdminDashboard = () => {
                                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Fill in the details below to create a dedicated Vendor account. Vendors are managed separately from platform customers.</p>
 
                                 <div style={{ display: 'grid', gap: '16px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Full Name</label>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>First Name</label>
                                         <input
                                             type="text"
                                             required
-                                            value={newVendor.full_name}
-                                            onChange={(e) => setNewVendor({ ...newVendor, full_name: e.target.value })}
+                                            value={newVendor.firstName}
+                                            onChange={(e) => setNewVendor({ ...newVendor, firstName: e.target.value })}
                                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                            placeholder="e.g. John Doe"
+                                            placeholder="John"
                                         />
                                     </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Last Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newVendor.lastName}
+                                            onChange={(e) => setNewVendor({ ...newVendor, lastName: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            placeholder="Doe"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Middle Name (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={newVendor.middleName}
+                                        onChange={(e) => setNewVendor({ ...newVendor, middleName: e.target.value })}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                        placeholder="Moro"
+                                    />
+                                </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Email Address</label>
                                         <input

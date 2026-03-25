@@ -32,7 +32,12 @@ const generateAccountNumber = async (role) => {
 
 const register = async (req, res) => {
     try {
-        const { email, password, full_name, phone, country, role, pin } = req.body;
+        const { email, password, confirmPassword, first_name, middle_name, last_name, phone, country, role, pin } = req.body;
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            return res.status(400).json({ error: 'Passwords do not match' });
+        }
 
         // Check if user already exists
         const existingUser = await User.findOne({ where: { email } });
@@ -55,7 +60,9 @@ const register = async (req, res) => {
             email,
             password: hashedPassword,
             transaction_pin: hashedPin,
-            full_name,
+            first_name,
+            middle_name,
+            last_name,
             phone,
             country: country || 'Ghana',
             role: role || 'user',
@@ -71,7 +78,7 @@ const register = async (req, res) => {
 
         // Send Communications (Non-blocking or catch errors)
         try {
-            await sendVerificationEmail(email, verificationToken, full_name);
+            await sendVerificationEmail(email, verificationToken, `${first_name} ${last_name}`);
         } catch (mailError) {
             console.error('Email sending failed:', mailError.message);
         }
@@ -281,7 +288,9 @@ const getAllUsers = async (req, res) => {
 
         if (search) {
             where[Op.or] = [
-                { full_name: { [Op.like]: `%${search}%` } },
+                { first_name: { [Op.like]: `%${search}%` } },
+                { middle_name: { [Op.like]: `%${search}%` } },
+                { last_name: { [Op.like]: `%${search}%` } },
                 { email: { [Op.like]: `%${search}%` } },
                 { phone: { [Op.like]: `%${search}%` } }
             ];
@@ -382,12 +391,14 @@ const submitKYC = async (req, res) => {
 
 const updateProfile = async (req, res) => {
     try {
-        const { full_name, phone } = req.body;
+        const { first_name, middle_name, last_name, phone } = req.body;
         const user = await User.findByPk(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        user.full_name = full_name;
-        user.phone = phone;
+        if (first_name) user.first_name = first_name;
+        if (middle_name !== undefined) user.middle_name = middle_name;
+        if (last_name) user.last_name = last_name;
+        if (phone) user.phone = phone;
         await user.save();
 
         res.json({ message: 'Profile updated successfully', user });
@@ -476,7 +487,7 @@ const updateUserRole = async (req, res) => {
 
 const createVendor = async (req, res) => {
     try {
-        const { email, password, full_name, phone, country } = req.body;
+        const { email, password, first_name, middle_name, last_name, phone, country } = req.body;
 
         const existingUser = await User.findOne({ where: { [Op.or]: [{ email }, { phone }] } });
         if (existingUser) {
@@ -489,7 +500,9 @@ const createVendor = async (req, res) => {
         const vendor = await User.create({
             email,
             password: hashedPassword,
-            full_name,
+            first_name,
+            middle_name,
+            last_name,
             phone,
             country: country || 'All',
             role: 'vendor',

@@ -4,7 +4,9 @@ import api, { getImageUrl } from '../services/api';
 
 const AdminProfile = () => {
     const { user, refreshProfile } = useAuth();
-    const [fullName, setFullName] = useState(user?.full_name || '');
+    const [firstName, setFirstName] = useState(user?.first_name || '');
+    const [middleName, setMiddleName] = useState(user?.middle_name || '');
+    const [lastName, setLastName] = useState(user?.last_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -13,7 +15,9 @@ const AdminProfile = () => {
 
     useEffect(() => {
         if (user) {
-            setFullName(user.full_name || '');
+            setFirstName(user.first_name || '');
+            setMiddleName(user.middle_name || '');
+            setLastName(user.last_name || '');
             setPhone(user.phone || '');
         }
     }, [user]);
@@ -22,7 +26,12 @@ const AdminProfile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.patch('/auth/profile', { full_name: fullName, phone });
+            await api.patch('/auth/profile', { 
+                first_name: firstName, 
+                middle_name: middleName, 
+                last_name: lastName, 
+                phone 
+            });
             setMsg({ type: 'success', text: 'Profile updated successfully!' });
             if (refreshProfile) await refreshProfile();
         } catch (error) {
@@ -115,9 +124,19 @@ const AdminProfile = () => {
                             <label>Email Address (Immutable)</label>
                             <input type="text" value={user?.email || ''} readOnly style={{ background: 'var(--accent-peach)', cursor: 'not-allowed', opacity: 0.8 }} />
                         </div>
+                        <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div>
+                                <label>First Name</label>
+                                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" />
+                            </div>
+                            <div>
+                                <label>Last Name</label>
+                                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
+                            </div>
+                        </div>
                         <div className="form-group">
-                            <label>Full Name</label>
-                            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
+                            <label>Middle Name (Optional)</label>
+                            <input type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Moro" />
                         </div>
                         <div className="form-group" style={{ marginBottom: '32px' }}>
                             <label>Phone Number</label>

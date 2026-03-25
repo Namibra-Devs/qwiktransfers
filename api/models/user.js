@@ -29,7 +29,21 @@ module.exports = (sequelize, DataTypes) => {
     kyc_document_id: DataTypes.STRING,
     kyc_front_url: DataTypes.STRING,
     kyc_back_url: DataTypes.STRING,
-    full_name: DataTypes.STRING,
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    middle_name: DataTypes.STRING,
+    last_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    full_name: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return [this.first_name, this.middle_name, this.last_name].filter(Boolean).join(' ');
+      }
+    },
     phone: {
       type: DataTypes.STRING,
       unique: true
@@ -63,6 +77,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'User',
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   });
   return User;
 };

@@ -16,9 +16,12 @@ const Register = () => {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [fullName, setFullName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
     const [country, setCountry] = useState('Ghana');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [pin, setPin] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
@@ -50,6 +53,11 @@ const Register = () => {
             return;
         }
 
+        if (!firstName.trim() || !lastName.trim()) {
+            setError('First and Last names are required');
+            return;
+        }
+
         const code = countryCodes[country];
         if (!phone.startsWith(code)) {
             setError(`Phone number must start with ${code} for ${country}`);
@@ -71,6 +79,10 @@ const Register = () => {
             setError('Password must be at least 6 characters');
             return;
         }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
         if (pin.length !== 4) {
             setError('PIN must be exactly 4 digits');
             return;
@@ -81,7 +93,10 @@ const Register = () => {
             await register({
                 email,
                 password,
-                full_name: fullName,
+                confirmPassword,
+                first_name: firstName,
+                middle_name: middleName,
+                last_name: lastName,
                 phone,
                 country,
                 pin
@@ -147,12 +162,27 @@ const Register = () => {
                     <form onSubmit={step === 1 ? handleNext : handleSubmit}>
                         {step === 1 ? (
                             <>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <Input
+                                        label="First Name"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        placeholder="Hamza"
+                                        required
+                                    />
+                                    <Input
+                                        label="Last Name"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        placeholder="Ibrahim"
+                                        required
+                                    />
+                                </div>
                                 <Input
-                                    label="Full Name"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Hamza Ibrahim"
-                                    required
+                                    label="Middle Name (Optional)"
+                                    value={middleName}
+                                    onChange={(e) => setMiddleName(e.target.value)}
+                                    placeholder="Moro"
                                 />
                                 <Input
                                     label="Email Address"
@@ -191,6 +221,14 @@ const Register = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Minimum 6 characters"
+                                    required
+                                />
+                                <Input
+                                    label="Confirm Password"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Repeat your password"
                                     required
                                 />
                                 <div style={{ marginBottom: '32px' }}>

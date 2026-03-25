@@ -30,11 +30,14 @@ const RegisterScreen = ({ navigation }) => {
     const [step, setStep] = useState(1);
 
     // Form State
-    const [fullName, setFullName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [country, setCountry] = useState('Ghana');
     const [phone, setPhone] = useState('+233');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [pin, setPin] = useState('');
 
     // UI State
@@ -44,8 +47,12 @@ const RegisterScreen = ({ navigation }) => {
 
     const handleNext = () => {
         if (step === 1) {
-            if (!fullName.trim()) {
-                Alert.alert('Required', 'Please enter your full name.');
+            if (!firstName.trim()) {
+                Alert.alert('Required', 'Please enter your first name.');
+                return;
+            }
+            if (!lastName.trim()) {
+                Alert.alert('Required', 'Please enter your last name.');
                 return;
             }
             if (!email.trim().includes('@')) {
@@ -80,6 +87,10 @@ const RegisterScreen = ({ navigation }) => {
             Alert.alert('Weak Password', 'Password must be at least 6 characters.');
             return;
         }
+        if (password !== confirmPassword) {
+            Alert.alert('Mismatch', 'Passwords do not match.');
+            return;
+        }
         if (pin.length !== 4) {
             Alert.alert('Invalid PIN', 'Transaction PIN must be 4 digits.');
             return;
@@ -90,7 +101,10 @@ const RegisterScreen = ({ navigation }) => {
             await register({
                 email: email.toLowerCase().trim(),
                 password,
-                full_name: fullName.trim(),
+                confirmPassword,
+                first_name: firstName.trim(),
+                middle_name: middleName.trim(),
+                last_name: lastName.trim(),
                 phone: phone.trim(),
                 country: country,
                 pin: pin,
@@ -112,10 +126,22 @@ const RegisterScreen = ({ navigation }) => {
                 return (
                     <View style={styles.stepContainer}>
                         <Input
-                            label="Full Name"
-                            placeholder="Hamza Ibrahim"
-                            value={fullName}
-                            onChangeText={setFullName}
+                            label="First Name"
+                            placeholder="Hamza"
+                            value={firstName}
+                            onChangeText={setFirstName}
+                        />
+                        <Input
+                            label="Middle Name (Optional)"
+                            placeholder="Moro"
+                            value={middleName}
+                            onChangeText={setMiddleName}
+                        />
+                        <Input
+                            label="Last Name"
+                            placeholder="Ibrahim"
+                            value={lastName}
+                            onChangeText={setLastName}
                         />
                         <Input
                             label="Email Address"
@@ -175,6 +201,13 @@ const RegisterScreen = ({ navigation }) => {
                             secureTextEntry={!showPassword}
                             rightIcon={showPassword ? "eye-off" : "eye"}
                             onRightIconPress={() => setShowPassword(!showPassword)}
+                        />
+                        <Input
+                            label="Confirm Password"
+                            placeholder="Repeat your password"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry={!showPassword}
                         />
                         <View style={{ marginBottom: 10 }}>
                             <Input
