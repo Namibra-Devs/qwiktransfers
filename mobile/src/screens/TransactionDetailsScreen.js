@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateAsync } from '../services/biometrics';
@@ -25,6 +26,7 @@ import { generateReceiptPDF } from '../services/ReceiptService';
 
 const TransactionDetailsScreen = ({ route, navigation }) => {
     const { transactionId, initialData } = route.params || {};
+    const { setIsPickingFile } = useAuth();
     const theme = useTheme();
     const [transaction, setTransaction] = useState(initialData || null);
     const [loading, setLoading] = useState(!initialData);
@@ -84,6 +86,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
 
     const handlePickImage = async () => {
         try {
+            setIsPickingFile(true);
             // Request permissions
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
@@ -107,6 +110,10 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
         } catch (error) {
             console.error('Image picker error:', error);
             Alert.alert('Picker Error', 'An error occurred while opening the image gallery.');
+        } finally {
+            setTimeout(() => {
+                setIsPickingFile(false);
+            }, 1000);
         }
     };
 

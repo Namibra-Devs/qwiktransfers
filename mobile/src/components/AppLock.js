@@ -39,13 +39,19 @@ const GlassContainer = ({ intensity, tint, style, children }) => {
 };
 
 const AppLock = () => {
-    const { user, isAppLocked, setIsAppLocked, verifyAppPin } = useAuth();
+    const { user, isAppLocked, setIsAppLocked, verifyAppPin, isPickingFile } = useAuth();
     const theme = useTheme();
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const appState = useRef(AppState.currentState);
     const isAuthenticating = useRef(false);
+    const pickingRef = useRef(isPickingFile);
+
+    // Sync ref with state
+    useEffect(() => {
+        pickingRef.current = isPickingFile;
+    }, [isPickingFile]);
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', nextAppState => {
@@ -53,7 +59,9 @@ const AppLock = () => {
                 appState.current.match(/active/) &&
                 nextAppState.match(/inactive|background/)
             ) {
-                if (user && !isAuthenticating.current) {
+                console.log(`[AppLock] Transition to ${nextAppState}. Picking: ${pickingRef.current}`);
+                if (user && !isAuthenticating.current && !pickingRef.current) {
+                    console.log('[AppLock] Locking App');
                     setIsAppLocked(true);
                 }
             }

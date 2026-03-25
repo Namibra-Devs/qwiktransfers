@@ -20,7 +20,7 @@ import api from '../services/api';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const KYCScreen = () => {
-    const { user, refreshProfile } = useAuth();
+    const { user, refreshProfile, setIsPickingFile } = useAuth();
     const theme = useTheme();
     const [docType, setDocType] = useState('ghana_card');
     const [docId, setDocId] = useState('');
@@ -29,22 +29,29 @@ const KYCScreen = () => {
     const [loading, setLoading] = useState(false);
 
     const pickImage = async (side) => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need access to your gallery to upload documents.');
-            return;
-        }
+        try {
+            setIsPickingFile(true);
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'We need access to your gallery to upload documents.');
+                return;
+            }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [16, 9],
-            quality: 0.7,
-        });
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [16, 9],
+                quality: 0.7,
+            });
 
-        if (!result.canceled) {
-            if (side === 'front') setFrontImage(result.assets[0].uri);
-            else setBackImage(result.assets[0].uri);
+            if (!result.canceled) {
+                if (side === 'front') setFrontImage(result.assets[0].uri);
+                else setBackImage(result.assets[0].uri);
+            }
+        } finally {
+            setTimeout(() => {
+                setIsPickingFile(false);
+            }, 1000);
         }
     };
 

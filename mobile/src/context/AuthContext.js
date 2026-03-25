@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAppLocked, setIsAppLocked] = useState(true);
+    const [isPickingFile, setIsPickingFile] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -109,7 +110,9 @@ export const AuthProvider = ({ children }) => {
             refreshProfile,
             isAppLocked,
             setIsAppLocked,
-            verifyAppPin
+            verifyAppPin,
+            isPickingFile,
+            setIsPickingFile
         }}>
             {children}
         </AuthContext.Provider>

@@ -17,11 +17,12 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import * as DocumentPicker from 'expo-document-picker';
+import TransactionPicker from '../components/TransactionPicker';
 import Button from '../components/Button';
 
 const ComplaintsScreen = ({ navigation }) => {
     const theme = useTheme();
-    const { user } = useAuth();
+    const { user, setIsPickingFile } = useAuth();
     
     const [complaints, setComplaints] = useState([]);
     const [transactions, setTransactions] = useState([]);
@@ -38,6 +39,8 @@ const ComplaintsScreen = ({ navigation }) => {
     // New States
     const [editId, setEditId] = useState(null);
     const [viewAttachmentUrl, setViewAttachmentUrl] = useState(null);
+    const [transactionPickerVisible, setTransactionPickerVisible] = useState(false);
+    const [existingAttachmentUrl, setExistingAttachmentUrl] = useState(null);
 
     useEffect(() => {
         fetchComplaints();
@@ -66,8 +69,9 @@ const ComplaintsScreen = ({ navigation }) => {
 
     const handlePickDocument = async () => {
         try {
+            setIsPickingFile(true);
             const result = await DocumentPicker.getDocumentAsync({
-                type: '*/*',
+                type: ['image/*', 'application/pdf'],
                 copyToCacheDirectory: true,
             });
             
@@ -76,6 +80,11 @@ const ComplaintsScreen = ({ navigation }) => {
             }
         } catch (error) {
             Alert.alert('Error', 'Failed to pick a document');
+        } finally {
+            // Delay resetting slightly to ensure AppState doesn't trigger before it's set
+            setTimeout(() => {
+                setIsPickingFile(false);
+            }, 1000);
         }
     };
 
@@ -125,6 +134,7 @@ const ComplaintsScreen = ({ navigation }) => {
         setDescription(complaint.description);
         setTransactionId(complaint.transaction_id ? complaint.transaction_id.toString() : '');
         setAttachment(null);
+        setExistingAttachmentUrl(complaint.attachment_url || null);
         setShowModal(true);
     };
 
@@ -158,6 +168,7 @@ const ComplaintsScreen = ({ navigation }) => {
         setDescription('');
         setTransactionId('');
         setAttachment(null);
+        setExistingAttachmentUrl(null);
     };
 
     const getStatusColor = (status) => {
@@ -287,14 +298,28 @@ const ComplaintsScreen = ({ navigation }) => {
                         />
 
                         <Text style={[styles.label, { color: theme.textMuted }]}>Related Transaction (Optional)</Text>
-                        {/* Currently we just use a numeric input or simple picker. A full Picker is imported separately but for simplicity using TextInput or basic UI. Let's use a native picker or custom UI. For now, assuming user types ID or we map it if we use @react-native-picker/picker. We'll use a simple text input for Transaction ID here since Expo Picker is external. */}
-                        <TextInput
-                            style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.card }]}
-                            placeholder="Enter Transaction ID (Optional)"
-                            placeholderTextColor={theme.textMuted}
-                            value={transactionId}
-                            onChangeText={setTransactionId}
-                            keyboardType="numeric"
+                        <TouchableOpacity
+                            style={[
+                                styles.pickerTrigger,
+                                {
+                                    backgroundColor: theme.card,
+                                    borderColor: theme.border
+                                }
+                            ]}
+                            onPress={() => setTransactionPickerVisible(true)}
+                        >
+                            <Text style={[styles.pickerText, { color: transactionId ? theme.text : theme.textMuted }]}>
+                                {transactionId ? transactions.find(t => t.id.toString() === transactionId)?.transaction_id + ' - ' + transactions.find(t => t.id.toString() === transactionId)?.amount_sent + ' GHS' : 'Select a transaction'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={theme.textMuted} />
+                        </TouchableOpacity>
+
+                        <TransactionPicker
+                            visible={transactionPickerVisible}
+                            onClose={() => setTransactionPickerVisible(false)}
+                            transactions={transactions}
+                            selectedId={transactionId}
+                            onSelect={(id) => setTransactionId(id)}
                         />
 
                         <Text style={[styles.label, { color: theme.textMuted }]}>Description</Text>
@@ -310,15 +335,46 @@ const ComplaintsScreen = ({ navigation }) => {
                         />
 
                         <Text style={[styles.label, { color: theme.textMuted }]}>Attachment (Optional)</Text>
-                        <TouchableOpacity 
-                            style={[styles.uploadButton, { borderColor: theme.border, backgroundColor: theme.card }]} 
-                            onPress={handlePickDocument}
-                        >
-                            <Ionicons name="cloud-upload-outline" size={24} color={theme.primary} />
-                            <Text style={[styles.uploadText, { color: theme.text }]}>
-                                {attachment ? attachment.name : 'Tap to upload a file/screenshot'}
-                            </Text>
-                        </TouchableOpacity>
+                        
+                        {(attachment || existingAttachmentUrl) ? (
+                            <View style={[styles.attachmentPreviewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                                    {attachment ? (
+                                        <Image source={{ uri: attachment.uri }} style={styles.previewThumbnail} />
+                                    ) : (
+                                        <Image source={{ uri: getImageUrl(existingAttachmentUrl) }} style={styles.previewThumbnail} />
+                                    )}
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.previewName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="middle">
+                                            {attachment ? attachment.name : 'Existing Document'}
+                                        </Text>
+                                        <Text style={[styles.previewSize, { color: theme.textMuted }]}>
+                                            {attachment ? `${(attachment.size / 1024 / 1024).toFixed(2)} MB` : 'Currently attached file'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity 
+                                    onPress={() => {
+                                        if (attachment) {
+                                            setAttachment(null);
+                                        } else {
+                                            handlePickDocument();
+                                        }
+                                    }}
+                                    style={styles.removeButton}
+                                >
+                                    <Text style={styles.removeButtonText}>{attachment ? 'Remove' : 'Replace'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity 
+                                style={[styles.uploadButton, { borderColor: theme.border, backgroundColor: theme.card }]} 
+                                onPress={handlePickDocument}
+                            >
+                                <Ionicons name="cloud-upload-outline" size={24} color={theme.primary} />
+                                <Text style={[styles.uploadText, { color: theme.text }]}>Tap to upload a file/screenshot</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </SafeAreaView>
             </Modal>
@@ -427,6 +483,19 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontFamily: 'Outfit_400Regular',
     },
+    pickerTrigger: {
+        height: 50,
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    pickerText: {
+        fontSize: 15,
+        fontFamily: 'Outfit_400Regular',
+    },
     textArea: {
         height: 120,
         borderWidth: 1,
@@ -456,6 +525,41 @@ const styles = StyleSheet.create({
     actionButtonText: {
         fontSize: 12,
         fontFamily: 'Outfit_700Bold',
+    },
+    attachmentPreviewCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    previewThumbnail: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        backgroundColor: '#f0f0f0',
+        resizeMode: 'cover'
+    },
+    previewName: {
+        fontSize: 14,
+        fontFamily: 'Outfit_600SemiBold',
+        marginBottom: 2
+    },
+    previewSize: {
+        fontSize: 12,
+        fontFamily: 'Outfit_400Regular'
+    },
+    removeButton: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20
+    },
+    removeButtonText: {
+        color: '#ef4444',
+        fontSize: 12,
+        fontFamily: 'Outfit_700Bold'
     },
 });
 

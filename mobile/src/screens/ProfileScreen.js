@@ -24,7 +24,7 @@ import { isBiometricSupported } from '../services/biometrics';
 import Input from '../components/Input';
 
 const ProfileScreen = ({ navigation }) => {
-    const { user, logout, refreshProfile } = useAuth();
+    const { user, logout, refreshProfile, setIsPickingFile } = useAuth();
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
 
@@ -129,45 +129,52 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     const handleAvatarUpload = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need permission to access your photos');
-            return;
-        }
+        try {
+            setIsPickingFile(true);
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'We need permission to access your photos');
+                return;
+            }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-        });
-
-        if (!result.canceled) {
-            const formData = new FormData();
-            const uri = result.assets[0].uri;
-            const filename = uri.split('/').pop();
-            const match = /\.(\w+)$/.exec(filename);
-            const type = match ? `image/${match[1]}` : `image`;
-
-            formData.append('avatar', {
-                uri,
-                name: filename,
-                type
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
             });
 
-            setLoading(true);
-            try {
-                await api.post('/auth/avatar', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+            if (!result.canceled) {
+                const formData = new FormData();
+                const uri = result.assets[0].uri;
+                const filename = uri.split('/').pop();
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : `image`;
+
+                formData.append('avatar', {
+                    uri,
+                    name: filename,
+                    type
                 });
-                await refreshProfile();
-                Alert.alert('Success', 'Profile picture updated!');
-            } catch (error) {
-                console.error(error);
-                Alert.alert('Error', 'Failed to upload image');
-            } finally {
-                setLoading(false);
+
+                setLoading(true);
+                try {
+                    await api.post('/auth/avatar', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    await refreshProfile();
+                    Alert.alert('Success', 'Profile picture updated!');
+                } catch (error) {
+                    console.error(error);
+                    Alert.alert('Error', 'Failed to upload image');
+                } finally {
+                    setLoading(false);
+                }
             }
+        } finally {
+            setTimeout(() => {
+                setIsPickingFile(false);
+            }, 1000);
         }
     };
 

@@ -35,8 +35,14 @@ const Complaints = () => {
 
     const handleAttachmentChange = (e) => {
         const file = e.target.files[0];
-        setAttachment(file);
         if (file) {
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                toast.error('Only images (JPG/PNG/GIF) and PDFs are allowed');
+                e.target.value = '';
+                return;
+            }
+            setAttachment(file);
             if (file.type.startsWith('image/')) {
                 setPreviewUrl(URL.createObjectURL(file));
             } else {
@@ -415,6 +421,7 @@ const Complaints = () => {
                                         <input 
                                             id="file-upload"
                                             type="file" 
+                                            accept="image/jpeg,image/png,image/gif,application/pdf"
                                             style={{ display: 'none' }}
                                             onChange={handleAttachmentChange}
                                         />
