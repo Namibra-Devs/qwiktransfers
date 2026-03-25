@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
-    TextInput,
-    TouchableOpacity,
     StyleSheet,
     Alert,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
-    ActivityIndicator
+    ImageBackground,
+    Image,
+    Animated,
+    Dimensions,
+    TouchableOpacity
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -21,6 +24,24 @@ import { authenticateAsync } from '../services/biometrics';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
+const { width, height } = Dimensions.get('window');
+
+// Resilient Glassmorphism fallback
+const GlassContainer = ({ intensity, tint, style, children }) => {
+    return (
+        <View style={[
+            style, 
+            { 
+                backgroundColor: tint === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.1)',
+                overflow: 'hidden' 
+            }
+        ]}>
+            <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
+            {children}
+        </View>
+    );
+};
+
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -30,9 +51,27 @@ const LoginScreen = ({ navigation }) => {
     const [canUseBiometrics, setCanUseBiometrics] = useState(false);
     const theme = useTheme();
 
+    // Animations
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(50)).current;
+
     useEffect(() => {
         fetchRate();
         checkBiometricAvailability();
+
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: true,
+            }),
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                friction: 8,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
     }, []);
 
     const checkBiometricAvailability = async () => {
@@ -55,15 +94,10 @@ const LoginScreen = ({ navigation }) => {
         }
     };
 
-    useEffect(() => {
-        fetchRate();
-    }, []);
-
     const fetchRate = async () => {
         try {
             const response = await api.get('/rates');
             const rawRate = response.data.rate;
-            // Ensure we display CAD -> GHS (should be > 1)
             const displayRate = rawRate < 1 ? (1 / rawRate) : rawRate;
             setRate(displayRate.toFixed(2));
         } catch (error) {
@@ -81,8 +115,8 @@ const LoginScreen = ({ navigation }) => {
             await login(email, password);
         } catch (error) {
             Alert.alert(
-                'Connection Debug',
-                `Login failed. Current API URL is: ${api.defaults.baseURL}\n\nError: ${error.message}`
+                'Access Denied',
+                `Login failed. ${error.response?.data?.error || error.message}`
             );
         } finally {
             setLoading(false);
@@ -90,92 +124,129 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flex}
+        <View style={styles.container}>
+            <ImageBackground
+                source={require('../../assets/images/login_bg_premium.png')}
+                style={styles.backgroundImage}
+                resizeMode="cover"
             >
-                <View style={styles.content}>
+                <StatusBar barStyle="light-content" />
+                <SafeAreaView style={styles.safeArea}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={styles.flex}
+                    >
+                        <Animated.View 
+                            style={[
+                                styles.content, 
+                                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                            ]}
+                        >
+                            {/* Floating Rate Badge */}
+                            {rate && (
+                                <GlassContainer intensity={30} tint="light" style={styles.rateBadge}>
+                                    <View style={styles.rateInner}>
+                                        <Ionicons name="trending-up" size={14} color="#fff" style={styles.rateIcon} />
+                                        <Text style={styles.rateText}>
+                                            1 CAD = <Text style={styles.rateHighlight}>{rate} GHS</Text>
+                                        </Text>
+                                    </View>
+                                </GlassContainer>
+                            )}
 
-                    {/* Rate Display */}
-                    {rate && (
-                        <View style={[styles.rateContainer, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '20' }]}>
-                            <View style={[styles.iconCircle, { backgroundColor: theme.primary }]}>
-                                <Ionicons name="trending-up" size={14} color="#fff" />
+                            {/* Logo Section */}
+                            <View style={styles.logoContainer}>
+                                <Image 
+                                    source={require('../../assets/logo-white.png')} 
+                                    style={styles.logo} 
+                                    resizeMode="contain"
+                                />
+                                <Text style={styles.brandSubtitle}>Fast. Secure. Worldwide.</Text>
                             </View>
-                            <Text style={[styles.rateText, { color: theme.text }]}>
-                                1 CAD <Text style={{ color: theme.textMuted }}>=</Text> <Text style={{ color: theme.primary, fontFamily: 'Outfit_700Bold' }}>{rate} GHS</Text>
-                            </Text>
-                        </View>
-                    )}
 
-                    <View style={styles.header}>
-                        <Text style={[styles.title, { color: theme.primary }]}>QWIK<Text style={{ color: theme.text }}>TRANSFERS</Text></Text>
-                        <Text style={[styles.subtitle, { color: theme.textMuted }]}>Sign in to your account</Text>
-                    </View>
+                            {/* Login Card */}
+                            <GlassContainer intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={styles.glassCard}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.cardTitle}>Welcome Back</Text>
+                                    <Text style={styles.cardSubtitle}>Sign in to your account</Text>
+                                </View>
 
-                    <View style={styles.form}>
-                        <Input
-                            label="Email"
-                            placeholder="name@example.com"
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
+                                <View style={styles.form}>
+                                    <View style={styles.inputContainer}>
+                                        <Input
+                                            placeholder="Email Address"
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            containerStyle={styles.glassInput}
+                                            placeholderTextColor="rgba(255,255,255,0.5)"
+                                            style={{ color: '#fff' }}
+                                        />
+                                    </View>
 
-                        <View style={styles.inputGroup}>
-                            <View style={styles.labelRow}>
-                                <Text style={[styles.label, { color: theme.textMuted }]}>Password</Text>
-                                <TouchableOpacity>
-                                    <Text style={[styles.forgotToken, { color: theme.primary }]}>Forgot password?</Text>
+                                    <View style={styles.inputContainer}>
+                                        <Input
+                                            placeholder="Password"
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            secureTextEntry={true}
+                                            containerStyle={styles.glassInput}
+                                            placeholderTextColor="rgba(255,255,255,0.5)"
+                                            style={{ color: '#fff' }}
+                                        />
+                                        <TouchableOpacity style={styles.forgotBtn}>
+                                            <Text style={styles.forgotText}>Forgot?</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <Button
+                                        label="Login"
+                                        onPress={handleLogin}
+                                        loading={loading}
+                                        style={styles.loginBtn}
+                                        textStyle={styles.loginBtnText}
+                                    />
+
+                                    {canUseBiometrics && (
+                                        <TouchableOpacity 
+                                            style={styles.bioBtn} 
+                                            onPress={handleBiometricLogin}
+                                            disabled={loading}
+                                        >
+                                            <GlassContainer intensity={20} tint="light" style={styles.bioBlur}>
+                                                <Ionicons name="finger-print" size={32} color="#fff" />
+                                            </GlassContainer>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </GlassContainer>
+
+                            {/* Footer */}
+                            <View style={styles.footer}>
+                                <Text style={styles.footerText}>Don't have an account?</Text>
+                                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                                    <Text style={styles.linkText}>Create Account</Text>
                                 </TouchableOpacity>
                             </View>
-                            <Input
-                                placeholder="••••••••"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={true}
-                                containerStyle={{ marginBottom: 0 }} // Remove default bottom margin for grouped password
-                            />
-                        </View>
-
-                        <Button
-                            title="Sign in"
-                            label="Sign in"
-                            onPress={handleLogin}
-                            loading={loading}
-                            style={{ marginTop: 16 }}
-                        />
-
-                        {canUseBiometrics && (
-                            <Button
-                                title="Use Biometrics"
-                                label="Use Biometrics"
-                                onPress={handleBiometricLogin}
-                                variant="outline"
-                                icon="finger-print"
-                                style={{ marginTop: 16 }}
-                                disabled={loading}
-                            />
-                        )}
-                    </View>
-
-                    <View style={styles.footer}>
-                        <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={[styles.link, { color: theme.primary }]}>Sign up</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                        </Animated.View>
+                    </KeyboardAvoidingView>
+                </SafeAreaView>
+            </ImageBackground>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    backgroundImage: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+    },
+    safeArea: {
         flex: 1,
     },
     flex: {
@@ -184,105 +255,135 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        justifyContent: 'center',
+        paddingTop: 40,
+        alignItems: 'center',
     },
-    rateContainer: {
-        alignSelf: 'flex-start',
+    rateBadge: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        marginBottom: 30,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    rateInner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        marginBottom: 20,
-        borderWidth: 1,
     },
-    iconCircle: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
+    rateIcon: {
         marginRight: 8,
     },
     rateText: {
         fontSize: 14,
-        fontFamily: 'Outfit_600SemiBold',
+        color: '#fff',
+        fontFamily: 'Outfit_500Medium',
     },
-    header: {
-        marginBottom: 40,
-        alignItems: 'flex-start',
-    },
-    title: {
-        fontSize: 34,
-        letterSpacing: -1.5,
-        fontWeight: '700',
-        marginBottom: 8,
+    rateHighlight: {
+        color: '#4ade80', // Soft green for the rate
         fontFamily: 'Outfit_700Bold',
     },
-    subtitle: {
-        fontSize: 17,
-        fontWeight: '400',
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    logo: {
+        width: 220,
+        height: 60,
+    },
+    brandSubtitle: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 14,
+        fontFamily: 'Outfit_400Regular',
+        marginTop: 8,
+        letterSpacing: 2,
+    },
+    glassCard: {
+        width: '100%',
+        borderRadius: 32,
+        padding: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    cardHeader: {
+        marginBottom: 24,
+    },
+    cardTitle: {
+        fontSize: 32,
+        color: '#fff',
+        fontFamily: 'Outfit_700Bold',
+        marginBottom: 4,
+    },
+    cardSubtitle: {
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.6)',
         fontFamily: 'Outfit_400Regular',
     },
     form: {
         width: '100%',
     },
-    inputGroup: {
-        marginBottom: 24,
+    inputContainer: {
+        marginBottom: 16,
+        position: 'relative',
     },
-    labelRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
+    glassInput: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        marginBottom: 0,
     },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        fontFamily: 'Outfit_600SemiBold',
+    forgotBtn: {
+        position: 'absolute',
+        right: 16,
+        top: 18,
     },
-    forgotToken: {
+    forgotText: {
+        color: '#fff',
         fontSize: 13,
-        fontWeight: '600',
         fontFamily: 'Outfit_600SemiBold',
+        opacity: 0.7,
     },
-    input: {
-        height: 58,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        fontSize: 16,
-        borderWidth: 1.5,
-        fontFamily: 'Outfit_400Regular',
+    loginBtn: {
+        backgroundColor: '#fff',
+        height: 60,
+        borderRadius: 20,
+        marginTop: 10,
     },
-    button: {
-        height: 58,
-        borderRadius: 29,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 16,
-    },
-    buttonText: {
-        color: 'white',
+    loginBtnText: {
+        color: '#1a1a1a',
         fontSize: 18,
-        fontWeight: '700',
         fontFamily: 'Outfit_700Bold',
+    },
+    bioBtn: {
+        alignSelf: 'center',
+        marginTop: 20,
+    },
+    bioBlur: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     footer: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
         marginTop: 40,
+        alignItems: 'center',
     },
     footerText: {
-        fontSize: 15,
-        marginRight: 8,
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 16,
         fontFamily: 'Outfit_400Regular',
     },
-    link: {
-        fontSize: 15,
-        fontWeight: '700',
+    linkText: {
+        color: '#fff',
+        fontSize: 16,
         fontFamily: 'Outfit_700Bold',
+        marginLeft: 8,
     },
 });
 

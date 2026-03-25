@@ -35,6 +35,7 @@ const rateRoutes = require('./routes/rateRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const supportRoutes = require('./routes/supportRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
 const { startRateWatcher } = require('./rateWatcher');
 const { initMonitoring } = require('./services/monitoringService');
 const { initBackupCron } = require('./services/backupService');
@@ -83,6 +84,7 @@ app.use('/api/rates', rateRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/complaints', complaintRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (req, res) => {

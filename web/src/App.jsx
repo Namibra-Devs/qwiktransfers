@@ -23,6 +23,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import AboutVendor from './pages/AboutVendor';
 import ContactUs from './pages/ContactUs';
 import VendorRegister from './pages/VendorRegister';
+import Complaints from './pages/Complaints';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -109,6 +110,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <UserDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/complaints"
+              element={
+                <PrivateRoute>
+                  <Complaints />
                 </PrivateRoute>
               }
             />

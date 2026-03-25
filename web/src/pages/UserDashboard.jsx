@@ -755,6 +755,7 @@ const UserDashboard = () => {
 
                 <div className="dashboard-actions">
                     <nav className="dashboard-nav-links">
+                        <Link to="/complaints" className="nav-link" style={{ color: 'var(--text-deep-brown)', fontWeight: 600, marginRight: '20px', textDecoration: 'none' }}>Support</Link>
                         <Link to="/kyc" className="kyc-badge-link">
                             {user?.kyc_status === 'verified' ? (
                                 <span className="kyc-status verified">✓ Verified</span>

@@ -56,6 +56,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         { id: 'transactions', label: 'Transactions', icon: '📊' },
         { id: 'kyc', label: 'KYC Review', icon: '🆔', badge: pendingCounts.kyc },
         { id: 'inquiries', label: 'Support Inquiries', icon: '📨', badge: pendingCounts.inquiries },
+        { id: 'complaints', label: 'User Complaints', icon: '⚠️' },
         { id: 'users', label: 'Users', icon: '👥' },
         { id: 'vendors', label: 'Vendors', icon: '🏢' },
         { id: 'audit', label: 'Audit Logs', icon: '📜' },

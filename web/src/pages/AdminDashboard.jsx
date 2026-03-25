@@ -15,6 +15,7 @@ import AnalyticsContainer from '../components/admin/AnalyticsContainer';
 import HelpCenter from '../components/admin/HelpCenter';
 import SystemSettings from '../components/admin/SystemSettings';
 import InquiryTable from '../components/admin/InquiryTable';
+import ComplaintTable from '../components/admin/ComplaintTable';
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -30,7 +31,13 @@ const AdminDashboard = () => {
     const [inquiryPage, setInquiryPage] = useState(1);
     const [inquiryTotalPages, setInquiryTotalPages] = useState(1);
     const [inquiryStatusFilter, setInquiryStatusFilter] = useState('pending');
-    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help', 'inquiries'
+    
+    // Complaints State
+    const [complaints, setComplaints] = useState([]);
+    const [complaintPage, setComplaintPage] = useState(1);
+    const [complaintTotalPages, setComplaintTotalPages] = useState(1);
+
+    const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help', 'inquiries', 'complaints'
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [adminStats, setAdminStats] = useState({ pendingTransactions: 0, pendingKYC: 0, successVolume: 0 });
 
@@ -87,8 +94,10 @@ const AdminDashboard = () => {
             fetchAuditLogs();
         } else if (tab === 'inquiries') {
             fetchInquiries();
+        } else if (tab === 'complaints') {
+            fetchComplaints();
         }
-    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, complaintPage, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -180,6 +189,26 @@ const AdminDashboard = () => {
             setInquiryTotalPages(res.data.pages);
         } catch (error) {
             console.error('Fetch inquiries error:', error);
+        }
+    };
+
+    const fetchComplaints = async () => {
+        try {
+            const res = await api.get(`/complaints/admin`);
+            setComplaints(res.data.complaints);
+            setComplaintTotalPages(1); // Backend doesn't paginate complaints yet
+        } catch (error) {
+            console.error('Fetch complaints error:', error);
+        }
+    };
+
+    const updateComplaintStatus = async (id, data) => {
+        try {
+            await api.patch(`/complaints/admin/${id}`, data);
+            toast.success('Complaint updated successfully!');
+            fetchComplaints();
+        } catch (error) {
+            toast.error('Failed to update complaint');
         }
     };
 
@@ -349,13 +378,13 @@ const AdminDashboard = () => {
                     )}
 
                     <div className="fade-in">
-                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'inquiries'].includes(tab) && (
+                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'inquiries', 'complaints'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : 'User Management'}
+                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
                                             </h2>
                                             <button
                                                 onClick={() => setTab('help')}
@@ -528,6 +557,13 @@ const AdminDashboard = () => {
                                         <InquiryTable
                                             inquiries={inquiries}
                                             fetchInquiries={fetchInquiries}
+                                        />
+                                    )}
+
+                                    {tab === 'complaints' && (
+                                        <ComplaintTable
+                                            complaints={complaints}
+                                            updateComplaintStatus={updateComplaintStatus}
                                         />
                                     )}
 

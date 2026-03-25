@@ -23,7 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isBiometricSupported } from '../services/biometrics';
 import Input from '../components/Input';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
     const { user, logout, refreshProfile } = useAuth();
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
@@ -342,6 +342,18 @@ const ProfileScreen = () => {
                                 {new Date(user?.createdAt).toLocaleDateString()}
                             </Text>
                         </View>
+                    </View>
+                ))}
+
+                {renderSection('Support & Help', 'help-circle-outline', (
+                    <View style={styles.cardContent}>
+                        <TouchableOpacity 
+                            style={[styles.row, { borderBottomWidth: 0 }]} 
+                            onPress={() => navigation.navigate('Complaints')}
+                        >
+                            <Text style={[styles.rowLabel, { color: theme.text }]}>View/Submit Complaints</Text>
+                            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+                        </TouchableOpacity>
                     </View>
                 ))}
 
