@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { toast } from '../utils/toast'; // Assuming a toast utility exists or using alert
+// import { toast } from '../utils/toast'; // Assuming a toast utility exists or using alert
 
 const ReferralScreen = ({ navigation }) => {
     const { user, getReferralStats, getReferredUsers } = useAuth();
