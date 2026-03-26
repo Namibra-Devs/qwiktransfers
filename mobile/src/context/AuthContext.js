@@ -99,6 +99,16 @@ export const AuthProvider = ({ children }) => {
 
     const refreshProfile = () => checkAuth();
 
+    const getReferralStats = async () => {
+        const response = await api.get('/api/referrals/stats');
+        return response.data;
+    };
+
+    const getReferredUsers = async () => {
+        const response = await api.get('/api/referrals/users');
+        return response.data;
+    };
+
     return (
         <AuthContext.Provider value={{ 
             user, 
@@ -112,7 +122,9 @@ export const AuthProvider = ({ children }) => {
             setIsAppLocked,
             verifyAppPin,
             isPickingFile,
-            setIsPickingFile
+            setIsPickingFile,
+            getReferralStats,
+            getReferredUsers
         }}>
             {children}
         </AuthContext.Provider>

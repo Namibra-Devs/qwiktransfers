@@ -41,13 +41,23 @@ export const AuthProvider = ({ children }) => {
         return response.data;
     };
 
+    const getReferralStats = async () => {
+        const response = await api.get('/api/referrals/stats');
+        return response.data;
+    };
+
+    const getReferredUsers = async () => {
+        const response = await api.get('/api/referrals/users');
+        return response.data;
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, refreshProfile: fetchProfile }}>
+        <AuthContext.Provider value={{ user, login, register, logout, loading, refreshProfile: fetchProfile, getReferralStats, getReferredUsers }}>
             {!loading && children}
         </AuthContext.Provider>
     );

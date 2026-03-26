@@ -24,6 +24,7 @@ import AboutVendor from './pages/AboutVendor';
 import ContactUs from './pages/ContactUs';
 import VendorRegister from './pages/VendorRegister';
 import Complaints from './pages/Complaints';
+import Referrals from './pages/Referrals';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -119,6 +120,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <Complaints />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/referrals"
+              element={
+                <PrivateRoute>
+                  <Referrals />
                 </PrivateRoute>
               }
             />

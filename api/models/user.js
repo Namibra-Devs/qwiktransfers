@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       User.hasMany(models.Transaction, { foreignKey: 'userId', as: 'transactions' });
       User.hasMany(models.Transaction, { foreignKey: 'vendorId', as: 'handledTransactions' });
+      
+      // Referral Associations
+      User.belongsTo(models.User, { as: 'referrer', foreignKey: 'referred_by_id' });
+      User.hasMany(models.User, { as: 'referredUsers', foreignKey: 'referred_by_id' });
+      User.hasMany(models.Referral, { as: 'referralsMade', foreignKey: 'referrer_id' });
     }
   }
   User.init({
@@ -74,11 +79,41 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: true
     },
     expo_push_token: DataTypes.STRING,
+    referral_code: {
+      type: DataTypes.STRING,
+      unique: true
+    },
+    referred_by_id: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Users',
+        key: 'id'
+      }
+    }
   }, {
     sequelize,
     modelName: 'User',
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
+    hooks: {
+      beforeCreate: async (user) => {
+        if (!user.referral_code) {
+          user.referral_code = await generateUniqueReferralCode(sequelize.models.User);
+        }
+      }
+    }
   });
+
+  async function generateUniqueReferralCode(UserModel) {
+    let code;
+    let exists = true;
+    while (exists) {
+      code = 'QT-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const user = await UserModel.findOne({ where: { referral_code: code } });
+      if (!user) exists = false;
+    }
+    return code;
+  }
+
   return User;
 };

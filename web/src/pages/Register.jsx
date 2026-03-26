@@ -23,6 +23,7 @@ const Register = () => {
     const [country, setCountry] = useState('Ghana');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [pin, setPin] = useState('');
+    const [referralCode, setReferralCode] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
@@ -99,7 +100,8 @@ const Register = () => {
                 last_name: lastName,
                 phone,
                 country,
-                pin
+                pin,
+                referral_code: referralCode
             });
             navigate('/register-success', { state: { email } });
         } catch (err) {
@@ -242,6 +244,15 @@ const Register = () => {
                                         required
                                     />
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-12px' }}>Used for authorizing transactions securely.</p>
+                                </div>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <Input
+                                        label="Referral Code (Optional)"
+                                        value={referralCode}
+                                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                                        placeholder="QT-XXXXXX"
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-12px' }}>Enter a friend's code to link your account.</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px' }}>
                                     <Button

@@ -194,6 +194,7 @@ const Complaints = () => {
 
                 <div className="dashboard-actions">
                     <nav className="dashboard-nav-links">
+                        <Link to="/referrals" className="nav-link" style={styles.navLink}>Refer & Earn</Link>
                         <Link to="/dashboard" className="nav-link" style={styles.navLink}>Dashboard</Link>
                         <Link to="/kyc" className="kyc-badge-link">
                             {user?.kyc_status === 'verified' ? (

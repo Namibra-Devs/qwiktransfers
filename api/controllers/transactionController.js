@@ -1,4 +1,4 @@
-const { Transaction, User, Rate, SystemConfig, sequelize } = require('../models');
+const { Transaction, User, Rate, SystemConfig, Referral, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
@@ -229,6 +229,39 @@ const updateStatus = async (req, res) => {
 
                 // Async email notification
                 sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
+
+                // Referral Logic: Reward referrer on first successful transaction
+                if (transaction.user.referred_by_id) {
+                    // Check if this is the user's first COMPLETED transaction
+                    const completedCount = await Transaction.count({
+                        where: {
+                            userId: transaction.userId,
+                            status: 'sent',
+                            id: { [Op.ne]: transaction.id }
+                        },
+                        transaction: t
+                    });
+
+                    if (completedCount === 0) {
+                        const refConfig = await SystemConfig.findOne({ where: { key: 'referral_settings' }, transaction: t });
+                        const settings = refConfig ? refConfig.value : { reward_amount: 10, reward_currency: 'GHS' };
+
+                        await Referral.create({
+                            referrer_id: transaction.user.referred_by_id,
+                            referred_user_id: transaction.userId,
+                            status: 'pending',
+                            reward_amount: settings.reward_amount,
+                            reward_currency: settings.reward_currency
+                        }, { transaction: t });
+
+                        // Create notification for referrer (outside the DB transaction to avoid blocking)
+                        createNotification({
+                            userId: transaction.user.referred_by_id,
+                            type: 'REFERRAL_REWARD',
+                            message: `Success! Your friend ${transaction.user.first_name} completed their first transaction. You have a pending reward of ${settings.reward_amount} ${settings.reward_currency}!`
+                        }).catch(err => console.error("Referral notification failed:", err));
+                    }
+                }
             }
             return await transaction.save({ transaction: t });
         });

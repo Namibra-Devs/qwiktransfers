@@ -32,7 +32,10 @@ const generateAccountNumber = async (role) => {
 
 const register = async (req, res) => {
     try {
-        const { email, password, confirmPassword, first_name, middle_name, last_name, phone, country, role, pin } = req.body;
+        const { 
+            email, password, confirmPassword, first_name, middle_name, last_name, 
+            phone, country, role, pin, referral_code 
+        } = req.body;
 
         // Check if passwords match
         if (password !== confirmPassword) {
@@ -49,6 +52,15 @@ const register = async (req, res) => {
         const existingUserPhone = await User.findOne({ where: { phone } });
         if (existingUserPhone) {
             return res.status(400).json({ error: 'Phone number is already registered' });
+        }
+
+        // 1. Resolve Referrer
+        let referred_by_id = null;
+        if (referral_code) {
+            const referrer = await User.findOne({ where: { referral_code: referral_code.trim().toUpperCase() } });
+            if (referrer) {
+                referred_by_id = referrer.id;
+            }
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -73,7 +85,8 @@ const register = async (req, res) => {
             verification_token: verificationToken,
             verification_token_expires: new Date(Date.now() + 86400000), // 24 hours
             is_email_verified: false,
-            is_active: role === 'vendor' ? false : true // Vendors require admin approval
+            is_active: role === 'vendor' ? false : true, // Vendors require admin approval
+            referred_by_id // Link to referrer
         });
 
         // Send Communications (Non-blocking or catch errors)

@@ -376,6 +376,13 @@ const ProfileScreen = ({ navigation }) => {
                 {renderSection('Support & Help', 'help-circle-outline', (
                     <View style={styles.cardContent}>
                         <TouchableOpacity 
+                            style={[styles.row, { borderBottomWidth: 0.5 }]} 
+                            onPress={() => navigation.navigate('Referral')}
+                        >
+                            <Text style={[styles.rowLabel, { color: theme.text }]}>Refer & Earn</Text>
+                            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
                             style={[styles.row, { borderBottomWidth: 0 }]} 
                             onPress={() => navigation.navigate('Complaints')}
                         >

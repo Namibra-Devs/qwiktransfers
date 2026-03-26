@@ -133,6 +133,7 @@ const Profile = () => {
 
                 <div className="dashboard-actions">
                     <nav className="dashboard-nav-links">
+                        <Link to="/referrals" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none', marginRight: '20px' }}>Refer & Earn</Link>
                         <Link 
                             to={user?.role === 'admin' ? '/admin' : user?.role === 'vendor' ? '/vendor' : '/dashboard'} 
                             style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none' }}

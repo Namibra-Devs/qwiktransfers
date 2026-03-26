@@ -16,6 +16,7 @@ import TransferScreen from './src/screens/TransferScreen';
 import TransactionDetailsScreen from './src/screens/TransactionDetailsScreen';
 import TransactionsScreen from './src/screens/TransactionsScreen';
 import ComplaintsScreen from './src/screens/ComplaintsScreen';
+import ReferralScreen from './src/screens/ReferralScreen';
 import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
 import { ActivityIndicator, View, Text, Platform, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -106,6 +107,7 @@ const Navigation = () => {
             <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
             <Stack.Screen name="KYC" component={KYCScreen} />
             <Stack.Screen name="Complaints" component={ComplaintsScreen} />
+            <Stack.Screen name="Referral" component={ReferralScreen} />
           </Stack.Group>
         ) : (
           <Stack.Group>

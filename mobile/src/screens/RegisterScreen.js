@@ -39,6 +39,7 @@ const RegisterScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [pin, setPin] = useState('');
+    const [referralCode, setReferralCode] = useState('');
 
     // UI State
     const [showPassword, setShowPassword] = useState(false);
@@ -108,6 +109,7 @@ const RegisterScreen = ({ navigation }) => {
                 phone: phone.trim(),
                 country: country,
                 pin: pin,
+                referral_code: referralCode,
                 role: 'user'
             }, { autoLogin: false });
 
@@ -225,6 +227,13 @@ const RegisterScreen = ({ navigation }) => {
                                 Used to authorize transfers and uploads.
                             </Text>
                         </View>
+                        <Input
+                            label="Referral Code (Optional)"
+                            placeholder="QT-XXXXXX"
+                            value={referralCode}
+                            onChangeText={(text) => setReferralCode(text.toUpperCase())}
+                            autoCapitalize="characters"
+                        />
                     </View>
                 );
             default:
