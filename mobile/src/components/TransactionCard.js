@@ -38,7 +38,7 @@ const TransactionCard = ({ tx, theme, onPress }) => {
                         {tx.recipient_details?.name || 'Unknown Recipient'}
                     </Text>
                     <Text style={[styles.txAmountLarge, { color: theme.text }]}>
-                        ₵{parseFloat(tx.amount_sent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {tx.type?.split('-')[0] === 'CAD' ? '$' : '₵'}{parseFloat(tx.amount_sent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                 </View>
                 <View style={styles.txSub}>

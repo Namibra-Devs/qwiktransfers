@@ -566,7 +566,14 @@ const getUserStats = async (req, res) => {
         // Current KPIs (User Specific)
         const totalSentCount = await Transaction.count({ where: { userId, status: 'sent' } });
         const pendingCount = await Transaction.count({ where: { userId, status: 'pending' } });
-        const successVolume = await Transaction.sum('amount_sent', { where: { userId, status: 'sent' } });
+        
+        const totalSentGHS = await Transaction.sum('amount_sent', { 
+            where: { userId, status: 'sent', type: 'GHS-CAD' } 
+        }) || 0;
+
+        const totalSentCAD = await Transaction.sum('amount_sent', { 
+            where: { userId, status: 'sent', type: 'CAD-GHS' } 
+        }) || 0;
 
         // Time-series Volume (User Specific) - Group by day
         const volumeHistory = await Transaction.findAll({
@@ -600,7 +607,9 @@ const getUserStats = async (req, res) => {
         res.json({
             pendingCount,
             totalSentCount,
-            successVolume: successVolume || 0,
+            totalSentGHS,
+            totalSentCAD,
+            successVolume: (totalSentGHS + totalSentCAD), // Legacy support if needed
             history: {
                 volume: volumeHistory,
                 transactions: txHistory

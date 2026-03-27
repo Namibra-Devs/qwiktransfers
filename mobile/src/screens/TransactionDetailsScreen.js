@@ -229,11 +229,11 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
         if (!transaction) return null;
 
         const steps = [
-            { label: 'Initiated', icon: 'create-outline', date: transaction.created_at },
+            { label: 'Initiated', icon: 'create-outline', date: transaction.createdAt || transaction.created_at },
             { label: 'Proof Uploaded', icon: 'cloud-upload-outline', date: transaction.proof_uploaded_at },
-            { label: 'Pending Review', icon: 'time-outline', date: null },
-            { label: 'Processing', icon: 'sync-outline', date: null },
-            { label: 'Sent', icon: 'checkmark-circle', date: transaction.sent_at }
+            { label: 'Pending Review', icon: 'time-outline', date: (transaction.status === 'pending' || activeIndex > 2) ? transaction.updatedAt : null },
+            { label: 'Processing', icon: 'sync-outline', date: (transaction.status === 'processing' || activeIndex > 3) ? transaction.updatedAt : null },
+            { label: 'Sent', icon: 'checkmark-circle', date: transaction.sent_at || transaction.sentAt || (transaction.status === 'sent' ? transaction.updatedAt : null) }
         ];
 
         // determine current active step based on status
@@ -284,7 +284,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                                         ]} />
                                     )}
                                 </View>
-                                <View style={styles.timelineContent}>
+                                <View style={[styles.timelineContent, { flex: 1 }]}>
                                     <Text style={[
                                         styles.stepLabel,
                                         {
@@ -296,7 +296,11 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                                     </Text>
                                     {step.date && (
                                         <Text style={[styles.stepDate, { color: theme.textMuted }]}>
-                                            {new Date(step.date).toLocaleDateString()}
+                                            {new Date(step.date).toLocaleDateString(undefined, { 
+                                                year: 'numeric', 
+                                                month: 'short', 
+                                                day: 'numeric' 
+                                            })}
                                         </Text>
                                     )}
                                 </View>
@@ -473,14 +477,14 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 )}
 
                 {/* Vendor Fulfillment Proof (The receipt the vendor uploaded) */}
-                {transaction.vendor_receipt && (
+                {transaction.vendor_proof_url && (
                     <TouchableOpacity
                         style={[styles.card, { backgroundColor: '#f0fdf4', borderColor: '#86efac', alignItems: 'center' }]}
                         onPress={() => {
                             const baseUrl = api.defaults.baseURL.replace('/api', '');
-                            const url = transaction.vendor_receipt.startsWith('http')
-                                ? transaction.vendor_receipt
-                                : `${baseUrl}${transaction.vendor_receipt}`;
+                            const url = transaction.vendor_proof_url.startsWith('http')
+                                ? transaction.vendor_proof_url
+                                : `${baseUrl}${transaction.vendor_proof_url}`;
                             setPreviewImage(url);
                             setShowPreviewModal(true);
                         }}

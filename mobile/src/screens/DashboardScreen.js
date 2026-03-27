@@ -117,24 +117,8 @@ const DashboardScreen = ({ navigation }) => {
             const res = await api.get('/transactions');
             const txs = res.data.transactions || res.data; // Handle different API response shapes
             setTransactions(txs);
-
-            // Calculate total sent in GHS equivalent
-            const total = txs
-                .filter(tx => tx.status === 'sent')
-                .reduce((acc, tx) => {
-                    const [fromCur, toCur] = tx.type.split('-');
-                    if (fromCur === 'GHS') {
-                        return acc + parseFloat(tx.amount_sent);
-                    } else if (toCur === 'GHS') {
-                        return acc + parseFloat(tx.amount_received);
-                    }
-                    return acc;
-                }, 0);
-            setTotalSent(total);
-
             // Save to cache for offline mode
             AsyncStorage.setItem('cachedTransactions', JSON.stringify(txs));
-            AsyncStorage.setItem('cachedTotalSent', total.toString());
         } catch (error) {
             console.error('Fetch Error:', error);
         }
@@ -201,7 +185,9 @@ const DashboardScreen = ({ navigation }) => {
                             {loading && transactions.length === 0 ? (
                                 <ShimmerPlaceholder duration={800} style={{ width: 150, height: 36, borderRadius: 8 }} />
                             ) : (
-                                `₵${totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                (user?.country?.toLowerCase() === 'canada') 
+                                ? `$${parseFloat(analyticsData?.totalSentCAD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : `₵${parseFloat(analyticsData?.totalSentGHS || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             )}
                         </Text>
                         <TouchableOpacity style={[styles.statsBtn, { backgroundColor: theme.primary + '10' }]}>
