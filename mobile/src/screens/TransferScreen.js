@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateAsync } from '../services/biometrics';
@@ -24,6 +23,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import api from '../services/api';
+import SelectionPicker from '../components/SelectionPicker';
 
 const TransferScreen = ({ navigation }) => {
     const theme = useTheme();
@@ -72,6 +72,10 @@ const TransferScreen = ({ navigation }) => {
     const [pin, setPin] = useState('');
     const [pinLoading, setPinLoading] = useState(false);
     const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+
+    // UI State for custom pickers
+    const [providerPickerVisible, setProviderPickerVisible] = useState(false);
+    const [bankPickerVisible, setBankPickerVisible] = useState(false);
 
     // Constants
     const momoProviders = [
@@ -378,17 +382,24 @@ const TransferScreen = ({ navigation }) => {
                 <>
                     <View style={styles.formGroup}>
                         <Text style={[styles.label, { color: theme.textMuted }]}>Provider</Text>
-                        <View style={[styles.pickerWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
-                            <Picker
-                                selectedValue={momoProvider}
-                                onValueChange={setMomoProvider}
-                                style={{ color: theme.text }}
-                                dropdownIconColor={theme.text}
-                            >
-                                <Picker.Item label="Select Provider" value="" color={theme.textMuted} />
-                                {momoProviders.map(p => <Picker.Item key={p.id} label={p.name} value={p.name} />)}
-                            </Picker>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.pickerTrigger, { backgroundColor: theme.input, borderColor: theme.border }]}
+                            onPress={() => setProviderPickerVisible(true)}
+                        >
+                            <Text style={[styles.pickerText, { color: momoProvider ? theme.text : theme.textMuted }]}>
+                                {momoProvider || 'Select Provider'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={theme.textMuted} />
+                        </TouchableOpacity>
+
+                        <SelectionPicker
+                            visible={providerPickerVisible}
+                            onClose={() => setProviderPickerVisible(false)}
+                            title="Select Provider"
+                            data={momoProviders}
+                            selectedValue={momoProvider}
+                            onSelect={(item) => setMomoProvider(item.name)}
+                        />
                     </View>
                     <View style={styles.formGroup}>
                         <Text style={[styles.label, { color: theme.textMuted }]}>Mobile Number</Text>
@@ -408,17 +419,25 @@ const TransferScreen = ({ navigation }) => {
                 <>
                     <View style={styles.formGroup}>
                         <Text style={[styles.label, { color: theme.textMuted }]}>Bank Name</Text>
-                        <View style={[styles.pickerWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
-                            <Picker
-                                selectedValue={bankName}
-                                onValueChange={setBankName}
-                                style={{ color: theme.text }}
-                                dropdownIconColor={theme.text}
-                            >
-                                <Picker.Item label="Select Bank" value="" color={theme.textMuted} />
-                                {ghanaBanks.map(b => <Picker.Item key={b} label={b} value={b} />)}
-                            </Picker>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.pickerTrigger, { backgroundColor: theme.input, borderColor: theme.border }]}
+                            onPress={() => setBankPickerVisible(true)}
+                        >
+                            <Text style={[styles.pickerText, { color: bankName ? theme.text : theme.textMuted }]}>
+                                {bankName || 'Select Bank'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={theme.textMuted} />
+                        </TouchableOpacity>
+
+                        <SelectionPicker
+                            visible={bankPickerVisible}
+                            onClose={() => setBankPickerVisible(false)}
+                            title="Select Bank"
+                            data={ghanaBanks}
+                            selectedValue={bankName}
+                            onSelect={(item) => setBankName(item)}
+                            placeholder="Search banks..."
+                        />
                     </View>
                     <View style={styles.formGroup}>
                         <Text style={[styles.label, { color: theme.textMuted }]}>Account Number</Text>
@@ -615,16 +634,16 @@ const TransferScreen = ({ navigation }) => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
 
-            {/* Header - Hidden on Step 4 (Success) */}
+            {/* Standardized Header - Hidden on Step 4 (Success) */}
             {step < 4 && (
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()}>
-                        <Ionicons name={step === 1 ? "close" : "arrow-back"} size={28} color={theme.text} />
+                <View style={[styles.header, { borderBottomColor: theme.border + '15', borderBottomWidth: step > 1 ? 1 : 0 }]}>
+                    <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name={step === 1 ? "close" : "arrow-back"} size={24} color={theme.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: theme.text }]}>
-                        {step === 1 ? 'Send Money' : step === 2 ? 'Recipient' : 'Review'}
+                        {step === 1 ? 'Send Money' : step === 2 ? 'Recipient Info' : 'Review Transfer'}
                     </Text>
-                    <View style={{ width: 28 }} />
+                    <View style={{ width: 44 }} />
                 </View>
             )}
 
@@ -743,13 +762,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         height: 60,
     },
+    backBtn: { padding: 8 },
     headerTitle: {
         fontSize: 18,
-        fontWeight: '600',
-        fontFamily: 'Outfit_600SemiBold',
+        fontFamily: 'Outfit_700Bold',
     },
     centerContainer: {
         flex: 1,
@@ -763,11 +783,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     bigInput: {
-        fontSize: 64,
-        fontWeight: '700',
+        fontSize: 56,
         fontFamily: 'Outfit_700Bold',
         textAlign: 'right',
-        minWidth: 100,
+        minWidth: 80,
     },
     currencyPill: {
         flexDirection: 'row',
@@ -848,10 +867,25 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Outfit_400Regular',
     },
+    pickerTrigger: {
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        marginBottom: 20,
+    },
+    pickerText: {
+        fontSize: 16,
+        fontFamily: 'Outfit_400Regular',
+    },
     pickerWrapper: {
-        borderWidth: 1.5,
         borderRadius: 12,
-        overflow: 'hidden',
+        marginBottom: 20,
+        borderWidth: 1,
+        overflow: 'hidden'
     },
     row: {
         flexDirection: 'row',
