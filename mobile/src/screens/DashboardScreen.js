@@ -170,9 +170,9 @@ const DashboardScreen = ({ navigation }) => {
                                 <Text style={[styles.heroRateBadgeText, { color: theme.primary }]}>1 CAD = {rate} GHS</Text>
                             </View>
                         )}
-                        <TouchableOpacity onPress={() => navigation.navigate('Alerts')} style={styles.notificationBtn}>
+                        <TouchableOpacity onPress={() => navigation.navigate('Alerts')} style={[styles.notificationBtn, { backgroundColor: theme.card }]}>
                             <Ionicons name="notifications-outline" size={24} color={theme.text} />
-                            <View style={styles.notificationDot} />
+                            <View style={[styles.notificationDot, { borderColor: theme.card }]} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -185,9 +185,9 @@ const DashboardScreen = ({ navigation }) => {
                             {loading && transactions.length === 0 ? (
                                 <ShimmerPlaceholder duration={800} style={{ width: 150, height: 36, borderRadius: 8 }} />
                             ) : (
-                                (user?.country?.toLowerCase() === 'canada') 
-                                ? `$${parseFloat(analyticsData?.totalSentCAD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                : `₵${parseFloat(analyticsData?.totalSentGHS || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                (user?.country?.toLowerCase() === 'canada')
+                                    ? `$${parseFloat(analyticsData?.totalSentCAD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    : `₵${parseFloat(analyticsData?.totalSentGHS || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             )}
                         </Text>
                         <TouchableOpacity style={[styles.statsBtn, { backgroundColor: theme.primary + '10' }]}>
@@ -375,7 +375,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
     },
     notificationDot: {
         position: 'absolute',
@@ -386,7 +385,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: '#FF3B30',
         borderWidth: 1.5,
-        borderColor: '#fff',
     },
     balanceSection: {
         marginBottom: 25,

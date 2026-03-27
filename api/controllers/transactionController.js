@@ -575,18 +575,16 @@ const getUserStats = async (req, res) => {
             where: { userId, status: 'sent', type: 'CAD-GHS' } 
         }) || 0;
 
-        // Time-series Volume (User Specific) - Group by day
         const volumeHistory = await Transaction.findAll({
             attributes: [
                 [fn('DATE', col('createdAt')), 'date'],
-                [fn('SUM', col('amount_sent')), 'total_sent'],
-                'status'
+                [fn('SUM', col('amount_sent')), 'total_sent']
             ],
             where: {
                 userId,
                 createdAt: { [Op.gte]: thirtyDaysAgo }
             },
-            group: [fn('DATE', col('createdAt')), 'status'],
+            group: [fn('DATE', col('createdAt'))],
             order: [[fn('DATE', col('createdAt')), 'ASC']]
         });
 

@@ -12,6 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#DC2626"
     },
+    "notification": {
+      "icon": "./assets/logo-white.png",
+      "color": "#DC2626"
+    },
     "ios": {
       "supportsTablet": true
     },

@@ -62,11 +62,17 @@ const TabNavigator = () => {
         },
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
-          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'Transactions') iconName = focused ? 'time' : 'time-outline';
-          else if (route.name === 'Alerts') iconName = focused ? 'notifications' : 'notifications-outline';
-          else if (route.name === 'Watcher') iconName = focused ? 'eye' : 'eye-outline';
-          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+          if (focused) {
+            if (route.name === 'Home') iconName = 'home';
+            else if (route.name === 'Transactions') iconName = 'time';
+            else if (route.name === 'Watcher') iconName = 'eye';
+            else if (route.name === 'Profile') iconName = 'person';
+          } else {
+            if (route.name === 'Home') iconName = 'home-outline';
+            else if (route.name === 'Transactions') iconName = 'time-outline';
+            else if (route.name === 'Watcher') iconName = 'eye-outline';
+            else if (route.name === 'Profile') iconName = 'person-outline';
+          }
 
           return <Ionicons name={iconName} size={24} color={color} />;
         },
@@ -74,7 +80,6 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="Transactions" component={TransactionsScreen} options={{ tabBarLabel: 'Transactions' }} />
-      <Tab.Screen name="Alerts" component={NotificationScreen} options={{ tabBarLabel: 'Activity' }} />
       <Tab.Screen name="Watcher" component={RateAlertScreen} options={{ tabBarLabel: 'Watcher' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: useAuth().user?.firstName || 'Me' }} />
     </Tab.Navigator>
@@ -102,14 +107,15 @@ const Navigation = () => {
         }}
       >
         {user ? (
-          <Stack.Group>
-            <Stack.Screen name="Main" component={TabNavigator} />
-            <Stack.Screen name="Transfer" component={TransferScreen} />
-            <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
-            <Stack.Screen name="KYC" component={KYCScreen} />
-            <Stack.Screen name="Complaints" component={ComplaintsScreen} />
-            <Stack.Screen name="Referral" component={ReferralScreen} />
-          </Stack.Group>
+            <Stack.Group>
+                <Stack.Screen name="Main" component={TabNavigator} />
+                <Stack.Screen name="Transfer" component={TransferScreen} />
+                <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
+                <Stack.Screen name="KYC" component={KYCScreen} />
+                <Stack.Screen name="Alerts" component={NotificationScreen} />
+                <Stack.Screen name="Complaints" component={ComplaintsScreen} />
+                <Stack.Screen name="Referral" component={ReferralScreen} />
+            </Stack.Group>
         ) : (
           <Stack.Group>
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
