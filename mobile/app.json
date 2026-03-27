@@ -4,11 +4,11 @@
     "slug": "qwiktransfers",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-red.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/name-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#DC2626"
     },
@@ -21,14 +21,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo-red.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.mobile"
     },
     "web": {
-      "favicon": "./assets/logo-red.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-font"

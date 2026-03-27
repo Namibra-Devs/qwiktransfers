@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -18,7 +18,7 @@ import TransactionsScreen from './src/screens/TransactionsScreen';
 import ComplaintsScreen from './src/screens/ComplaintsScreen';
 import ReferralScreen from './src/screens/ReferralScreen';
 import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
-import { ActivityIndicator, View, Text, Platform, AppState, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, Text, Platform, AppState, StyleSheet, Animated, Easing } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AppLock from './src/components/AppLock';
 import {
@@ -217,7 +217,59 @@ const toastStyles = StyleSheet.create({
   },
 });
 
+const AnimatedSplashScreen = ({ onAnimationFinish }) => {
+  const [opacity] = useState(new Animated.Value(1));
+  const [scale] = useState(new Animated.Value(1));
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(1000), // Hold the splash screen for a moment
+      Animated.parallel([
+        Animated.timing(scale, {
+          toValue: 2.0, // Zoom in effect
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0, // Fade out
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      onAnimationFinish();
+    });
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#DC2626', // Match native splash background
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity: opacity,
+        zIndex: 9999,
+        elevation: 9999,
+      }}
+    >
+      <Animated.Image
+        source={require('./assets/name-logo.png')}
+        style={{
+          width: '80%',
+          height: 200,
+          resizeMode: 'contain',
+          transform: [{ scale: scale }],
+        }}
+      />
+    </Animated.View>
+  );
+};
+
 export default function App() {
+  const [isSplashAnimationComplete, setAnimationComplete] = useState(false);
   const [fontsLoaded] = useFonts({
     Outfit_300Light,
     Outfit_400Regular,
@@ -265,6 +317,9 @@ export default function App() {
           <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
             <Navigation />
           </View>
+          {!isSplashAnimationComplete && (
+            <AnimatedSplashScreen onAnimationFinish={() => setAnimationComplete(true)} />
+          )}
         </AuthProvider>
       </ThemeProvider>
       <Toast config={toastConfig} />
