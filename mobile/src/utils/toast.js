@@ -14,7 +14,7 @@ export const showToast = (type, title, message = '') => {
     position: 'top',
     visibilityTime: 4000,
     autoHide: true,
-    topOffset: 60,
+    topOffset: 70,
   });
 };
 

@@ -18,7 +18,7 @@ import TransactionsScreen from './src/screens/TransactionsScreen';
 import ComplaintsScreen from './src/screens/ComplaintsScreen';
 import ReferralScreen from './src/screens/ReferralScreen';
 import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
-import { ActivityIndicator, View, Text, Platform, AppState } from 'react-native';
+import { ActivityIndicator, View, Text, Platform, AppState, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AppLock from './src/components/AppLock';
 import {
@@ -131,6 +131,86 @@ import { registerForPushNotificationsAsync } from './src/services/notifications'
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
+const toastConfig = {
+  success: ({ text1, text2 }) => (
+    <View style={toastStyles.toastContainer}>
+      <View style={[toastStyles.iconContainer, { backgroundColor: '#10b981' }]}>
+        <Ionicons name="checkmark" size={18} color="#fff" />
+      </View>
+      <View style={toastStyles.content}>
+        <Text style={toastStyles.title}>{text1}</Text>
+        {text2 ? <Text style={toastStyles.message}>{text2}</Text> : null}
+      </View>
+    </View>
+  ),
+  error: ({ text1, text2 }) => (
+    <View style={toastStyles.toastContainer}>
+      <View style={[toastStyles.iconContainer, { backgroundColor: '#ef4444' }]}>
+        <Ionicons name="close" size={18} color="#fff" />
+      </View>
+      <View style={toastStyles.content}>
+        <Text style={toastStyles.title}>{text1}</Text>
+        {text2 ? <Text style={toastStyles.message}>{text2}</Text> : null}
+      </View>
+    </View>
+  ),
+  info: ({ text1, text2 }) => (
+    <View style={toastStyles.toastContainer}>
+      <View style={[toastStyles.iconContainer, { backgroundColor: '#3b82f6' }]}>
+        <Ionicons name="information" size={18} color="#fff" />
+      </View>
+      <View style={toastStyles.content}>
+        <Text style={toastStyles.title}>{text1}</Text>
+        {text2 ? <Text style={toastStyles.message}>{text2}</Text> : null}
+      </View>
+    </View>
+  ),
+};
+
+const toastStyles = StyleSheet.create({
+  toastContainer: {
+    height: 'auto',
+    minHeight: 50,
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  iconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 14,
+    fontFamily: 'Outfit_600SemiBold',
+    color: '#1C1917',
+  },
+  message: {
+    fontSize: 12,
+    fontFamily: 'Outfit_400Regular',
+    color: '#78716C',
+    marginTop: 1,
+  },
+});
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Outfit_300Light,
@@ -181,7 +261,7 @@ export default function App() {
           </View>
         </AuthProvider>
       </ThemeProvider>
-      <Toast />
+      <Toast config={toastConfig} />
     </SafeAreaProvider>
   );
 }

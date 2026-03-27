@@ -100,12 +100,12 @@ export const AuthProvider = ({ children }) => {
     const refreshProfile = () => checkAuth();
 
     const getReferralStats = async () => {
-        const response = await api.get('/api/referrals/stats');
+        const response = await api.get('/referrals/stats');
         return response.data;
     };
 
     const getReferredUsers = async () => {
-        const response = await api.get('/api/referrals/users');
+        const response = await api.get('/referrals/users');
         return response.data;
     };
 

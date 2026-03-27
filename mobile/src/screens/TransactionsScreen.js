@@ -108,7 +108,11 @@ const TransactionsScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.text }]}>Transactions</Text>
+                <View style={{ width: 24 }} />
             </View>
 
             {loading && page === 1 ? (
@@ -142,14 +146,15 @@ const TransactionsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        height: 60,
     },
     headerTitle: {
-        fontSize: 24,
-        fontFamily: 'Outfit_700Bold',
+        fontSize: 18,
+        fontFamily: 'Outfit_600SemiBold',
     },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     txRow: {

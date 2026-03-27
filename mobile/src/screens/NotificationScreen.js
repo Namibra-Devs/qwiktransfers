@@ -14,7 +14,7 @@ import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const NotificationScreen = () => {
+const NotificationScreen = ({ navigation }) => {
     const theme = useTheme();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -98,7 +98,10 @@ const NotificationScreen = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
             <View style={styles.header}>
-                <Text style={[styles.title, { color: theme.text }]}>Activity</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Activity</Text>
                 <TouchableOpacity onPress={fetchNotifications}>
                     <Ionicons name="refresh-outline" size={24} color={theme.text} />
                 </TouchableOpacity>
@@ -133,14 +136,14 @@ const styles = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 15,
+        height: 60,
     },
-    title: {
-        fontSize: 32,
-        fontFamily: 'Outfit_700Bold',
+    headerTitle: {
+        fontSize: 18,
+        fontFamily: 'Outfit_600SemiBold',
     },
     listContent: {
         paddingBottom: 20,

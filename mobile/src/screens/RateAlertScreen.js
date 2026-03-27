@@ -15,7 +15,7 @@ import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const RateAlertScreen = () => {
+const RateAlertScreen = ({ navigation }) => {
     const theme = useTheme();
     const [alerts, setAlerts] = useState([]);
     const [targetRate, setTargetRate] = useState('');
@@ -83,14 +83,19 @@ const RateAlertScreen = () => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Rate Watcher</Text>
+                <View style={{ width: 24 }} />
+            </View>
+
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={{ padding: 20 }}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Header */}
-                <Text style={[styles.screenTitle, { color: theme.text }]}>Rate Watcher</Text>
-
                 {/* Big Rate Display */}
                 <View style={styles.rateDisplay}>
                     <Text style={[styles.rateLabel, { color: theme.textMuted }]}>Current Rate</Text>
@@ -166,11 +171,16 @@ const RateAlertScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    screenTitle: {
-        fontSize: 32,
-        fontFamily: 'Outfit_700Bold',
-        marginBottom: 30,
-        marginTop: 10,
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        height: 60,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontFamily: 'Outfit_600SemiBold',
     },
     rateDisplay: {
         marginBottom: 40,
