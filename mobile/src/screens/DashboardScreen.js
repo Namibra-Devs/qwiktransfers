@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    Alert,
     RefreshControl,
     Image,
     Platform,
@@ -90,7 +89,7 @@ const DashboardScreen = ({ navigation }) => {
             setLoading(true);
         }
         await Promise.all([
-            fetchTransactions(), 
+            fetchTransactions(),
             fetchAnalytics(),
             refreshProfile?.()
         ]);
@@ -156,40 +155,68 @@ const DashboardScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <View style={styles.appHeader}>
-                <TouchableOpacity 
-                    onPress={() => navigation.navigate('Profile')}
-                    style={styles.avatarContainer}
-                >
-                    {user?.profile_picture ? (
-                        <Image 
-                            source={{ uri: getImageUrl(user.profile_picture) }} 
-                            style={styles.avatarImage} 
-                        />
-                    ) : (
-                        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary + '20' }]}>
-                            <Text style={[styles.avatarText, { color: theme.primary }]}>
-                                {(user?.full_name || user?.firstName || 'U').charAt(0).toUpperCase()}
-                            </Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 13, color: theme.textMuted, fontFamily: 'Outfit_400Regular' }}>{getGreeting()}</Text>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, fontFamily: 'Outfit_700Bold' }}>{(user?.full_name || user?.firstName || 'User').split(' ')[0]}</Text>
-                </View>
-                <View style={styles.headerActions}>
-                    {rate && (
-                        <View style={[styles.rateBadge, { backgroundColor: theme.primary + '15' }]}>
-                            <Text style={[styles.rateBadgeText, { color: theme.primary }]}>1 CAD = {rate} GHS</Text>
-                        </View>
-                    )}
-                    <TouchableOpacity onPress={() => navigation.navigate('Alerts')}>
-                        <Ionicons name="notifications-outline" size={26} color={theme.text} />
+            <View style={[styles.heroSection, { backgroundColor: theme.primary + '08' }]}>
+                <View style={styles.heroTop}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Profile')}
+                        style={styles.heroAvatarContainer}
+                    >
+                        {user?.profile_picture ? (
+                            <Image
+                                source={{ uri: getImageUrl(user.profile_picture) }}
+                                style={styles.heroAvatarImage}
+                            />
+                        ) : (
+                            <View style={[styles.heroAvatarPlaceholder, { backgroundColor: theme.primary + '20' }]}>
+                                <Text style={[styles.heroAvatarText, { color: theme.primary }]}>
+                                    {(user?.full_name || user?.firstName || 'U').charAt(0).toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
+                    <View style={styles.heroGreeting}>
+                        <Text style={[styles.heroGreetingText, { color: theme.textMuted }]}>{getGreeting()}</Text>
+                        <Text style={[styles.heroNameText, { color: theme.text }]}>
+                            {(user?.full_name || user?.firstName || 'User').split(' ')[0]}
+                        </Text>
+                    </View>
+                    <View style={styles.heroHeaderActions}>
+                        {rate && (
+                            <View style={[styles.heroRateBadge, { backgroundColor: theme.primary + '15' }]}>
+                                <Text style={[styles.heroRateBadgeText, { color: theme.primary }]}>1 CAD = {rate} GHS</Text>
+                            </View>
+                        )}
+                        <TouchableOpacity onPress={() => navigation.navigate('Alerts')} style={styles.notificationBtn}>
+                            <Ionicons name="notifications-outline" size={24} color={theme.text} />
+                            <View style={styles.notificationDot} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Balance Section */}
+                <View style={styles.balanceSection}>
+                    <Text style={[styles.balanceLabel, { color: theme.textMuted }]}>Total Sent</Text>
+                    <View style={styles.balanceRow}>
+                        <Text style={[styles.balanceValue, { color: theme.text }]}>
+                            {loading && transactions.length === 0 ? (
+                                <ShimmerPlaceholder duration={800} style={{ width: 150, height: 36, borderRadius: 8 }} />
+                            ) : (
+                                `₵${totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            )}
+                        </Text>
+                        <TouchableOpacity style={[styles.statsBtn, { backgroundColor: theme.primary + '10' }]}>
+                            <Ionicons name="trending-up" size={20} color={theme.primary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Quick Action Buttons */}
+                <View style={styles.actionGrid}>
+                    <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
+                    <ActionButton icon="swap-horizontal" label="Rates" onPress={() => navigation.navigate('Watcher')} theme={theme} color={theme.primary} />
+                    <ActionButton icon="gift-outline" label="Reward" onPress={() => navigation.navigate('Referral')} theme={theme} color={theme.primary} />
                 </View>
             </View>
-
             <ScrollView
                 refreshControl={
                     <RefreshControl
@@ -201,41 +228,10 @@ const DashboardScreen = ({ navigation }) => {
                     />
                 }
             >
-                {/* Coinbase-style Portfolio Header */}
-                <View style={styles.portfolioHeader}>
-                    <View style={styles.headerTop}>
-                        <View>
-                            <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Total Sent</Text>
-                            <Text style={[styles.portfolioValue, { color: theme.text }]}>
-                                {loading && transactions.length === 0 ? (
-                                    <View style={{ paddingTop: 8 }}>
-                                        <ShimmerPlaceholder duration={800} style={{ width: 180, height: 32, borderRadius: 8 }} />
-                                    </View>
-                                ) : (
-                                    `₵${totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                )}
-                            </Text>
-                        </View>
-                        <View style={styles.sparklineContainer}>
-                            <Ionicons name="stats-chart" size={44} color={theme.primary} style={{ opacity: 0.8 }} />
-                        </View>
-                    </View>
-                </View>
-
-                {/* Quick Action Buttons */}
-                <View style={styles.actionGrid}>
-                    {/* <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
-                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color={theme.primary} /> */}
-                    <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
-                    <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color={theme.primary} />
-                    <ActionButton icon="swap-horizontal" label="Rate" onPress={() => navigation.navigate('Watcher')} theme={theme} color={theme.primary} />
-                    <ActionButton icon="shield-half-outline" label="KYC" onPress={() => navigation.navigate('KYC')} theme={theme} color={theme.primary} />
-                </View>
-
                 {/* Transaction Analytics Chart */}
-                <TransactionChart 
-                    data={analyticsData} 
-                    loading={analyticsLoading} 
+                <TransactionChart
+                    data={analyticsData}
+                    loading={analyticsLoading}
                 />
 
                 {/* Verification / Limits Card */}
@@ -325,108 +321,139 @@ const DashboardScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    appHeader: {
+    heroSection: {
+        paddingHorizontal: 20,
+        paddingTop: 15,
+        paddingBottom: 25,
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+    },
+    heroTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
+        marginBottom: 24,
     },
-    avatarContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+    heroAvatarContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 2,
         borderColor: '#fff',
-        elevation: 4,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
     },
-    avatarImage: {
+    heroAvatarImage: {
         width: '100%',
         height: '100%',
     },
-    avatarPlaceholder: {
+    heroAvatarPlaceholder: {
         width: '100%',
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    avatarText: {
+    heroAvatarText: {
         fontSize: 18,
         fontFamily: 'Outfit_700Bold',
     },
-    headerActions: {
+    heroGreeting: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    heroGreetingText: {
+        fontSize: 13,
+        fontFamily: 'Outfit_400Regular',
+    },
+    heroNameText: {
+        fontSize: 18,
+        fontWeight: '700',
+        fontFamily: 'Outfit_700Bold',
+    },
+    heroHeaderActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 15,
+        gap: 12,
     },
-    rateBadge: {
+    heroRateBadge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
     },
-    rateBadgeText: {
-        fontSize: 13,
+    heroRateBadgeText: {
+        fontSize: 11,
         fontWeight: '700',
         fontFamily: 'Outfit_700Bold',
     },
-    portfolioHeader: {
-        paddingTop: 20,
-        paddingBottom: 25,
-        paddingHorizontal: 20,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    notificationBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#fff',
     },
-    portfolioLabel: {
-        fontSize: 16,
+    notificationDot: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#FF3B30',
+        borderWidth: 1.5,
+        borderColor: '#fff',
+    },
+    balanceSection: {
+        marginBottom: 25,
+    },
+    balanceLabel: {
+        fontSize: 14,
         fontWeight: '600',
-        marginBottom: 4,
         fontFamily: 'Outfit_600SemiBold',
+        marginBottom: 4,
     },
-    portfolioValue: {
-        fontSize: 36,
+    balanceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    balanceValue: {
+        fontSize: 34,
         fontWeight: '700',
         letterSpacing: -1,
         fontFamily: 'Outfit_700Bold',
     },
-    sparklineContainer: {
-        width: 100,
-        height: 60,
+    statsBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
-        alignItems: 'flex-end',
+        alignItems: 'center',
     },
     actionGrid: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 15,
-        marginBottom: 30,
+        paddingHorizontal: 0, // Adjusted for full width within heroSection
     },
     actionItem: {
         alignItems: 'center',
         flex: 1,
     },
     actionIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        shadowColor: "red", // Or remove shadow color logic to let it inherit or use theme if needed, but 'red' is safer generic if theme not in scope of styles
+        backgroundColor: '#fff',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
     actionLabel: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '600',
         fontFamily: 'Outfit_600SemiBold',
     },

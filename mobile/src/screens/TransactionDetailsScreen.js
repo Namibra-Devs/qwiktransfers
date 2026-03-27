@@ -7,12 +7,12 @@ import {
     TouchableOpacity,
     StatusBar,
     ActivityIndicator,
-    Alert,
     Image,
     Modal,
     TextInput,
     Platform
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
@@ -77,7 +77,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             if (initialData && error.response && error.response.status === 404) {
                 // Do nothing, keep using initialData
             } else {
-                Alert.alert('Error', 'Could not load transaction details.');
+                errorToast('Error', 'Could not load transaction details.');
             }
         } finally {
             setLoading(false);
@@ -90,7 +90,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             // Request permissions
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission needed', 'We need access to your photos to upload proof.');
+                errorToast('Permission needed', 'We need access to your photos to upload proof.');
                 return;
             }
 
@@ -109,7 +109,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             }
         } catch (error) {
             console.error('Image picker error:', error);
-            Alert.alert('Picker Error', 'An error occurred while opening the image gallery.');
+            errorToast('Picker Error', 'An error occurred while opening the image gallery.');
         } finally {
             setTimeout(() => {
                 setIsPickingFile(false);
@@ -124,7 +124,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             try {
                 await uploadProof();
             } catch (error) {
-                Alert.alert('Error', error.response?.data?.error || 'Upload failed');
+                errorToast('Error', error.response?.data?.error || 'Upload failed');
                 setPinLoading(false);
             }
         }
@@ -141,7 +141,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             await uploadProof();
 
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'PIN Verification Failed');
+            errorToast('Error', error.response?.data?.error || 'PIN Verification Failed');
             setPinLoading(false);
             setPin('');
         }
@@ -168,7 +168,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 },
             });
 
-            Alert.alert('Success', 'Payment proof uploaded successfully!');
+            successToast('Success', 'Payment proof uploaded successfully!');
             setShowPinModal(false);
             setPin('');
             setSelectedImage(null);
@@ -186,7 +186,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
             fetchTransactionDetails();
         } catch (error) {
             console.error('Upload error:', error);
-            Alert.alert('Upload Failed', 'There was an issue uploading your proof. Please try again.');
+            errorToast('Upload Failed', 'There was an issue uploading your proof. Please try again.');
             setPinLoading(false);
         }
     };
@@ -221,7 +221,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
         try {
             await generateReceiptPDF(transaction);
         } catch (error) {
-            Alert.alert('Error', 'Failed to generate receipt. Please try again.');
+            errorToast('Error', 'Failed to generate receipt. Please try again.');
         }
     };
 
@@ -518,7 +518,7 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                                         onError={(e) => {
                                             console.error('Image load error:', e.nativeEvent.error);
                                             setPreviewLoading(false);
-                                            Alert.alert('Load Error', 'Could not load the proof image.');
+                                            errorToast('Load Error', 'Could not load the proof image.');
                                         }}
                                     />
                                 </>

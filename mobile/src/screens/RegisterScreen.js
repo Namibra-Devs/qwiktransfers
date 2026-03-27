@@ -4,12 +4,12 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
     ScrollView,
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -49,26 +49,26 @@ const RegisterScreen = ({ navigation }) => {
     const handleNext = () => {
         if (step === 1) {
             if (!firstName.trim()) {
-                Alert.alert('Required', 'Please enter your first name.');
+                errorToast('Required', 'Please enter your first name.');
                 return;
             }
             if (!lastName.trim()) {
-                Alert.alert('Required', 'Please enter your last name.');
+                errorToast('Required', 'Please enter your last name.');
                 return;
             }
             if (!email.trim().includes('@')) {
-                Alert.alert('Invalid Email', 'Please enter a valid email address.');
+                errorToast('Invalid Email', 'Please enter a valid email address.');
                 return;
             }
         }
         if (step === 2) {
             const code = countryCodes[country];
             if (!phone.startsWith(code)) {
-                Alert.alert('Invalid Phone', `Phone number must start with ${code} for ${country}`);
+                errorToast('Invalid Phone', `Phone number must start with ${code} for ${country}`);
                 return;
             }
             if (phone.length < 10) {
-                Alert.alert('Too Short', 'Please enter a valid phone number.');
+                errorToast('Too Short', 'Please enter a valid phone number.');
                 return;
             }
         }
@@ -85,15 +85,15 @@ const RegisterScreen = ({ navigation }) => {
 
     const handleRegister = async () => {
         if (password.length < 6) {
-            Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+            errorToast('Weak Password', 'Password must be at least 6 characters.');
             return;
         }
         if (password !== confirmPassword) {
-            Alert.alert('Mismatch', 'Passwords do not match.');
+            errorToast('Mismatch', 'Passwords do not match.');
             return;
         }
         if (pin.length !== 4) {
-            Alert.alert('Invalid PIN', 'Transaction PIN must be 4 digits.');
+            errorToast('Invalid PIN', 'Transaction PIN must be 4 digits.');
             return;
         }
 
@@ -116,7 +116,7 @@ const RegisterScreen = ({ navigation }) => {
             navigation.navigate('RegisterSuccess', { email: email.toLowerCase().trim() });
         } catch (error) {
             console.error('Registration error:', error);
-            Alert.alert('Registration Failed', error.response?.data?.error || error.message || 'Please check your details.');
+            errorToast('Registration Failed', error.response?.data?.error || error.message || 'Please check your details.');
         } finally {
             setLoading(false);
         }

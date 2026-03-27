@@ -5,12 +5,12 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Alert,
     Image,
     ActivityIndicator,
     TextInput,
     StatusBar
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -33,7 +33,7 @@ const KYCScreen = () => {
             setIsPickingFile(true);
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'We need access to your gallery to upload documents.');
+                errorToast('Permission Denied', 'We need access to your gallery to upload documents.');
                 return;
             }
 
@@ -57,7 +57,7 @@ const KYCScreen = () => {
 
     const handleSubmit = async () => {
         if (!docId || !frontImage || !backImage) {
-            Alert.alert('Missing Information', 'Please provide your ID number and both front and back photos.');
+            errorToast('Missing Information', 'Please provide your ID number and both front and back photos.');
             return;
         }
 
@@ -85,11 +85,11 @@ const KYCScreen = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            Alert.alert('Success', 'KYC documents submitted for verification!');
+            successToast('Success', 'KYC documents submitted for verification!');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
             console.error(error);
-            Alert.alert('Upload Failed', error.response?.data?.error || 'Something went wrong. Please check your network connection.');
+            errorToast('Upload Failed', error.response?.data?.error || 'Something went wrong. Please check your network connection.');
         } finally {
             setLoading(false);
         }

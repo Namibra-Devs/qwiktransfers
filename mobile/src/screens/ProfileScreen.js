@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Alert,
     Switch,
     TextInput,
     ActivityIndicator,
@@ -13,6 +12,7 @@ import {
     StatusBar,
     Platform
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -82,7 +82,7 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleUpdateProfile = async () => {
         if (!firstName || !lastName || !phone) {
-            Alert.alert('Error', 'First name, last name and phone are required');
+            errorToast('Error', 'First name, last name and phone are required');
             return;
         }
         setLoading(true);
@@ -94,9 +94,9 @@ const ProfileScreen = ({ navigation }) => {
                 phone 
             });
             await refreshProfile();
-            Alert.alert('Success', 'Profile updated successfully!');
+            successToast('Success', 'Profile updated successfully!');
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to update profile');
+            errorToast('Error', error.response?.data?.error || 'Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -104,17 +104,17 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword) {
-            Alert.alert('Error', 'Both current and new passwords are required');
+            errorToast('Error', 'Both current and new passwords are required');
             return;
         }
         setLoading(true);
         try {
             await api.post('/auth/change-password', { currentPassword, newPassword });
-            Alert.alert('Success', 'Password changed successfully!');
+            successToast('Success', 'Password changed successfully!');
             setCurrentPassword('');
             setNewPassword('');
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to change password');
+            errorToast('Error', error.response?.data?.error || 'Failed to change password');
         } finally {
             setLoading(false);
         }
@@ -122,16 +122,16 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleSetPin = async () => {
         if (!/^\d{4}$/.test(pin)) {
-            Alert.alert('Error', 'PIN must be exactly 4 digits');
+            errorToast('Error', 'PIN must be exactly 4 digits');
             return;
         }
         setLoading(true);
         try {
             await api.post('/auth/set-pin', { pin });
-            Alert.alert('Success', 'Transaction PIN updated successfully!');
+            successToast('Success', 'Transaction PIN updated successfully!');
             setPin('');
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to set PIN');
+            errorToast('Error', error.response?.data?.error || 'Failed to set PIN');
         } finally {
             setLoading(false);
         }
@@ -142,7 +142,7 @@ const ProfileScreen = ({ navigation }) => {
             setIsPickingFile(true);
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'We need permission to access your photos');
+                errorToast('Permission Denied', 'We need permission to access your photos');
                 return;
             }
 
@@ -172,10 +172,10 @@ const ProfileScreen = ({ navigation }) => {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     await refreshProfile();
-                    Alert.alert('Success', 'Profile picture updated!');
+                    successToast('Success', 'Profile picture updated!');
                 } catch (error) {
                     console.error(error);
-                    Alert.alert('Error', 'Failed to upload image');
+                    errorToast('Error', 'Failed to upload image');
                 } finally {
                     setLoading(false);
                 }

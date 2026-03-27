@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
@@ -13,6 +12,7 @@ import {
     Dimensions,
     TouchableOpacity
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -76,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
             const loggedIn = await loginWithBiometrics();
             setLoading(false);
             if (!loggedIn) {
-                Alert.alert('Session Expired', 'Your session has expired. Please log in with your password again.');
+                errorToast('Session Expired', 'Your session has expired. Please log in with your password again.');
             }
         }
     };
@@ -94,14 +94,14 @@ const LoginScreen = ({ navigation }) => {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please enter email and password');
+            errorToast('Error', 'Please enter email and password');
             return;
         }
         setLoading(true);
         try {
             await login(email, password);
         } catch (error) {
-            Alert.alert(
+            errorToast(
                 'Access Denied',
                 `Login failed. ${error.response?.data?.error || error.message}`
             );

@@ -6,10 +6,10 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
-    Alert,
     ActivityIndicator,
     Keyboard
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -53,12 +53,12 @@ const RateAlertScreen = () => {
         setSubmitting(true);
         try {
             await api.post('/system/rate-alerts', { targetRate: parseFloat(targetRate), direction: 'above' });
-            Alert.alert('Success', 'We\'ll notify you when the rate hits your target.');
+            successToast('Success', "We'll notify you when the rate hits your target.");
             setTargetRate('');
             Keyboard.dismiss();
             fetchAlerts();
         } catch (error) {
-            Alert.alert('Error', 'Failed to set alert');
+            errorToast('Error', 'Failed to set alert');
         } finally {
             setSubmitting(false);
         }
@@ -69,7 +69,7 @@ const RateAlertScreen = () => {
             await api.delete(`/system/rate-alerts/${id}`);
             setAlerts(alerts.filter(a => a.id !== id));
         } catch (error) {
-            Alert.alert('Error', 'Failed to delete alert');
+            errorToast('Error', 'Failed to delete alert');
         }
     };
 

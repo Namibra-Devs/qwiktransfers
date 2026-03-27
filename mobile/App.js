@@ -32,6 +32,7 @@ import {
 } from '@expo-google-fonts/outfit';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -180,6 +181,7 @@ export default function App() {
           </View>
         </AuthProvider>
       </ThemeProvider>
+      <Toast />
     </SafeAreaProvider>
   );
 }

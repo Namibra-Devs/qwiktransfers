@@ -8,9 +8,9 @@ import {
     Modal,
     TextInput,
     ActivityIndicator,
-    Alert,
     Image
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
@@ -57,7 +57,7 @@ const ComplaintsScreen = ({ navigation }) => {
             const res = await api.get('/complaints');
             setComplaints(res.data.complaints);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load complaints');
+            errorToast('Error', 'Failed to load complaints');
         } finally {
             setLoading(false);
         }
@@ -84,7 +84,7 @@ const ComplaintsScreen = ({ navigation }) => {
                 setAttachment(result.assets[0]);
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to pick a document');
+            errorToast('Error', 'Failed to pick a document');
         } finally {
             // Delay resetting slightly to ensure AppState doesn't trigger before it's set
             setTimeout(() => {
@@ -95,7 +95,7 @@ const ComplaintsScreen = ({ navigation }) => {
 
     const handleSubmit = async () => {
         if (!subject || !description) {
-            return Alert.alert('Error', 'Subject and description are required');
+            return errorToast('Error', 'Subject and description are required');
         }
 
         setSubmitting(true);
@@ -117,17 +117,17 @@ const ComplaintsScreen = ({ navigation }) => {
                 await api.patch(`/complaints/${editId}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                Alert.alert('Success', 'Complaint updated successfully');
+                successToast('Success', 'Complaint updated successfully');
             } else {
                 await api.post('/complaints', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                Alert.alert('Success', 'Complaint submitted successfully');
+                successToast('Success', 'Complaint submitted successfully');
             }
             closeModal();
             fetchComplaints();
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to submit complaint');
+            errorToast('Error', error.response?.data?.error || 'Failed to submit complaint');
         } finally {
             setSubmitting(false);
         }
@@ -152,10 +152,10 @@ const ComplaintsScreen = ({ navigation }) => {
         if (!complaintToCancel) return;
         try {
             await api.delete(`/complaints/${complaintToCancel}`);
-            Alert.alert('Success', 'Complaint cancelled');
+            successToast('Success', 'Complaint cancelled');
             fetchComplaints();
         } catch (error) {
-            Alert.alert('Error', 'Failed to cancel complaint');
+            errorToast('Error', 'Failed to cancel complaint');
         } finally {
             setCancelConfirmVisible(false);
             setComplaintToCancel(null);

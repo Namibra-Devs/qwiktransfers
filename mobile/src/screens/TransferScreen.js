@@ -7,7 +7,6 @@ import {
     TextInput,
     ScrollView,
     StatusBar,
-    Alert,
     ActivityIndicator,
     Modal,
     Platform,
@@ -15,6 +14,7 @@ import {
     Keyboard,
     TouchableWithoutFeedback
 } from 'react-native';
+import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -148,7 +148,7 @@ const TransferScreen = ({ navigation }) => {
 
     const validateStep1 = () => {
         if (!amount || parseFloat(amount) <= 0) {
-            Alert.alert('Invalid Amount', 'Please enter a valid amount to send.');
+            errorToast('Invalid Amount', 'Please enter a valid amount to send.');
             return false;
         }
         return true;
@@ -156,31 +156,31 @@ const TransferScreen = ({ navigation }) => {
 
     const validateStep2 = () => {
         if (!recipientName) {
-            Alert.alert('Missing Info', 'Please enter the recipient\'s full name.');
+            errorToast('Missing Info', "Please enter the recipient's full name.");
             return false;
         }
 
         if (toCurrency === 'CAD') {
             if (recipientType === 'bank') {
                 if (!accountNumber || !transitNumber || !institutionNumber) {
-                    Alert.alert('Missing Info', 'Please fill in all bank details (Account, Transit, Inst #).');
+                    errorToast('Missing Info', 'Please fill in all bank details (Account, Transit, Inst #).');
                     return false;
                 }
             } else if (recipientType === 'interac') {
                 if (!interacEmail || !interacEmail.includes('@')) {
-                    Alert.alert('Invalid Email', 'Please enter a valid Interac email address.');
+                    errorToast('Invalid Email', 'Please enter a valid Interac email address.');
                     return false;
                 }
             }
         } else { // GHS
             if (recipientType === 'momo') {
                 if (!accountNumber || !momoProvider) {
-                    Alert.alert('Missing Info', 'Please select a provider and enter the mobile money number.');
+                    errorToast('Missing Info', 'Please select a provider and enter the mobile money number.');
                     return false;
                 }
             } else if (recipientType === 'bank') {
                 if (!accountNumber || !bankName) {
-                    Alert.alert('Missing Info', 'Please select a bank and enter the account number.');
+                    errorToast('Missing Info', 'Please select a bank and enter the account number.');
                     return false;
                 }
             }
@@ -260,7 +260,7 @@ const TransferScreen = ({ navigation }) => {
             await api.post('/auth/verify-pin', { pin: pin.toString() });
             await executeTransaction();
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error || 'PIN Validation Failed');
+            errorToast('Error', error.response?.data?.error || 'PIN Validation Failed');
         } finally {
             setPinLoading(false);
         }
@@ -275,7 +275,7 @@ const TransferScreen = ({ navigation }) => {
                 try {
                     await executeTransaction();
                 } catch (error) {
-                    Alert.alert('Error', error.response?.data?.error || 'Transaction failed. Please check your history before trying again.');
+                    errorToast('Error', error.response?.data?.error || 'Transaction failed. Please check your history before trying again.');
                 }
             } else {
                 // Fallback to PIN if biometric auth fails or cancels
