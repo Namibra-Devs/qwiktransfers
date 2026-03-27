@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,21 +12,30 @@ import {
 } from 'react-native';
 import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import DocTypePicker from '../components/DocTypePicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const KYCScreen = () => {
+const KYCScreen = ({ navigation }) => {
     const { user, refreshProfile, setIsPickingFile } = useAuth();
     const theme = useTheme();
-    const [docType, setDocType] = useState('ghana_card');
+    const [docType, setDocType] = useState('passport'); // Default to passport as it is universal
     const [docId, setDocId] = useState('');
     const [frontImage, setFrontImage] = useState(null);
     const [backImage, setBackImage] = useState(null);
+    const [pickerVisible, setPickerVisible] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (user?.country === 'Ghana') {
+            setDocType('ghana_card');
+        } else if (user?.country === 'Canada') {
+            setDocType('government_id');
+        }
+    }, [user?.country]);
 
     const pickImage = async (side) => {
         try {
@@ -122,9 +131,18 @@ const KYCScreen = () => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
+            
+            {/* Standardized Header */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>ID Verification</Text>
+                <View style={{ width: 40 }} />
+            </View>
+
             <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.header}>
-                    <Text style={[styles.title, { color: theme.text }]}>Verify Identity</Text>
+                <View style={styles.introSection}>
                     <Text style={[styles.subtitle, { color: theme.textMuted }]}>
                         Increase your sending limits and secure your account by verifying your identity.
                     </Text>
@@ -132,18 +150,26 @@ const KYCScreen = () => {
 
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <Text style={[styles.label, { color: theme.textMuted }]}>Document Type</Text>
-                    <View style={[styles.pickerContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                        <Picker
-                            selectedValue={docType}
-                            onValueChange={(v) => setDocType(v)}
-                            style={styles.picker}
-                            dropdownIconColor={theme.text}
-                        >
-                            <Picker.Item label="Ghana Card / Voter ID" value="ghana_card" color={theme.text} />
-                            <Picker.Item label="Passport" value="passport" color={theme.text} />
-                            <Picker.Item label="Driver's License" value="drivers_license" color={theme.text} />
-                        </Picker>
-                    </View>
+                    <TouchableOpacity
+                        style={[styles.pickerTrigger, { backgroundColor: theme.background, borderColor: theme.border }]}
+                        onPress={() => setPickerVisible(true)}
+                    >
+                        <Text style={[styles.pickerText, { color: theme.text }]}>
+                            {docType === 'ghana_card' ? 'Ghana Card / Voter ID' : 
+                             docType === 'passport' ? 'Passport' : 
+                             docType === 'drivers_license' ? "Driver's License" : 
+                             docType === 'government_id' ? 'Government Issued ID' : 'Select Document'}
+                        </Text>
+                        <Ionicons name="chevron-down" size={20} color={theme.textMuted} />
+                    </TouchableOpacity>
+
+                    <DocTypePicker
+                        visible={pickerVisible}
+                        onClose={() => setPickerVisible(false)}
+                        onSelect={(v) => setDocType(v)}
+                        selectedValue={docType}
+                        country={user?.country}
+                    />
 
                     <Text style={[styles.label, { color: theme.textMuted }]}>ID Number</Text>
                     <TextInput
@@ -214,15 +240,20 @@ const KYCScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { paddingHorizontal: 20, paddingTop: 20, marginBottom: 20 },
-    title: {
-        fontSize: 32,
-        fontFamily: 'Outfit_700Bold',
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        height: 60,
     },
+    backBtn: { padding: 8 },
+    headerTitle: { fontSize: 18, fontFamily: 'Outfit_700Bold' },
+    introSection: { paddingHorizontal: 20, marginBottom: 20 },
     subtitle: {
         fontSize: 15,
         fontFamily: 'Outfit_400Regular',
-        marginTop: 8,
         lineHeight: 22
     },
     card: {
@@ -238,14 +269,19 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5
     },
-    pickerContainer: {
+    pickerTrigger: {
+        height: 55,
         borderRadius: 12,
         marginBottom: 20,
         borderWidth: 1,
-        overflow: 'hidden'
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
     },
-    picker: {
-        height: 55,
+    pickerText: {
+        fontSize: 16,
+        fontFamily: 'Outfit_400Regular',
     },
     input: {
         height: 55,
