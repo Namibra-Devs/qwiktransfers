@@ -18,6 +18,11 @@ const Profile = () => {
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
 
+    // Danger Zone State
+    const [dangerAction, setDangerAction] = useState(null); // 'disable' or 'delete'
+    const [actionReason, setActionReason] = useState('');
+    const [showDangerModal, setShowDangerModal] = useState(false);
+
     const [config, setConfig] = useState({
         system_name: 'QWIK',
         system_logo: ''
@@ -90,6 +95,36 @@ const Profile = () => {
             setPin('');
         } catch (error) {
             setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDangerAction = async (e) => {
+        if (e) e.preventDefault();
+        if (!actionReason.trim()) {
+            setMsg({ type: 'error', text: 'Please provide a reason' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const endpoint = dangerAction === 'disable' ? '/auth/disable-account' : '/auth/delete-account';
+            await api.post(endpoint, { reason: actionReason });
+            
+            setShowDangerModal(false);
+            setMsg({ 
+                type: 'success', 
+                text: dangerAction === 'disable' 
+                    ? 'Account disabled. You will now be signed out.' 
+                    : 'Deletion request submitted. You will now be signed out.' 
+            });
+            
+            setTimeout(() => {
+                logout();
+            }, 3000);
+        } catch (error) {
+            setMsg({ type: 'error', text: error.response?.data?.error || 'Action failed' });
         } finally {
             setLoading(false);
         }
@@ -407,7 +442,151 @@ const Profile = () => {
                             </form>
                         </section>
                     </div>
+
+                    {/* Danger Zone */}
+                    <section className="card" style={{ 
+                        marginTop: '32px', 
+                        padding: '32px', 
+                        borderColor: 'rgba(239, 68, 68, 0.2)',
+                        background: 'rgba(239, 68, 68, 0.02)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', color: '#ef4444' }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ef4444' }}>Danger Zone</h3>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px', fontWeight: 500 }}>
+                            Manage your account visibility and data. Actions here are serious and permanent.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                            <div style={{ padding: '20px', borderRadius: '16px', background: 'white', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--warning)' }}>Disable Account</h4>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Temporarily hide your profile.</p>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    style={{ width: 'auto', padding: '10px 20px', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+                                    onClick={() => { setDangerAction('disable'); setShowDangerModal(true); }}
+                                >
+                                    Disable
+                                </Button>
+                            </div>
+
+                            <div style={{ padding: '20px', borderRadius: '16px', background: 'white', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#ef4444' }}>Delete Account</h4>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Purge all your account data.</p>
+                                </div>
+                                <Button 
+                                    variant="primary" 
+                                    style={{ width: 'auto', padding: '10px 20px', background: '#ef4444', borderColor: '#ef4444' }}
+                                    onClick={() => { setDangerAction('delete'); setShowDangerModal(true); }}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
+
+                {/* Danger Modal */}
+                {showDangerModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000,
+                        backdropFilter: 'blur(8px)'
+                    }}>
+                        <div style={{
+                            background: 'var(--card-bg)',
+                            width: '90%',
+                            maxWidth: '500px',
+                            padding: '40px',
+                            borderRadius: '32px',
+                            boxShadow: '0 25px 50px rgba(0,0,0,0.2)',
+                            position: 'relative'
+                        }}>
+                            <button 
+                                onClick={() => setShowDangerModal(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '24px',
+                                    right: '24px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-muted)'
+                                }}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+
+                            <h3 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-deep-brown)' }}>
+                                {dangerAction === 'disable' ? 'Disable Account' : 'Request Deletion'}
+                            </h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontWeight: 500 }}>
+                                {dangerAction === 'disable' 
+                                    ? 'Sorry to see you go! Please let us know why you are disabling your account.'
+                                    : 'This action is irreversible. Your data will be scheduled for permanent deletion.'
+                                }
+                            </p>
+
+                            <form onSubmit={handleDangerAction}>
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reason</label>
+                                    <textarea
+                                        style={{
+                                            width: '100%',
+                                            height: '120px',
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            background: 'var(--input-bg)',
+                                            border: '1px solid var(--border-color)',
+                                            color: 'var(--text-deep-brown)',
+                                            fontFamily: 'inherit',
+                                            fontSize: '1rem',
+                                            resize: 'none'
+                                        }}
+                                        placeholder="Type your reason here..."
+                                        value={actionReason}
+                                        onChange={(e) => setActionReason(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <Button 
+                                    type="submit" 
+                                    loading={loading}
+                                    style={{ 
+                                        width: '100%', 
+                                        height: '56px', 
+                                        background: dangerAction === 'disable' ? 'var(--warning)' : '#ef4444',
+                                        borderColor: dangerAction === 'disable' ? 'var(--warning)' : '#ef4444'
+                                    }}
+                                >
+                                    Confirm {dangerAction === 'disable' ? 'Deactivation' : 'Deletion'}
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

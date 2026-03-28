@@ -10,7 +10,9 @@ import {
     ActivityIndicator,
     Image,
     StatusBar,
-    Platform
+    Platform,
+    Modal,
+    Alert
 } from 'react-native';
 import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,6 +45,11 @@ const ProfileScreen = ({ navigation }) => {
     // Biometrics State
     const [biometricEnabled, setBiometricEnabled] = useState(false);
     const [biometricSupported, setBiometricSupported] = useState(false);
+
+    // Danger Zone State
+    const [reasonModalVisible, setReasonModalVisible] = useState(false);
+    const [dangerAction, setDangerAction] = useState(null); // 'disable' or 'delete'
+    const [actionReason, setActionReason] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -132,6 +139,36 @@ const ProfileScreen = ({ navigation }) => {
             setPin('');
         } catch (error) {
             errorToast('Error', error.response?.data?.error || 'Failed to set PIN');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDangerAction = async () => {
+        if (!actionReason.trim()) {
+            errorToast('Error', 'Please provide a reason');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const endpoint = dangerAction === 'disable' ? '/auth/disable-account' : '/auth/delete-account';
+            await api.post(endpoint, { reason: actionReason });
+            
+            setReasonModalVisible(false);
+            successToast(
+                'Account Updated', 
+                dangerAction === 'disable' 
+                    ? 'Your account has been disabled. You will now be signed out.' 
+                    : 'Your deletion request has been submitted. You will now be signed out.'
+            );
+            
+            // Wait for toast then logout
+            setTimeout(() => {
+                logout();
+            }, 2000);
+        } catch (error) {
+            errorToast('Error', error.response?.data?.error || 'Action failed. Please try again later.');
         } finally {
             setLoading(false);
         }
@@ -392,6 +429,42 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 ))}
 
+                {renderSection('Danger Zone', 'warning-outline', (
+                    <View style={styles.cardContent}>
+                        <Text style={[styles.dangerDescription, { color: theme.textMuted }]}>
+                            Manage your account visibility and data. Actions here are serious.
+                        </Text>
+                        
+                        <TouchableOpacity 
+                            style={[styles.dangerRow, { borderBottomWidth: 0.5 }]} 
+                            onPress={() => {
+                                setDangerAction('disable');
+                                setReasonModalVisible(true);
+                            }}
+                        >
+                            <View>
+                                <Text style={[styles.dangerRowLabel, { color: '#f59e0b' }]}>Disable Account</Text>
+                                <Text style={[styles.dangerRowSub, { color: theme.textMuted }]}>Temporarily hide your profile.</Text>
+                            </View>
+                            <Ionicons name="power-outline" size={20} color="#f59e0b" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.dangerRow, { borderBottomWidth: 0 }]} 
+                            onPress={() => {
+                                setDangerAction('delete');
+                                setReasonModalVisible(true);
+                            }}
+                        >
+                            <View>
+                                <Text style={[styles.dangerRowLabel, { color: '#ef4444' }]}>Delete Account</Text>
+                                <Text style={[styles.dangerRowSub, { color: theme.textMuted }]}>Request permanent removal of data.</Text>
+                            </View>
+                            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                    </View>
+                ))}
+
                 <TouchableOpacity style={styles.logoutButton} onPress={logout}>
                     <Ionicons name="log-out-outline" size={20} color="#ef4444" style={{ marginRight: 8 }} />
                     <Text style={styles.logoutText}>Sign Out</Text>
@@ -400,6 +473,60 @@ const ProfileScreen = ({ navigation }) => {
                 <Text style={[styles.version, { color: theme.textMuted }]}>QwikTransfers Mobile v1.0.0</Text>
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            <Modal
+                visible={reasonModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setReasonModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>
+                                {dangerAction === 'disable' ? 'Disable Account' : 'Request Deletion'}
+                            </Text>
+                            <TouchableOpacity onPress={() => setReasonModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={theme.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
+                            {dangerAction === 'disable' 
+                                ? 'We are sorry to see you go temporarily. Please tell us why you are disabling your account.'
+                                : 'This action is permanent and will request removal of all your data. Please let us know the reason.'
+                            }
+                        </Text>
+
+                        <TextInput
+                            style={[styles.reasonInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                            placeholder="Type your reason here..."
+                            placeholderTextColor={theme.textMuted}
+                            multiline
+                            numberOfLines={4}
+                            value={actionReason}
+                            onChangeText={setActionReason}
+                        />
+
+                        <TouchableOpacity 
+                            style={[
+                                styles.confirmButton, 
+                                { backgroundColor: dangerAction === 'disable' ? '#f59e0b' : '#ef4444' }
+                            ]}
+                            onPress={handleDangerAction}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.confirmButtonText}>
+                                    Confirm {dangerAction === 'disable' ? 'Deactivation' : 'Deletion'}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -567,6 +694,75 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 12,
         fontFamily: 'Outfit_400Regular',
+    },
+    dangerDescription: {
+        fontSize: 13,
+        fontFamily: 'Outfit_400Regular',
+        marginBottom: 16,
+    },
+    dangerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+    dangerRowLabel: {
+        fontSize: 15,
+        fontFamily: 'Outfit_700Bold',
+    },
+    dangerRowSub: {
+        fontSize: 12,
+        fontFamily: 'Outfit_400Regular',
+        marginTop: 2,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        padding: 24,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        minHeight: 350,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: 'Outfit_700Bold',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        fontFamily: 'Outfit_400Regular',
+        lineHeight: 20,
+        marginBottom: 20,
+    },
+    reasonInput: {
+        height: 120,
+        borderWidth: 1,
+        borderRadius: 16,
+        padding: 16,
+        fontSize: 15,
+        fontFamily: 'Outfit_400Regular',
+        textAlignVertical: 'top',
+        marginBottom: 24,
+    },
+    confirmButton: {
+        height: 56,
+        borderRadius: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: 'Outfit_700Bold',
     },
 });
 

@@ -637,6 +637,54 @@ const updatePushToken = async (req, res) => {
     }
 };
 
+const disableAccount = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.is_active = false;
+        user.deactivation_reason = reason || 'No reason provided';
+        await user.save();
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'DISABLE_ACCOUNT',
+            details: `User disabled account. Reason: ${reason || 'N/A'}`,
+            ipAddress: req.ip
+        });
+
+        res.json({ message: 'Account disabled successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const requestDeletion = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.deletion_requested_at = new Date();
+        user.deletion_reason = reason || 'No reason provided';
+        await user.save();
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'REQUEST_DELETION',
+            details: `User requested account deletion. Reason: ${reason || 'N/A'}`,
+            ipAddress: req.ip
+        });
+
+        res.json({ message: 'Account deletion request submitted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -657,5 +705,7 @@ module.exports = {
     updateUserRegion,
     toggleUserStatus,
     updateAvatar,
-    updatePushToken
+    updatePushToken,
+    disableAccount,
+    requestDeletion
 };

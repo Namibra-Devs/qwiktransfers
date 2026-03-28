@@ -5,7 +5,9 @@ const { register, login, verifyEmail, resendVerification, forgotPassword, resetP
     updateUserRegion,
     toggleUserStatus,
     updateAvatar,
-    updatePushToken
+    updatePushToken,
+    disableAccount,
+    requestDeletion
 } = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -21,6 +23,11 @@ router.patch('/profile', verifyToken, updateProfile);
 router.post('/change-password', verifyToken, changePassword);
 router.post('/set-pin', verifyToken, setPin);
 router.post('/verify-pin', verifyToken, verifyPin);
+
+// Danger Zone
+router.post('/disable-account', verifyToken, disableAccount);
+router.post('/delete-account', verifyToken, requestDeletion);
+
 router.get('/users', verifyAdmin, getAllUsers);
 router.patch('/kyc/status', verifyAdmin, updateKYCStatus);
 router.patch('/update-role', verifyAdmin, updateUserRole);

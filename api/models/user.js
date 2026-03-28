@@ -89,7 +89,10 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Users',
         key: 'id'
       }
-    }
+    },
+    deletion_requested_at: DataTypes.DATE,
+    deletion_reason: DataTypes.TEXT,
+    deactivation_reason: DataTypes.TEXT
   }, {
     sequelize,
     modelName: 'User',
