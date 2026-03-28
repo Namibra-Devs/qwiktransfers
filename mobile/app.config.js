@@ -6,13 +6,14 @@ const productionUrl = 'http://161.97.80.67';
 export default {
     name: "QwikTransfers",
     slug: "qwiktransfers",
+    owner: "namibra",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/logo-red.png",
+    icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: false,
     splash: {
-        image: "./assets/splash.png",
+        image: "./assets/name-logo.png",
         resizeMode: "contain",
         backgroundColor: "#DC2626"
     },
@@ -21,22 +22,22 @@ export default {
     },
     android: {
         adaptiveIcon: {
-            foregroundImage: "./assets/logo-red.png",
-            // backgroundColor: "#ffffff"
+            foregroundImage: "./assets/icon.png",
+            backgroundColor: "#ffffff"
         },
         edgeToEdgeEnabled: true,
-        package: "com.anonymous.mobile",
+        package: "com.namibra.qwiktransfers",
         usesCleartextTraffic: true,
         permissions: ["INTERNET"]
     },
     web: {
-        favicon: "./assets/logo-red.png"
+        favicon: "./assets/icon.png"
     },
     runtimeVersion: {
         policy: "appVersion"
     },
     updates: {
-        url: "https://u.expo.dev/7489686b-bc77-4483-b54c-2cde26d23842"
+        url: "https://u.expo.dev/d8a066d8-caf6-4510-9aa1-986d97c618c2"
     },
     plugins: [
         "expo-font",
@@ -52,7 +53,7 @@ export default {
     extra: {
         apiUrl: (process.env.API_URL || productionUrl) + '/api',
         eas: {
-            projectId: "7489686b-bc77-4483-b54c-2cde26d23842"
+            projectId: "d8a066d8-caf6-4510-9aa1-986d97c618c2"
         }
     }
 };

@@ -2,6 +2,7 @@
   "expo": {
     "name": "QwikTransfers",
     "slug": "qwiktransfers",
+    "owner": "namibra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,7 +18,8 @@
       "color": "#DC2626"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.namibra.qwiktransfers"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +27,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.mobile"
+      "package": "com.namibra.qwiktransfers"
     },
     "web": {
       "favicon": "./assets/icon.png"
@@ -35,7 +37,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "7489686b-bc77-4483-b54c-2cde26d23842"
+        "projectId": "d8a066d8-caf6-4510-9aa1-986d97c618c2"
       }
     }
   }

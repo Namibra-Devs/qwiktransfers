@@ -5,7 +5,7 @@ import api, { getImageUrl } from '../services/api';
 const LandingLayout = ({ children }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [config, setConfig] = useState({
-        system_name: 'Qwiktransfers',
+        system_name: 'QwikTransfers',
         system_logo: ''
     });
 
@@ -14,7 +14,7 @@ const LandingLayout = ({ children }) => {
             try {
                 const configRes = await api.get('/system/config/public');
                 setConfig({
-                    system_name: configRes.data.system_name || 'Qwiktransfers',
+                    system_name: configRes.data.system_name || 'QwikTransfers',
                     system_logo: configRes.data.system_logo || ''
                 });
             } catch (error) {
@@ -47,10 +47,10 @@ const LandingLayout = ({ children }) => {
                 <div className="nav-segment nav-brand-pill">
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
                         {config.system_logo ? (
-                            <img 
-                                src={getImageUrl(`/${config.system_logo}`)} 
-                                alt="Logo" 
-                                style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px' }} 
+                            <img
+                                src={getImageUrl(`/${config.system_logo}`)}
+                                alt="Logo"
+                                style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px' }}
                             />
                         ) : (
                             <div style={{ width: '28px', height: '28px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 900, fontSize: '0.9rem' }}>Q</div>
@@ -112,7 +112,7 @@ const LandingLayout = ({ children }) => {
                         <span className="mobile-nav-icon">📄</span>
                         <span className="mobile-nav-text">Privacy</span>
                     </Link>
-                    
+
                     <div className="mobile-menu-divider"></div>
 
                     <Link to="/login" className="mobile-nav-item" onClick={closeMenu}>

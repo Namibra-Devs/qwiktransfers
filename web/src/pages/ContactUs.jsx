@@ -65,7 +65,7 @@ const ContactUs = () => {
                                 </div>
                                 <div className="stat-block">
                                     <div className="stat-label">WhatsApp Support</div>
-                                    <div className="stat-value" style={{ fontSize: '2rem', color: 'var(--success)' }}>+1 (647) 000-0000</div>
+                                    <div className="stat-value" style={{ fontSize: '2rem', color: 'var(--success)' }}>+1 (604) 842-2928</div>
                                 </div>
                                 <div className="stat-block">
                                     <div className="stat-label">Toronto Hub</div>
