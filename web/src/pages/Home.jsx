@@ -160,7 +160,7 @@ const Home = () => {
                     <div className="editorial-content-layer">
                         <div className="editorial-text-group">
                             <div className="text-layer-back">{systemName.toUpperCase()}</div>
-                            <h1 className="text-layer-front signature-font">MONEY MOVES FAST</h1>
+                            <h1 className="text-layer-front signature-font">MAKE MONEY MOVES FAST</h1>
                         </div>
 
                         <div className="editorial-cards-container">

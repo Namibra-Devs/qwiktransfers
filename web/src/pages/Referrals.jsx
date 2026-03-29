@@ -3,8 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import ThemeSwitcher from '../components/ThemeSwitcher';
-import NotificationPanel from '../components/NotificationPanel';
+import DashboardHeader from '../components/DashboardHeader';
 import Button from '../components/Button';
 
 const Referrals = () => {
@@ -52,56 +51,12 @@ const Referrals = () => {
 
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
-                <div className="dashboard-brand">
-                    <Link to="/dashboard" className="brand-link">
-                        {config.system_logo ? (
-                            <img src={getImageUrl(config.system_logo)} alt="Logo" className="nav-logo" />
-                        ) : (
-                            <div className="nav-logo-placeholder">Q</div>
-                        )}
-                        <span className="brand-name">{config.system_name}</span>
-                    </Link>
-                </div>
-
-                <div className="dashboard-actions">
-                    <nav className="dashboard-nav-links">
-                        <Link to="/dashboard" className="nav-link" style={styles.navLink}>Dashboard</Link>
-                        <Link to="/complaints" className="nav-link" style={styles.navLink}>Support</Link>
-                        <Link to="/kyc" className="kyc-badge-link">
-                            {user?.kyc_status === 'verified' ? (
-                                <span className="kyc-status verified">✓ Verified</span>
-                            ) : (
-                                <span className="kyc-status unverified">Verify ID</span>
-                            )}
-                        </Link>
-                    </nav>
-
-                    <div className="header-utilities">
-                        <NotificationPanel />
-                        <ThemeSwitcher />
-                        <Link to="/profile" className="user-profile-pill">
-                            <div className="profile-details">
-                                <span className="user-name">{user?.full_name || user?.email?.split('@')[0]}</span>
-                                <span className="user-acc">{user?.account_number || 'ID: QT-USER'}</span>
-                            </div>
-                            {user?.profile_picture ? (
-                                <img src={getImageUrl(user.profile_picture)} alt="Avatar" className="user-avatar" />
-                            ) : (
-                                <div className="user-avatar-placeholder">{(user?.full_name || 'Q')[0].toUpperCase()}</div>
-                            )}
-                        </Link>
-                        <button onClick={logout} className="sign-out-btn">
-                            <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
-                            <span className="text">Sign Out</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <DashboardHeader 
+                user={user} 
+                logout={logout} 
+                config={config} 
+                type={user?.role || 'user'} 
+            />
 
             <main className="dashboard-main fade-in" style={{ padding: '40px 20px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
                 <div style={{ marginBottom: '40px' }}>

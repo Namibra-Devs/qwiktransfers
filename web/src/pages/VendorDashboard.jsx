@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import ThemeSwitcher from '../components/ThemeSwitcher';
+import DashboardHeader from '../components/DashboardHeader';
 import NotificationPanel from '../components/NotificationPanel';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -417,24 +417,13 @@ const VendorDashboard = () => {
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Please do not refresh the page.</p>
                 </div>
             )}
-            <header className="dashboard-header">
-                <div className="dashboard-brand">
-                    <Link to="/" className="brand-link">
-                        {config.system_logo ? (
-                            <img
-                                src={getImageUrl(`/${config.system_logo}`)}
-                                alt="Logo"
-                                className="nav-logo"
-                            />
-                        ) : (
-                            <div className="nav-logo-placeholder">Q</div>
-                        )}
-                        <span className="brand-name">{config.system_name}</span>
-                        <span className="brand-badge vendor">VENDOR</span>
-                    </Link>
-                </div>
-
-                <div className="dashboard-actions">
+            
+            <DashboardHeader 
+                user={user} 
+                logout={logout} 
+                config={config} 
+                type="vendor" 
+                extraActions={
                     <div className="vendor-status-pill">
                         <div className={`status-dot ${isOnline ? 'online' : 'offline'}`}></div>
                         <span className="status-text">{isOnline ? 'Online' : 'Offline'}</span>
@@ -442,40 +431,8 @@ const VendorDashboard = () => {
                             {isOnline ? 'Go Offline' : 'Go Online'}
                         </button>
                     </div>
-
-                    <div className="header-utilities">
-                        <NotificationPanel />
-                        <ThemeSwitcher />
-
-                        <Link to="/profile" className="user-profile-pill">
-                            <div className="profile-details">
-                                <span className="user-name">{user?.full_name || user?.email?.split('@')[0]}</span>
-                                <span className="user-acc">{user?.account_number || 'ID: QT-VENDOR'}</span>
-                            </div>
-                            {user?.profile_picture ? (
-                                <img
-                                    src={getImageUrl(user.profile_picture)}
-                                    alt="Avatar"
-                                    className="user-avatar"
-                                />
-                            ) : (
-                                <div className="user-avatar-placeholder">
-                                    {(user?.full_name || user?.email || 'V')[0].toUpperCase()}
-                                </div>
-                            )}
-                        </Link>
-
-                        <button onClick={logout} className="sign-out-btn">
-                            <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
-                            <span className="text">Sign Out</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+                }
+            />
 
             <main className="dashboard-main">
                 <div className="vendor-stats-grid">
