@@ -97,26 +97,8 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'User',
     toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-    hooks: {
-      beforeCreate: async (user) => {
-        if (!user.referral_code) {
-          user.referral_code = await generateUniqueReferralCode(sequelize.models.User);
-        }
-      }
-    }
+    toObject: { virtuals: true }
   });
-
-  async function generateUniqueReferralCode(UserModel) {
-    let code;
-    let exists = true;
-    while (exists) {
-      code = 'QT-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      const user = await UserModel.findOne({ where: { referral_code: code } });
-      if (!user) exists = false;
-    }
-    return code;
-  }
 
   return User;
 };

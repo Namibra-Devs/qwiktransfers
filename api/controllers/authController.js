@@ -25,16 +25,30 @@ const generateAccountNumber = async (role) => {
         if (!existing) return accountNumber;
     }
 
-    // If we reach here, we had 5 collisions (very unlikely but possible)
     // Use a timestamp-based fallback to guarantee uniqueness
     return `${prefix}${Date.now().toString().slice(-6)}`;
 };
 
+const generateReferralCode = async () => {
+    let isUnique = false;
+    let code = '';
+
+    for (let attempts = 0; attempts < 5; attempts++) {
+        // Generate a 6-character alphanumeric code
+        code = 'QTR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const existing = await User.findOne({ where: { referral_code: code } });
+        if (!existing) return code;
+    }
+
+    // Fallback
+    return 'QTR-' + Date.now().toString(36).slice(-6).toUpperCase();
+};
+
 const register = async (req, res) => {
     try {
-        const { 
-            email, password, confirmPassword, first_name, middle_name, last_name, 
-            phone, country, role, pin, referral_code 
+        const {
+            email, password, confirmPassword, first_name, middle_name, last_name,
+            phone, country, role, pin, referral_code
         } = req.body;
 
         // Check if passwords match
@@ -67,6 +81,7 @@ const register = async (req, res) => {
         const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
         const verificationToken = crypto.randomBytes(32).toString('hex');
         const accountNumber = await generateAccountNumber(role || 'user');
+        const referralCode = await generateReferralCode();
 
         const user = await User.create({
             email,
@@ -86,7 +101,8 @@ const register = async (req, res) => {
             verification_token_expires: new Date(Date.now() + 86400000), // 24 hours
             is_email_verified: false,
             is_active: role === 'vendor' ? false : true, // Vendors require admin approval
-            referred_by_id // Link to referrer
+            referred_by_id, // Link to referrer
+            referral_code: referralCode
         });
 
         // Send Communications (Non-blocking or catch errors)
@@ -112,9 +128,9 @@ const register = async (req, res) => {
             ipAddress: req.ip
         });
 
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'Registration successful. Please check your email for a verification link.',
-            user 
+            user
         });
     } catch (error) {
         if (error.name === 'SequelizeUniqueConstraintError') {
@@ -511,6 +527,7 @@ const createVendor = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const accountNumber = await generateAccountNumber('vendor');
+        const referralCode = await generateReferralCode();
 
         const vendor = await User.create({
             email,
@@ -524,7 +541,8 @@ const createVendor = async (req, res) => {
             account_number: accountNumber,
             is_active: true,
             is_email_verified: true, // Admin-created vendors are pre-verified
-            kyc_status: 'verified' // Admin assumes responsibility for vendor identity
+            kyc_status: 'verified', // Admin assumes responsibility for vendor identity
+            referral_code: referralCode
         });
 
         // Audit log
