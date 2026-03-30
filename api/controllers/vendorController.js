@@ -46,7 +46,7 @@ const getAvailablePool = async (req, res) => {
 
         const pool = await Transaction.findAll({
             where,
-            include: [{ model: User, as: 'user', attributes: ['full_name', 'email'] }],
+            include: [{ model: User, as: 'user', attributes: ['full_name', 'first_name', 'middle_name', 'last_name', 'email'] }],
             order: [['createdAt', 'DESC']]
         });
         res.json(pool);
@@ -61,7 +61,7 @@ const getHandledTransactions = async (req, res) => {
             where: {
                 vendorId: req.user.id
             },
-            include: [{ model: User, as: 'user', attributes: ['full_name', 'email'] }],
+            include: [{ model: User, as: 'user', attributes: ['full_name', 'first_name', 'middle_name', 'last_name', 'email'] }],
             order: [['updatedAt', 'DESC']]
         });
         res.json(transactions);

@@ -4,6 +4,15 @@ import { getImageUrl } from '../services/api';
 import ThemeSwitcher from './ThemeSwitcher';
 import NotificationPanel from './NotificationPanel';
 
+const formatUserName = (userObj) => {
+    if (!userObj) return null;
+    if (userObj.first_name || userObj.last_name) {
+        const parts = [userObj.first_name, userObj.middle_name, userObj.last_name].filter(Boolean);
+        if (parts.length > 0) return parts.join(' ');
+    }
+    return userObj.full_name || null;
+};
+
 const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -26,7 +35,10 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
         { name: 'Refer & Earn', path: '/referrals', icon: '🎁' },
         { name: 'Support', path: '/complaints', icon: '🎧' },
         { name: 'Profile', path: '/profile', icon: '👤' }
-    ];
+    ].filter(link => {
+        if (type === 'vendor' && link.name === 'Refer & Earn') return false;
+        return true;
+    });
 
     return (
         <>
@@ -56,19 +68,19 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                             <Link key={link.path} to={link.path} className="nav-link">{link.name}</Link>
                         ))}
                         {user?.kyc_status && (
-                             <Link to="/kyc" className="kyc-badge-link">
-                             {user?.kyc_status === 'verified' ? (
-                                 <span className="kyc-status verified">✓ Verified</span>
-                             ) : (
-                                 <span className="kyc-status unverified">Verify ID</span>
-                             )}
-                         </Link>
+                            <Link to="/kyc" className="kyc-badge-link">
+                                {user?.kyc_status === 'verified' ? (
+                                    <span className="kyc-status verified">✓ Verified</span>
+                                ) : (
+                                    <span className="kyc-status unverified">Verify ID</span>
+                                )}
+                            </Link>
                         )}
                     </nav>
 
                     <div className="header-utilities">
                         {extraActions && <div className="extra-header-actions desktop-only">{extraActions}</div>}
-                        
+
                         <div className="utility-pill nav-segment desktop-only">
                             <NotificationPanel />
                             <ThemeSwitcher />
@@ -76,7 +88,7 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
 
                         <Link to="/profile" className="user-profile-pill nav-segment desktop-only">
                             <div className="profile-details">
-                                <span className="user-name">{user?.full_name || user?.email?.split('@')[0]}</span>
+                                <span className="user-name">{formatUserName(user) || user?.email?.split('@')[0] || 'User'}</span>
                                 <span className="user-acc">{user?.account_number || `ID: QT-${type.toUpperCase()}`}</span>
                             </div>
                             {user?.profile_picture ? (
@@ -87,7 +99,7 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                                 />
                             ) : (
                                 <div className="user-avatar-placeholder">
-                                    {(user?.full_name || user?.email || 'Q')[0].toUpperCase()}
+                                    {(formatUserName(user) || user?.email || 'Q')[0].toUpperCase()}
                                 </div>
                             )}
                         </Link>
@@ -138,16 +150,16 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
 
                     <div className="mobile-menu-divider"></div>
 
-                    <div className="mobile-user-card" onClick={() => { closeMenu(); window.location.href='/profile'; }} style={{ cursor: 'pointer' }}>
-                         <div className="user-avatar-large">
+                    <div className="mobile-user-card" onClick={() => { closeMenu(); window.location.href = '/profile'; }} style={{ cursor: 'pointer' }}>
+                        <div className="user-avatar-large">
                             {user?.profile_picture ? (
                                 <img src={getImageUrl(user.profile_picture)} alt="Avatar" />
                             ) : (
-                                <span>{(user?.full_name || 'Q')[0].toUpperCase()}</span>
+                                <span>{(formatUserName(user) || 'Q')[0].toUpperCase()}</span>
                             )}
                         </div>
                         <div className="user-card-info">
-                            <div className="user-card-name">{user?.full_name}</div>
+                            <div className="user-card-name">{formatUserName(user) || 'User'}</div>
                             <div className="user-card-email">{user?.email}</div>
                         </div>
                     </div>

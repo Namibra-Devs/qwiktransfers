@@ -153,6 +153,30 @@ exports.getAllComplaints = async (req, res) => {
     }
 };
 
+// Vendor: Get complaints against their transactions
+exports.getVendorComplaints = async (req, res) => {
+    try {
+        const vendor_id = req.user.id;
+        const complaints = await Complaint.findAll({
+            order: [['createdAt', 'DESC']],
+            include: [
+                { 
+                    model: Transaction, 
+                    as: 'transaction', 
+                    where: { vendorId: vendor_id },
+                    attributes: ['transaction_id', 'amount_sent', 'status'] 
+                },
+                { model: User, as: 'user', attributes: ['id', 'first_name', 'last_name', 'email'] }
+            ]
+        });
+
+        res.json({ complaints });
+    } catch (error) {
+        console.error('Error fetching vendor complaints:', error);
+        res.status(500).json({ error: 'Failed to fetch complaints against you' });
+    }
+};
+
 // Admin: Update complaint status & response
 exports.updateComplaint = async (req, res) => {
     try {

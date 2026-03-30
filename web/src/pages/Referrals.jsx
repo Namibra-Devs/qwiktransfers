@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import DashboardHeader from '../components/DashboardHeader';
 import Button from '../components/Button';
@@ -12,6 +12,10 @@ const Referrals = () => {
     const [referredUsers, setReferredUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [config, setConfig] = useState({ system_name: 'QWIK', system_logo: '' });
+
+    if (user?.role === 'vendor') {
+        return <Navigate to="/vendor" />;
+    }
 
     useEffect(() => {
         const fetchData = async () => {

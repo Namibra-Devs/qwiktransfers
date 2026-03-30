@@ -7,6 +7,7 @@ const upload = require('../middleware/uploadMiddleware');
 // User Routes
 router.post('/', verifyToken, upload.single('attachment'), complaintController.createComplaint);
 router.get('/', verifyToken, complaintController.getUserComplaints);
+router.get('/vendor', verifyToken, complaintController.getVendorComplaints);
 router.patch('/:id', verifyToken, upload.single('attachment'), complaintController.updateUserComplaint);
 router.delete('/:id', verifyToken, complaintController.cancelComplaint);
 
