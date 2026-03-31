@@ -79,55 +79,55 @@ const LandingLayout = ({ children }) => {
             </nav>
 
             {/* Premium Mobile Menu Overlay (Chowdeck Style) */}
-            <div className={`premium-mobile-menu ${isMenuOpen ? 'open' : ''}`}>
-                <div className="mobile-menu-header">
-                    <div className="mobile-menu-logo">
+            <div className={`landing-mobile-menu ${isMenuOpen ? 'open' : ''}`}>
+                <div className="landing-menu-header">
+                    <div className="landing-menu-logo">
                         {config.system_logo ? (
                             <img src={getImageUrl(`/${config.system_logo}`)} alt="Logo" />
                         ) : (
                             <span className="signature-font">Q</span>
                         )}
                     </div>
-                    <button className="mobile-close-btn" onClick={closeMenu}>✕</button>
+                    <button className="landing-close-btn" onClick={closeMenu}>✕</button>
                 </div>
 
-                <div className="mobile-menu-links">
-                    <Link to="/" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">🏠</span>
-                        <span className="mobile-nav-text">Home</span>
+                <div className="landing-menu-links">
+                    <Link to="/" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">🏠</span>
+                        <span className="landing-nav-text">Home</span>
                     </Link>
-                    <a href="/#how-it-works" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">🚀</span>
-                        <span className="mobile-nav-text">Movement</span>
+                    <a href="/#how-it-works" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">🚀</span>
+                        <span className="landing-nav-text">Movement</span>
                     </a>
-                    <Link to="/about-vendor" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">🤝</span>
-                        <span className="mobile-nav-text">Vendors</span>
+                    <Link to="/about-vendor" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">🤝</span>
+                        <span className="landing-nav-text">Vendors</span>
                     </Link>
-                    <Link to="/contact-us" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">📞</span>
-                        <span className="mobile-nav-text">Contact</span>
+                    <Link to="/contact-us" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">📞</span>
+                        <span className="landing-nav-text">Contact</span>
                     </Link>
-                    <Link to="/privacy-policy" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">📄</span>
-                        <span className="mobile-nav-text">Privacy</span>
+                    <Link to="/privacy-policy" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">📄</span>
+                        <span className="landing-nav-text">Privacy</span>
                     </Link>
 
-                    <div className="mobile-menu-divider"></div>
+                    <div className="landing-menu-divider"></div>
 
-                    <Link to="/login" className="mobile-nav-item" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">👤</span>
-                        <span className="mobile-nav-text">Log in</span>
+                    <Link to="/login" className="landing-nav-item" onClick={closeMenu}>
+                        <span className="landing-nav-icon">👤</span>
+                        <span className="landing-nav-text">Log in</span>
                     </Link>
-                    <Link to="/register" className="mobile-nav-item highlight" onClick={closeMenu}>
-                        <span className="mobile-nav-icon">✨</span>
-                        <span className="mobile-nav-text">Join Qwiktransfers</span>
+                    <Link to="/register" className="landing-nav-item highlight" onClick={closeMenu}>
+                        <span className="landing-nav-icon">✨</span>
+                        <span className="landing-nav-text">Join Qwiktransfers</span>
                     </Link>
                 </div>
 
-                <div className="mobile-menu-footer">
+                <div className="landing-menu-footer">
                     <p>© {new Date().getFullYear()} {config.system_name}</p>
-                    <div className="mobile-socials">
+                    <div className="landing-socials">
                         <span>Twitter</span>
                         <span>Instagram</span>
                     </div>
