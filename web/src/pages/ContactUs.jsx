@@ -68,8 +68,8 @@ const ContactUs = () => {
                                     <div className="stat-value" style={{ fontSize: '2rem', color: 'var(--success)' }}>+1 (604) 842-2928</div>
                                 </div>
                                 <div className="stat-block">
-                                    <div className="stat-label">Toronto Hub</div>
-                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>Downtown Toronto, ON, Canada</div>
+                                    <div className="stat-label">Vancouver Hub</div>
+                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>Vancouver, BC, Canada</div>
                                 </div>
                             </div>
                         </div>
