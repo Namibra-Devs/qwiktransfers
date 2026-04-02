@@ -1,7 +1,6 @@
 import 'dotenv/config';
 
-// const productionUrl = 'http://uowkkskssoo0k8cccg00ssks.161.97.80.67.sslip.io';
-const productionUrl = 'http://161.97.80.67';
+const productionUrl = 'https://api.qwiktransfers.com';
 
 export default {
     name: "QwikTransfers",
@@ -15,7 +14,7 @@ export default {
     splash: {
         image: "./assets/name-logo.png",
         resizeMode: "contain",
-        backgroundColor: "#DC2626"
+        backgroundColor: "#ffffff"
     },
     ios: {
         supportsTablet: true
