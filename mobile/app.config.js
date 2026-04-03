@@ -26,6 +26,7 @@ export default {
         },
         edgeToEdgeEnabled: true,
         package: "com.namibra.qwiktransfers",
+        versionCode: 2,
         usesCleartextTraffic: true,
         permissions: ["INTERNET"]
     },

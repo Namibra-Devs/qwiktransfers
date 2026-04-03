@@ -21,6 +21,7 @@ import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
 import { ActivityIndicator, View, Text, Platform, AppState, StyleSheet, Animated, Easing } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AppLock from './src/components/AppLock';
+import ConnectivityManager from './src/components/ConnectivityManager';
 import {
   useFonts,
   Outfit_300Light,
@@ -314,6 +315,7 @@ export default function App() {
         <AuthProvider>
           <StatusBar style="auto" hidden={false} translucent={true} animated={true} />
           <AppLock />
+          <ConnectivityManager />
           <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
             <Navigation />
           </View>

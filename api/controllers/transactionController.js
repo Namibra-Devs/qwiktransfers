@@ -62,59 +62,78 @@ const createTransaction = async (req, res) => {
         const exchange_rate = type === 'CAD-GHS' ? (1 / liveRate).toFixed(6) : liveRate.toFixed(6);
         const amount_received = (amount_sent * exchange_rate).toFixed(2);
 
+        // Idempotency: Prevent duplicate transactions with the same admin_reference
+        if (recipient_details && recipient_details.admin_reference) {
+            const existingTx = await Transaction.findOne({
+                where: {
+                    userId,
+                    createdAt: { [Op.gt]: new Date(Date.now() - 10 * 60000) } // Within last 10 mins
+                },
+                order: [['createdAt', 'DESC']]
+            });
+
+            if (existingTx && existingTx.recipient_details && existingTx.recipient_details.admin_reference === recipient_details.admin_reference) {
+                console.log(`Idempotency triggered for user ${userId}, reference ${recipient_details.admin_reference}`);
+                return res.status(200).json(existingTx);
+            }
+        }
+
         const rate_locked_until = new Date(Date.now() + 15 * 60000); // 15 minutes
 
         // Generate Custom Transaction ID: QT-YYYYMMDD-XXXX
         const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
         const transaction_id = `QT-${datePart}-${randomPart}`;
+        const transaction = await sequelize.transaction(async (t) => {
+            const tx = await Transaction.create({
+                userId,
+                type: type || 'GHS-CAD',
+                amount_sent,
+                exchange_rate: parseFloat(exchange_rate),
+                amount_received: parseFloat(amount_received),
+                recipient_details,
+                status: 'pending',
+                proof_url: '',
+                rate_locked_until,
+                locked_rate: parseFloat(exchange_rate),
+                transaction_id,
+                market_rate: liveRate,
+                base_currency_profit: 0
+            }, { transaction: t });
 
-        const transaction = await Transaction.create({
-            userId,
-            type: type || 'GHS-CAD',
-            amount_sent,
-            exchange_rate: parseFloat(exchange_rate),
-            amount_received: parseFloat(amount_received),
-            recipient_details,
-            status: 'pending',
-            proof_url: '',
-            rate_locked_until,
-            locked_rate: parseFloat(exchange_rate),
-            transaction_id,
-            market_rate: liveRate,
-            base_currency_profit: 0 // Will be calculated upon completion/success
+            await logAction({
+                userId,
+                action: 'TRANSACTION_CREATE',
+                details: `User created transaction ${tx.id} for ${amount_sent} ${type.split('-')[0]}`,
+                ipAddress: req.ip
+            }, { transaction: t });
+
+            return tx;
         });
 
-        // Audit log
-        await logAction({
-            userId,
-            action: 'TRANSACTION_CREATE',
-            details: `User created transaction ${transaction.id} for ${amount_sent} ${type.split('-')[0]}`,
-            ipAddress: req.ip
-        });
-
-        // Send Email Notification
-        if (user) {
-            await sendTransactionInitiatedEmail(user, transaction);
+        // Notifications
+        try {
+            if (user) {
+                await sendTransactionInitiatedEmail(user, transaction).catch(e => console.error("Email failed:", e.message));
+                if (user.phone) {
+                    const fromCurr = type.split('-')[0];
+                    const toCurr = type.split('-')[1];
+                    const refMsg = recipient_details.admin_reference ? `Ref: ${recipient_details.admin_reference}` : '';
+                    await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`).catch(e => console.error("SMS failed:", e.message));
+                }
+                await createNotification({
+                    userId,
+                    type: 'TRANSACTION_UPDATE',
+                    message: `Transaction of ${amount_sent} ${type.split('-')[0]} initiated. Your rate is locked for 15 minutes.`
+                }).catch(e => console.error("In-app notification failed:", e.message));
+            }
+        } catch (notifErr) {
+            console.error("Notification block failed:", notifError.message);
         }
-
-        // Send SMS Notification (Short & Concise)
-        if (user && user.phone) {
-            const fromCurr = type.split('-')[0];
-            const toCurr = type.split('-')[1];
-            const refMsg = recipient_details.admin_reference ? `Ref: ${recipient_details.admin_reference}` : '';
-            await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`);
-        }
-
-        // Create Notification for User
-        await createNotification({
-            userId,
-            type: 'TRANSACTION_UPDATE',
-            message: `Transaction of ${amount_sent} ${type.split('-')[0]} initiated. Your rate is locked for 15 minutes.`
-        });
 
         res.status(201).json(transaction);
     } catch (error) {
+        console.error("Transaction Creation Error:", error);
         res.status(500).json({ error: error.message });
     }
 };

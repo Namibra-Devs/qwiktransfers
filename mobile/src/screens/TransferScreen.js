@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import api from '../services/api';
 import SelectionPicker from '../components/SelectionPicker';
+import NetInfo from '@react-native-community/netinfo';
 
 const TransferScreen = ({ navigation }) => {
     const theme = useTheme();
@@ -203,6 +204,14 @@ const TransferScreen = ({ navigation }) => {
 
     const executeTransaction = async () => {
         if (loading) return; // Robust guard
+        
+        // Connectivity check
+        const netInfo = await NetInfo.fetch();
+        if (!netInfo.isConnected) {
+            errorToast('No Internet', 'Please check your connection and try again.');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -251,7 +260,17 @@ const TransferScreen = ({ navigation }) => {
             setStep(4); // Success Step
         } catch (error) {
             console.error('Transaction execution failed:', error);
-            throw error; // Rethrow to be caught by caller
+            
+            // If the request was made but no response was received (Network Error)
+            if (!error.response && error.request) {
+                setShowPinModal(false);
+                setPin('');
+                errorToast('Connection Lost', 'Your transaction may have been processed. Please check your history before trying again.');
+            } else {
+                // Better guidance for user on standard API errors
+                const errorMsg = error.response?.data?.error || 'Transfer failed. Check your connection.';
+                errorToast('Transfer Error', errorMsg);
+            }
         } finally {
             setLoading(false);
         }

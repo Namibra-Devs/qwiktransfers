@@ -27,7 +27,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.namibra.qwiktransfers"
+      "package": "com.namibra.qwiktransfers",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/icon.png"
