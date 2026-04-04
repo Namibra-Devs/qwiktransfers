@@ -1269,20 +1269,20 @@ const UserDashboard = () => {
 
             {/* PIN Verification Modal */}
             {showPinModal && (
-                <div className="modal-overlay" style={{ zIndex: 12000 }}>
-                    <div className="modal-content glass" style={{ maxWidth: '400px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content glass" style={{ maxWidth: '440px', padding: '40px' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🛡️</div>
-                            <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>Security Verification</h3>
-                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
+                            <div style={{ fontSize: '3.5rem', marginBottom: '24px' }}>🛡️</div>
+                            <h3 style={{ marginBottom: '12px', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Security Verification</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.5 }}>
                                 {pinAction?.type === 'cancel'
-                                    ? 'Authorize the cancellation of this transfer.'
-                                    : 'Enter your 4-digit security PIN to proceed.'}
+                                    ? 'Confirm this action by entering your security PIN.'
+                                    : 'Enter your 4-digit security PIN to proceed with this transfer.'}
                             </p>
                         </div>
 
                         <form onSubmit={handlePinSubmit}>
-                            <div style={{ position: 'relative', marginBottom: '32px' }}>
+                            <div style={{ marginBottom: '40px' }}>
                                 <input
                                     type="password"
                                     maxLength="4"
@@ -1291,24 +1291,26 @@ const UserDashboard = () => {
                                     style={{
                                         textAlign: 'center',
                                         fontSize: '2.5rem',
-                                        letterSpacing: '16px',
+                                        letterSpacing: '24px',
                                         width: '100%',
-                                        background: 'var(--bg-main)',
+                                        background: 'var(--bg-peach)',
                                         border: '1px solid var(--border-color)',
-                                        color: 'var(--text-deep-brown)',
-                                        borderRadius: '16px',
-                                        padding: '20px 0'
+                                        color: 'var(--primary)',
+                                        borderRadius: '20px',
+                                        padding: '24px 0',
+                                        boxSizing: 'border-box',
+                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                                     }}
                                     placeholder="••••"
                                     autoFocus
                                     required
                                 />
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <Button type="button" variant="outline" onClick={() => setShowPinModal(false)} style={{ flex: 1, padding: '16px' }}>
+                            <div style={{ display: 'flex', gap: '20px' }}>
+                                <Button type="button" variant="outline" onClick={() => { setShowPinModal(false); setPin(''); }} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
                                     Cancel
                                 </Button>
-                                <Button type="submit" loading={loading} style={{ flex: 1, padding: '16px' }}>
+                                <Button type="submit" loading={loading} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
                                     Verify
                                 </Button>
                             </div>
