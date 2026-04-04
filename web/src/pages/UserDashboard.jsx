@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Big from 'big.js';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
@@ -91,7 +92,7 @@ const RateWatchCard = () => {
         if (!targetRate) return toast.error("Enter a target rate");
         setLoading(true);
         try {
-            await api.post('/system/rate-alerts', { targetRate: parseFloat(targetRate), direction: 'above' });
+            await api.post('/system/rate-alerts', { targetRate: new Big(targetRate).toNumber(), direction: 'above' });
             toast.success("Rate alert set!");
             setTargetRate('');
             fetchAlerts();
@@ -150,7 +151,7 @@ const RateWatchCard = () => {
                             fontWeight: 800,
                             border: '1px solid var(--border-color)'
                         }}>
-                            1 CAD ≥ {parseFloat(alert.targetRate).toFixed(2)}
+                            1 CAD ≥ {new Big(alert.targetRate).toFixed(2)}
                             <span onClick={() => deleteAlert(alert.id)} style={{ cursor: 'pointer', opacity: 0.6, fontSize: '1rem' }}>&times;</span>
                         </div>
                     ))}
@@ -779,13 +780,13 @@ const UserDashboard = () => {
 
                                 <Input
                                     label="Recipient gets"
-                                    value={amount ? (amount * rate).toFixed(2) : '0.00'}
+                                    value={amount ? new Big(amount).times(rate).toFixed(2) : '0.00'}
                                     readOnly
                                     style={{ background: 'var(--bg-main)', fontSize: '1.25rem', fontWeight: 600, cursor: 'not-allowed' }}
                                     placeholder="0.00"
                                 />
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-16px', marginBottom: '8px', fontWeight: 500 }}>
-                                    Exchange Rate: 1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
+                                    Exchange Rate: 1 {fromCurrency} = {new Big(rate).toFixed(4)} {toCurrency}
                                 </p>
 
                                 <Input

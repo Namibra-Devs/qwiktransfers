@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Big from 'big.js';
 import {
     View,
     Text,
@@ -135,12 +136,10 @@ const TransferScreen = ({ navigation }) => {
         }
     };
 
-    const handleCurrencySwitch = () => {
         setFromCurrency(prev => prev === 'GHS' ? 'CAD' : 'GHS');
         setToCurrency(prev => prev === 'CAD' ? 'GHS' : 'CAD');
-        setRate(prev => 1 / prev); // Invert rate
+        setRate(prev => new Big(1).div(prev).toNumber()); // Invert rate precisely
         setAmount(''); // Clear amount on switch to avoid confusion
-    };
 
     const generateReference = () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -332,11 +331,11 @@ const TransferScreen = ({ navigation }) => {
             <View style={styles.conversionContainer}>
                 <View style={[styles.conversionPill, { backgroundColor: theme.input }]}>
                     <Text style={[styles.conversionText, { color: theme.textMuted }]}>
-                        ≈ {(parseFloat(amount || 0) * rate).toFixed(2)} {toCurrency}
+                        ≈ {amount ? new Big(amount).times(rate).toFixed(2) : '0.00'} {toCurrency}
                     </Text>
                 </View>
                 <Text style={[styles.rateText, { color: theme.textMuted }]}>
-                    1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
+                    1 {fromCurrency} = {new Big(rate).toFixed(4)} {toCurrency}
                 </Text>
             </View>
         </View>
@@ -554,7 +553,7 @@ const TransferScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.receiptRow}>
                     <Text style={[styles.receiptLabel, { color: theme.textMuted }]}>They get</Text>
-                    <Text style={[styles.receiptValue, { color: theme.primary }]}>{(parseFloat(amount) * rate).toFixed(2)} {toCurrency}</Text>
+                    <Text style={[styles.receiptValue, { color: theme.primary }]}>{amount ? new Big(amount).times(rate).toFixed(2) : '0.00'} {toCurrency}</Text>
                 </View>
 
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />

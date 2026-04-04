@@ -1,5 +1,7 @@
 const { Rate } = require('../models');
-const axios = require('axios'); // Needed for external API, ensure it's installed or use fetch
+const Big = require('big.js');
+const axios = require('axios');
+const { logAction } = require('../services/auditService');
 
 const getRates = async (req, res) => {
     try {
@@ -61,18 +63,20 @@ const updateRateSettings = async (req, res) => {
                 const response = await axios.get('https://api.exchangerate-api.com/v4/latest/CAD');
                 const marketRate = response.data.rates.GHS;
                 if (marketRate) {
-                    const adjustedCADtoGHS = marketRate * (1 + (rateRecord.spread || 5.0) / 100);
-                    rateRecord.rate = (1 / adjustedCADtoGHS).toFixed(6);
+                    const marketRateBig = new Big(marketRate);
+                    const spreadBig = new Big(rateRecord.spread || 5.0);
+                    const adjustedCADtoGHS = marketRateBig.times(new Big(1).plus(spreadBig.div(100)));
+                    rateRecord.rate = new Big(1).div(adjustedCADtoGHS).toFixed(6);
                 }
             } catch (apiError) {
                 console.error('Sync error in update:', apiError.message);
                 // Fallback to manual calculation if API fails during toggle
-                const manualCADtoGHS = rateRecord.manual_rate || 10.0;
-                rateRecord.rate = (1 / manualCADtoGHS).toFixed(6);
+                const manualCADtoGHS = new Big(rateRecord.manual_rate || 10.0);
+                rateRecord.rate = new Big(1).div(manualCADtoGHS).toFixed(6);
             }
         } else {
-            const manualCADtoGHS = rateRecord.manual_rate || 10.0;
-            rateRecord.rate = (1 / manualCADtoGHS).toFixed(6);
+            const manualCADtoGHS = new Big(rateRecord.manual_rate || 10.0);
+            rateRecord.rate = new Big(1).div(manualCADtoGHS).toFixed(6);
         }
 
         await rateRecord.save();

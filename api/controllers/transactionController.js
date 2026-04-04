@@ -2,6 +2,7 @@ const { Transaction, User, Rate, SystemConfig, Referral, sequelize } = require('
 const { Op } = require('sequelize');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
+const Big = require('big.js');
 const fs = require('fs');
 const path = require('path');
 const { logAction } = require('../services/auditService');
@@ -37,13 +38,16 @@ const createTransaction = async (req, res) => {
 
         const getReferenceAmount = (amount, txType, rate) => {
             const currency = txType.split('-')[0];
-            const numAmount = parseFloat(amount) || 0;
-            // If the transaction is GHS, we convert it to CAD (reference) using the live rate
-            // If it's already CAD, we keep it as is.
-            return currency === 'GHS' ? numAmount * rate : numAmount;
+            const numAmount = amount || 0;
+            // Use Big for precision
+            const bigAmount = new Big(numAmount);
+            const bigRate = new Big(rate);
+            return currency === 'GHS' ? bigAmount.times(bigRate).toNumber() : bigAmount.toNumber();
         };
 
-        const currentSpent = todayTransactions.reduce((sum, tx) => sum + getReferenceAmount(tx.amount_sent, tx.type, liveRate), 0);
+        const currentSpent = todayTransactions.reduce((sum, tx) => {
+            return new Big(sum).plus(getReferenceAmount(tx.amount_sent, tx.type, liveRate)).toNumber();
+        }, 0);
         const prospectiveSent = getReferenceAmount(amount_sent, type || 'GHS-CAD', liveRate);
 
         if (currentSpent + prospectiveSent > dailyLimit) {
@@ -59,8 +63,12 @@ const createTransaction = async (req, res) => {
             });
         }
 
-        const exchange_rate = type === 'CAD-GHS' ? (1 / liveRate).toFixed(6) : liveRate.toFixed(6);
-        const amount_received = (amount_sent * exchange_rate).toFixed(2);
+        const bigLiveRate = new Big(liveRate);
+        const exchange_rate = type === 'CAD-GHS' 
+            ? new Big(1).div(bigLiveRate).toFixed(6) 
+            : bigLiveRate.toFixed(6);
+
+        const amount_received = new Big(amount_sent).times(exchange_rate).toFixed(2);
 
         // Idempotency: Prevent duplicate transactions with the same admin_reference
         if (recipient_details && recipient_details.admin_reference) {
@@ -230,20 +238,20 @@ const updateStatus = async (req, res) => {
 
                 // Calculate Profit
                 const type = transaction.type || 'GHS-CAD';
-                const marketRate = parseFloat(transaction.market_rate) || 0;
-                const amountSent = parseFloat(transaction.amount_sent);
-                const amountReceived = parseFloat(transaction.amount_received);
+                const bigMarketRate = new Big(transaction.market_rate || 0);
+                const bigAmountSent = new Big(transaction.amount_sent);
+                const bigAmountReceived = new Big(transaction.amount_received);
 
-                if (type === 'GHS-CAD' && marketRate > 0) {
+                if (type === 'GHS-CAD' && bigMarketRate.gt(0)) {
                     // How many CAD the market would have given for the GHS sent
-                    const marketCAD = amountSent * marketRate;
+                    const marketCAD = bigAmountSent.times(bigMarketRate);
                     // Profit is the difference
-                    transaction.base_currency_profit = (marketCAD - amountReceived).toFixed(4);
-                } else if (type === 'CAD-GHS' && marketRate > 0) {
+                    transaction.base_currency_profit = marketCAD.minus(bigAmountReceived).toFixed(4);
+                } else if (type === 'CAD-GHS' && bigMarketRate.gt(0)) {
                     // How many CAD the recipient actually got at market rate
-                    const actualCADEquivalent = amountReceived / marketRate;
+                    const actualCADEquivalent = bigAmountReceived.div(bigMarketRate);
                     // Profit is what user paid (CAD) minus what recipient got (in CAD equiv)
-                    transaction.base_currency_profit = (amountSent - actualCADEquivalent).toFixed(4);
+                    transaction.base_currency_profit = bigAmountSent.minus(actualCADEquivalent).toFixed(4);
                 }
 
                 // Async email notification
