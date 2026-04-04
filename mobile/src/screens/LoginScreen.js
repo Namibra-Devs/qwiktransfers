@@ -101,10 +101,16 @@ const LoginScreen = ({ navigation }) => {
         try {
             await login(email, password);
         } catch (error) {
-            errorToast(
-                'Access Denied',
-                `Login failed. ${error.response?.data?.error || error.message}`
-            );
+            if (error.code === 'ECONNABORTED') {
+                errorToast('Timeout', 'Login request timed out. Please check your internet connection.');
+            } else if (!error.response) {
+                errorToast('Network Error', 'Please check your internet connection and try again.');
+            } else {
+                errorToast(
+                    'Access Denied',
+                    `Login failed. ${error.response?.data?.error || 'Invalid email or password'}`
+                );
+            }
         } finally {
             setLoading(false);
         }

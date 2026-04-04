@@ -51,7 +51,13 @@ const Login = () => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Invalid email or password');
+            if (err.code === 'ECONNABORTED') {
+                setError('Login request timed out. Please check your internet connection.');
+            } else if (!err.response) {
+                setError('Network error. Please check your internet connection and try again.');
+            } else {
+                setError(err.response?.data?.error || 'Invalid email or password');
+            }
         } finally {
             setLoading(false);
         }

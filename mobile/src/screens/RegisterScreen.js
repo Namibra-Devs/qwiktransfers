@@ -115,8 +115,13 @@ const RegisterScreen = ({ navigation }) => {
 
             navigation.navigate('RegisterSuccess', { email: email.toLowerCase().trim() });
         } catch (error) {
-            console.error('Registration error:', error);
-            errorToast('Registration Failed', error.response?.data?.error || error.message || 'Please check your details.');
+            if (error.code === 'ECONNABORTED') {
+                errorToast('Timeout', 'Registration request timed out. Please check your internet connection.');
+            } else if (!error.response) {
+                errorToast('Network Error', 'Please check your internet connection and try again.');
+            } else {
+                errorToast('Registration Failed', error.response?.data?.error || 'Registration failed. Please check your details.');
+            }
         } finally {
             setLoading(false);
         }

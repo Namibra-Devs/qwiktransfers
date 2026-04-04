@@ -105,7 +105,13 @@ const Register = () => {
             });
             navigate('/register-success', { state: { email } });
         } catch (err) {
-            setError(err.response?.data?.error || 'Registration failed. Try a different email.');
+            if (err.code === 'ECONNABORTED') {
+                setError('Registration request timed out. Please check your internet connection.');
+            } else if (!err.response) {
+                setError('Network error. Please check your internet connection and try again.');
+            } else {
+                setError(err.response?.data?.error || 'Registration failed. Try a different email.');
+            }
         } finally {
             setLoading(false);
         }
