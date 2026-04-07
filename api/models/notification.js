@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
         isRead: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
+        },
+        link: {
+            type: DataTypes.STRING,
+            allowNull: true
         }
     }, {
         sequelize,

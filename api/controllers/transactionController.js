@@ -6,11 +6,11 @@ const Big = require('big.js');
 const fs = require('fs');
 const path = require('path');
 const { logAction } = require('../services/auditService');
-const { createNotification } = require('../services/notificationService');
+const { createNotification, notifyRelevantVendors } = require('../services/notificationService');
 
 const createTransaction = async (req, res) => {
     try {
-        const { amount_sent, recipient_details, type } = req.body;
+        const { amount_sent, recipient_details, type, exchange_rate, amount_received, rate_locked_until, market_rate } = req.body;
         const userId = req.user.id;
         const user = await User.findByPk(userId);
 
@@ -64,11 +64,11 @@ const createTransaction = async (req, res) => {
         }
 
         const bigLiveRate = new Big(liveRate);
-        const exchange_rate = type === 'CAD-GHS' 
+        const final_exchange_rate = exchange_rate || (type === 'CAD-GHS' 
             ? new Big(1).div(bigLiveRate).toFixed(6) 
-            : bigLiveRate.toFixed(6);
+            : bigLiveRate.toFixed(6));
 
-        const amount_received = new Big(amount_sent).times(exchange_rate).toFixed(2);
+        const final_amount_received = amount_received || new Big(amount_sent).times(final_exchange_rate).toFixed(2);
 
         // Idempotency: Prevent duplicate transactions with the same admin_reference
         if (recipient_details && recipient_details.admin_reference) {
@@ -86,7 +86,7 @@ const createTransaction = async (req, res) => {
             }
         }
 
-        const rate_locked_until = new Date(Date.now() + 15 * 60000); // 15 minutes
+        const final_rate_locked_until = rate_locked_until || new Date(Date.now() + 15 * 60000); // 15 minutes
 
         // Generate Custom Transaction ID: QT-YYYYMMDD-XXXX
         const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -97,49 +97,56 @@ const createTransaction = async (req, res) => {
                 userId,
                 type: type || 'GHS-CAD',
                 amount_sent,
-                exchange_rate: parseFloat(exchange_rate),
-                amount_received: parseFloat(amount_received),
+                exchange_rate: parseFloat(final_exchange_rate),
+                amount_received: parseFloat(final_amount_received),
                 recipient_details,
                 status: 'pending',
                 proof_url: '',
-                rate_locked_until,
-                locked_rate: parseFloat(exchange_rate),
+                rate_locked_until: final_rate_locked_until,
                 transaction_id,
-                market_rate: liveRate,
+                market_rate: market_rate || liveRate,
                 base_currency_profit: 0
             }, { transaction: t });
 
             await logAction({
                 userId,
                 action: 'TRANSACTION_CREATE',
-                details: `User created transaction ${tx.id} for ${amount_sent} ${type.split('-')[0]}`,
+                details: `User created transaction ${tx.id} for ${amount_sent} ${type?.split('-')[0] || 'CAD'}`,
                 ipAddress: req.ip
-            }, { transaction: t });
+            });
 
             return tx;
         });
 
-        // Notifications
+        // Respond immediately to the user
+        res.status(201).json(transaction);
+
+        // Notifications (Background)
         try {
             if (user) {
                 await sendTransactionInitiatedEmail(user, transaction).catch(e => console.error("Email failed:", e.message));
+                
+                const fromCurr = type?.split('-')[0] || 'CAD';
+                const toCurr = type?.split('-')[1] || 'GHS';
+                
                 if (user.phone) {
-                    const fromCurr = type.split('-')[0];
-                    const toCurr = type.split('-')[1];
                     const refMsg = recipient_details.admin_reference ? `Ref: ${recipient_details.admin_reference}` : '';
                     await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`).catch(e => console.error("SMS failed:", e.message));
                 }
+
                 await createNotification({
                     userId,
                     type: 'TRANSACTION_UPDATE',
-                    message: `Transaction of ${amount_sent} ${type.split('-')[0]} initiated. Your rate is locked for 15 minutes.`
+                    message: `Transaction of ${amount_sent} ${fromCurr} initiated. Your rate is locked for 15 minutes.`,
+                    link: `/dashboard?search=${transaction.transaction_id}`
                 }).catch(e => console.error("In-app notification failed:", e.message));
+
+                // Notify online vendors for Dispatch Pool
+                await notifyRelevantVendors(transaction).catch(e => console.error("Vendor notification failed:", e.message));
             }
         } catch (notifErr) {
-            console.error("Notification block failed:", notifError.message);
+            console.error("Background notification block failed:", notifErr.message);
         }
-
-        res.status(201).json(transaction);
     } catch (error) {
         console.error("Transaction Creation Error:", error);
         res.status(500).json({ error: error.message });

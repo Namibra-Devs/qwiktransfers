@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationPanel = () => {
     const [notifications, setNotifications] = useState([]);
     const [showPanel, setShowPanel] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const panelRef = useRef(null);
+    const navigate = useNavigate();
 
     const fetchNotifications = async () => {
         try {
@@ -123,16 +125,32 @@ const NotificationPanel = () => {
                             notifications.map(notification => (
                                 <div
                                     key={notification.id}
-                                    onClick={() => !notification.isRead && markAsRead(notification.id)}
+                                    onClick={async () => {
+                                        if (!notification.isRead) {
+                                            await markAsRead(notification.id);
+                                        }
+                                        if (notification.link) {
+                                            navigate(notification.link);
+                                            setShowPanel(false);
+                                        }
+                                    }}
                                     style={{
                                         padding: '12px 16px',
                                         borderBottom: '1px solid var(--border-color)',
                                         background: notification.isRead ? 'transparent' : 'rgba(216, 172, 143, 0.05)',
                                         cursor: 'pointer',
-                                        transition: 'background 0.2s'
+                                        transition: 'background 0.2s',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '4px'
                                     }}
                                 >
-                                    <div style={{ fontSize: '0.85rem', marginBottom: '4px', lineHeight: '1.4' }}>{notification.message}</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <div style={{ fontSize: '0.85rem', lineHeight: '1.4', flex: 1 }}>{notification.message}</div>
+                                        {notification.link && (
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)', opacity: 0.7 }}>open_in_new</span>
+                                        )}
+                                    </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                         {new Date(notification.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                                     </div>

@@ -31,7 +31,8 @@ module.exports = (sequelize, DataTypes) => {
     market_rate: DataTypes.DECIMAL,
     base_currency_profit: DataTypes.DECIMAL,
     rejection_reason: DataTypes.TEXT,
-    vendor_proof_url: DataTypes.TEXT
+    vendor_proof_url: DataTypes.TEXT,
+    rate_locked_until: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'Transaction',

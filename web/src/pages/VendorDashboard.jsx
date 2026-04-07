@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import DashboardHeader from '../components/DashboardHeader';
 import NotificationPanel from '../components/NotificationPanel';
@@ -19,6 +19,7 @@ const formatUserName = (userObj) => {
 
 const VendorDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
+    const location = useLocation();
     const [isOnline, setIsOnline] = useState(user?.is_online || false);
     const [pool, setPool] = useState([]);
     const [myTransactions, setMyTransactions] = useState([]);
@@ -27,6 +28,16 @@ const VendorDashboard = () => {
     const [poolLoading, setPoolLoading] = useState(false);
     const [myTxLoading, setMyTxLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('pool');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        const search = params.get('search');
+
+        if (tab) setActiveTab(tab);
+        if (search) setSearchQuery(search);
+    }, [location]);
 
     const [config, setConfig] = useState({
         system_name: 'QWIK',
@@ -538,11 +549,66 @@ const VendorDashboard = () => {
                                         height: 'fit-content'
                                     }}
                                 >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>refresh</span>
                                     Refresh Pool
                                 </button>
                             </div>
                         </div>
+                        
+                        {searchQuery && (
+                            <div className="search-active-banner glass fade-in" style={{
+                                margin: '0 32px 32px 32px',
+                                padding: '20px 24px',
+                                borderRadius: '18px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                background: 'rgba(183, 71, 42, 0.05)',
+                                border: '1px solid rgba(183, 71, 42, 0.15)',
+                                animation: 'slide-down 0.4s ease-out',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ 
+                                        width: '45px', 
+                                        height: '45px', 
+                                        borderRadius: '12px', 
+                                        background: 'var(--accent-peach)', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        color: 'var(--primary)'
+                                    }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>filter_alt</span>
+                                    </div>
+                                    <div>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Single Transaction View</h4>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Showing results for reference: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{searchQuery}</span></p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        const params = new URLSearchParams(location.search);
+                                        params.delete('search');
+                                        window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+                                    }}
+                                    className="btn-outline"
+                                    style={{ 
+                                        width: 'auto', 
+                                        padding: '10px 24px', 
+                                        fontSize: '0.85rem', 
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>view_list</span>
+                                    Back to Full Pool
+                                </button>
+                            </div>
+                        )}
 
                         <div className="table-responsive">
                             <table className="premium-table">
@@ -560,13 +626,81 @@ const VendorDashboard = () => {
                                         <TableSkeleton rows={5} cols={5} />
                                     ) : pool.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-                                                No pending transactions in the pool right now.
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '80px 0' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+                                                    <div className="radar-container" style={{ position: 'relative', width: '80px', height: '80px' }}>
+                                                        <div className="radar-ping" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: '50%', background: 'var(--primary)', opacity: 0.2, animation: 'radar-pulse 2s infinite' }}></div>
+                                                        <div className="radar-ping" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: '50%', background: 'var(--primary)', opacity: 0.1, animation: 'radar-pulse 2s infinite 0.5s' }}></div>
+                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 20px var(--primary)' }}></div>
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Searching for Requests</h3>
+                                                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Waiting for new transactions in your region...</p>
+                                                    </div>
+                                                    <button 
+                                                        onClick={fetchPool}
+                                                        style={{ 
+                                                            display: 'inline-flex', 
+                                                            alignItems: 'center', 
+                                                            gap: '8px', 
+                                                            padding: '10px 20px', 
+                                                            background: 'rgba(183, 71, 42, 0.08)',
+                                                            color: 'var(--primary)',
+                                                            border: 'none',
+                                                            borderRadius: '12px',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.85rem'
+                                                        }}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
+                                                        Check Again
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (searchQuery && pool.filter(tx => 
+                                            tx.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            tx.id?.toString() === searchQuery
+                                        ).length === 0) ? (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '80px 0' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--text-muted)', opacity: 0.5 }}>search_off</span>
+                                                    <div>
+                                                        <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 800 }}>No record found</h3>
+                                                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>The transaction may have been claimed or is no longer available.</p>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setSearchQuery('');
+                                                            const params = new URLSearchParams(location.search);
+                                                            params.delete('search');
+                                                            window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+                                                        }}
+                                                        className="btn-outline"
+                                                        style={{ width: 'auto', padding: '8px 24px', fontSize: '0.8rem' }}
+                                                    >
+                                                        Show All Requests
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ) : (
-                                        pool.map(tx => (
-                                            <tr key={tx.id} className="table-row" onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
+                                        (searchQuery ? pool.filter(tx => 
+                                            tx.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            tx.id?.toString() === searchQuery
+                                        ) : pool).map(tx => (
+                                            <tr 
+                                                key={tx.id} 
+                                                className={`table-row ${searchQuery && (tx.transaction_id === searchQuery || tx.id?.toString() === searchQuery) ? 'highlighted-row' : ''}`}
+                                                onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} 
+                                                style={{ 
+                                                    cursor: 'pointer',
+                                                    background: searchQuery && (tx.transaction_id === searchQuery || tx.id?.toString() === searchQuery) ? 'rgba(183, 71, 42, 0.05)' : 'inherit',
+                                                    borderLeft: searchQuery && (tx.transaction_id === searchQuery || tx.id?.toString() === searchQuery) ? '4px solid var(--primary)' : 'none'
+                                                }}
+                                            >
                                                 <td>
                                                     <div className="user-info">
                                                         <span className="name" style={{ fontWeight: 800 }}>{tx.user ? formatUserName(tx.user) : 'Customer'}</span>
