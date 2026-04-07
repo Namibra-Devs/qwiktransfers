@@ -11,7 +11,7 @@ const ConnectivityManager = () => {
             toast.success('Back Online!', {
                 duration: 4000,
                 position: 'top-center',
-                icon: '🌐',
+                icon: <span className="material-symbols-outlined" style={{ color: '#fff' }}>public</span>,
                 style: {
                     borderRadius: '12px',
                     background: '#22c55e',
@@ -47,7 +47,9 @@ const ConnectivityManager = () => {
     return (
         <div className={`connectivity-banner ${!isOnline ? 'offline' : 'online-restoring'}`}>
             <div className="connectivity-content">
-                <span className="connectivity-icon">{!isOnline ? '⏳' : '✅'}</span>
+                <span className="material-symbols-outlined connectivity-icon" style={{ fontSize: '1.5rem' }}>
+                    {!isOnline ? 'cloud_off' : 'check_circle'}
+                </span>
                 <div className="connectivity-text">
                     <span className="connectivity-title">
                         {!isOnline ? 'No Internet Connection' : 'Connection Restored'}

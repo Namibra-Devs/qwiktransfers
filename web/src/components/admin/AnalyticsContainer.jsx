@@ -113,8 +113,11 @@ const AnalyticsContainer = ({ stats }) => {
                 <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--primary)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Growth Metric</span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: stats.volumeGrowth >= 0 ? '#059669' : '#d83b01', background: stats.volumeGrowth >= 0 ? 'rgba(5, 150, 105, 0.1)' : 'rgba(216, 59, 1, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                            {stats.volumeGrowth >= 0 ? '↑' : '↓'} {Math.abs(stats.volumeGrowth)}%
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.75rem', fontWeight: 800, color: stats.volumeGrowth >= 0 ? '#059669' : '#d83b01', background: stats.volumeGrowth >= 0 ? 'rgba(5, 150, 105, 0.1)' : 'rgba(216, 59, 1, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
+                                {stats.volumeGrowth >= 0 ? 'trending_up' : 'trending_down'}
+                            </span>
+                            {Math.abs(stats.volumeGrowth)}%
                         </span>
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>MoM Volume</div>
@@ -144,9 +147,10 @@ const AnalyticsContainer = ({ stats }) => {
                 <button
                     onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/admin/stats/export`, '_blank')}
                     className="btn btn-secondary"
-                    style={{ background: '#fff', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    style={{ background: '#fff', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
                 >
-                    📥 Export Full Analytics (XLSX)
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>download</span>
+                    Export Full Analytics (XLSX)
                 </button>
             </div>
 
@@ -157,9 +161,9 @@ const AnalyticsContainer = ({ stats }) => {
                         <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Transaction Volume Trend</h3>
                         <button
                             onClick={() => window.dispatchEvent(new CustomEvent('switch-tab', { detail: 'help' }))}
-                            style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
+                            style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
                         >
-                            ?
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>help_outline</span>
                         </button>
                     </div>
                     <Line data={volumeData} options={chartOptions} />

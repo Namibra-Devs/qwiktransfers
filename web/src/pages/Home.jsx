@@ -49,16 +49,16 @@ const RateCalculator = ({ rate }) => {
                         className="calc-input"
                         placeholder="1000"
                     />
-                    <div className="calc-currency">
-                        <span className="flag">🇨🇦</span> CAD
+                    <div className="calc-currency" style={{ fontWeight: 700 }}>
+                        CAD
                     </div>
                 </div>
             </div>
 
             <div className="calc-divider">
                 <div className="calc-divider-line"></div>
-                <div className="calc-switch-btn">
-                    ↓↑
+                <div className="calc-switch-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="material-symbols-outlined">swap_vert</span>
                 </div>
                 <div className="calc-divider-line"></div>
             </div>
@@ -72,8 +72,8 @@ const RateCalculator = ({ rate }) => {
                         readOnly
                         className="calc-input readonly"
                     />
-                    <div className="calc-currency">
-                        <span className="flag">🇬🇭</span> GHS
+                    <div className="calc-currency" style={{ fontWeight: 700 }}>
+                        GHS
                     </div>
                 </div>
             </div>
@@ -164,18 +164,20 @@ const Home = () => {
                         </div>
 
                         <div className="editorial-cards-container">
-                            <div className="floating-accent face-green"><span>☺</span></div>
-                            <div className="floating-accent face-orange"><span>☺</span></div>
+                            <div className="floating-accent face-green"><span className="material-symbols-outlined">face</span></div>
+                            <div className="floating-accent face-orange"><span className="material-symbols-outlined">sentiment_satisfied</span></div>
 
                             <div className="editorial-card card-success">
                                 <div className="card-header">
-                                    <span className="icon">✓</span>
+                                    <span className="icon">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>check_circle</span>
+                                    </span>
                                     <strong>Payment Sent</strong>
                                     <span className="view-link">View Receipt &gt;</span>
                                 </div>
                                 <div className="card-body">
                                     <div className="amount-row">
-                                        <span className="currency">🇨🇦 CAD</span>
+                                        <span className="currency">CAD</span>
                                         <span className="value">1,000.00</span>
                                     </div>
                                     <div className="transfer-path">
@@ -184,7 +186,7 @@ const Home = () => {
                                         <div className="dot green"></div>
                                     </div>
                                     <div className="amount-row">
-                                        <span className="currency">🇬🇭 GHS</span>
+                                        <span className="currency">GHS</span>
                                         <span className="value" style={{ color: 'var(--success)' }}>{rate ? (1000 * rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}</span>
                                     </div>
                                 </div>
@@ -192,7 +194,9 @@ const Home = () => {
 
                             <div className="editorial-card card-rate">
                                 <div className="card-header">
-                                    <span className="icon clock">⚡</span>
+                                    <span className="icon clock">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>bolt</span>
+                                    </span>
                                     <strong>Live Market Rate</strong>
                                 </div>
                                 <div className="card-body">
@@ -241,9 +245,9 @@ const Home = () => {
                             <RateCalculator rate={rate} />
 
                             <div className="calc-trust-badges">
-                                <div className="trust-badge"><span className="checkmark">✓</span> Guaranteed Exchange Rates</div>
-                                <div className="trust-badge"><span className="checkmark">✓</span> Zero Hidden Markup</div>
-                                <div className="trust-badge"><span className="checkmark">✓</span> Instant Payouts</div>
+                                <div className="trust-badge"><span className="material-symbols-outlined" style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '4px' }}>verified_user</span> Guaranteed Exchange Rates</div>
+                                <div className="trust-badge"><span className="material-symbols-outlined" style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '4px' }}>verified_user</span> Zero Hidden Markup</div>
+                                <div className="trust-badge"><span className="material-symbols-outlined" style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '4px' }}>verified_user</span> Instant Payouts</div>
                             </div>
                         </div>
                     </div>
@@ -270,9 +274,9 @@ const Home = () => {
                 {/* Live Pulse Ticker */}
                 <div className="ticker-wrap">
                     <div className="ticker-content">
-                        • 🇨🇦 CANADA TO GHANA 🇬🇭 INSTANT SETTLEMENT • LOWEST FEES GUARANTEED • REAL-TIME TRACKING • BANK-LEVEL SECURITY • NO HIDDEN CHARGES • GHANA'S MOST TRUSTED PARTNER •
+                        • CANADA TO GHANA INSTANT SETTLEMENT • LOWEST FEES GUARANTEED • REAL-TIME TRACKING • BANK-LEVEL SECURITY • NO HIDDEN CHARGES • GHANA'S MOST TRUSTED PARTNER •
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        • 🇨🇦 CANADA TO GHANA 🇬🇭 INSTANT SETTLEMENT • LOWEST FEES GUARANTEED • REAL-TIME TRACKING • BANK-LEVEL SECURITY • NO HIDDEN CHARGES • GHANA'S MOST TRUSTED PARTNER •
+                        • CANADA TO GHANA INSTANT SETTLEMENT • LOWEST FEES GUARANTEED • REAL-TIME TRACKING • BANK-LEVEL SECURITY • NO HIDDEN CHARGES • GHANA'S MOST TRUSTED PARTNER •
                     </div>
                 </div>
 
@@ -323,7 +327,7 @@ const Home = () => {
                         <div className="bento-grid">
                             {/* Main Stat Card - Large */}
                             <div className="bento-card bento-stat-main">
-                                <div className="stat-icon">📈</div>
+                                <div className="stat-icon"><span className="material-symbols-outlined" style={{ fontSize: '2rem' }}>trending_up</span></div>
                                 <div className="stat-value">$20M+</div>
                                 <div className="stat-label">Annual Transfer Volume</div>
                                 <div className="stat-growth">+140% YOY</div>
@@ -340,7 +344,10 @@ const Home = () => {
                                 </div>
                                 <p className="test-quote">"Sent GH₵2.5k to Kumasi instantly. The live rate tracking feature gave me total peace of mind."</p>
                                 <div className="test-footer">
-                                    <span className="verify-badge">✓ Verified Transfer</span>
+                                    <span className="verify-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        Verified Transfer
+                                    </span>
                                 </div>
                             </div>
 
@@ -361,7 +368,10 @@ const Home = () => {
                                 </div>
                                 <p className="test-quote">"Best exchange rates I've found in Toronto. No hidden markup like the big banks."</p>
                                 <div className="test-footer">
-                                    <span className="verify-badge">✓ Verified Transfer</span>
+                                    <span className="verify-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        Verified Transfer
+                                    </span>
                                 </div>
                             </div>
 
@@ -382,7 +392,10 @@ const Home = () => {
                                 </div>
                                 <p className="test-quote">"A truly beautiful app. The transfer was completely seamless. Highly recommended for any serious sender."</p>
                                 <div className="test-footer">
-                                    <span className="verify-badge">✓ Verified Transfer</span>
+                                    <span className="verify-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        Verified Transfer
+                                    </span>
                                 </div>
                             </div>
 
@@ -397,7 +410,10 @@ const Home = () => {
                                 </div>
                                 <p className="test-quote">"Zero hidden charges as promised. Support team is elite and very responsive."</p>
                                 <div className="test-footer">
-                                    <span className="verify-badge">✓ Verified User</span>
+                                    <span className="verify-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        Verified User
+                                    </span>
                                 </div>
                             </div>
                         </div>

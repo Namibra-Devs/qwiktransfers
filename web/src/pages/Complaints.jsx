@@ -208,21 +208,33 @@ const Complaints = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-deep-brown)', margin: 0 }}>{complaint.subject}</h4>
                         {complaint.attachment_url && (
-                            <span style={{ background: 'var(--bg-main)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>📎 ATTACHED</span>
+                            <span style={{ background: 'var(--bg-main)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>attachment</span>
+                                ATTACHED
+                            </span>
                         )}
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <span>📅 {new Date(complaint.createdAt).toLocaleDateString()}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>calendar_today</span>
+                            {new Date(complaint.createdAt).toLocaleDateString()}
+                        </span>
                         {complaint.transaction && (
                             <>
                                 <span style={{ opacity: 0.3 }}>|</span>
-                                <span style={{ color: 'var(--primary)', fontWeight: 800 }}>🔗 TX: {complaint.transaction.transaction_id}</span>
+                                <span style={{ color: 'var(--primary)', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>link</span>
+                                    TX: {complaint.transaction.transaction_id}
+                                </span>
                             </>
                         )}
                         {isReport && complaint.user && (
                             <>
                                 <span style={{ opacity: 0.3 }}>|</span>
-                                <span style={{ color: 'var(--secondary)', fontWeight: 800 }}>👤 FROM: {complaint.user.first_name} {complaint.user.last_name}</span>
+                                <span style={{ color: 'var(--secondary)', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>person</span>
+                                    FROM: {complaint.user.first_name} {complaint.user.last_name}
+                                </span>
                             </>
                         )}
                     </div>
@@ -261,7 +273,8 @@ const Complaints = () => {
                             className="refresh-btn"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', padding: '10px 20px', borderRadius: '12px', fontWeight: 700 }}
                         >
-                            👁️ View Attachment Document
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>visibility</span>
+                            View Attachment Document
                         </button>
                     )}
                 </div>
@@ -354,7 +367,9 @@ const Complaints = () => {
                         {activeTab === 'my' ? (
                             complaints.length === 0 ? (
                                 <div className="glass-card" style={{ textAlign: 'center', padding: '100px 40px', border: '2px dashed var(--border-color)', background: 'transparent' }}>
-                                    <div style={{ fontSize: '5rem', marginBottom: '24px', opacity: 0.3 }}>📬</div>
+                                    <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>mark_email_unread</span>
+                                    </div>
                                     <h3 style={{ color: 'var(--text-deep-brown)', marginBottom: '16px', fontSize: '1.6rem', fontWeight: 800 }}>Clear for takeoff</h3>
                                     <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto', lineHeight: '1.6', fontWeight: 500 }}>You have no active support tickets. If you need assistance, our team is ready to help.</p>
                                     <button onClick={() => setShowModal(true)} className="refresh-btn" style={{ marginTop: '32px', padding: '12px 32px', borderRadius: '12px', fontWeight: 700 }}>Initiate Inquiry</button>
@@ -367,7 +382,9 @@ const Complaints = () => {
                         ) : (
                             userReports.length === 0 ? (
                                 <div className="glass-card" style={{ textAlign: 'center', padding: '100px 40px', border: '2px dashed var(--border-color)', background: 'transparent' }}>
-                                    <div style={{ fontSize: '5rem', marginBottom: '24px', opacity: 0.3 }}>💎</div>
+                                    <div style={{ background: '#dcfce7', color: '#16a34a', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>verified</span>
+                                    </div>
                                     <h3 style={{ color: 'var(--text-deep-brown)', marginBottom: '16px', fontSize: '1.6rem', fontWeight: 800 }}>Impeccable Record</h3>
                                     <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto', lineHeight: '1.6', fontWeight: 500 }}>No users have filed complaints against your transactions. Keep up the great work!</p>
                                 </div>
@@ -387,7 +404,9 @@ const Complaints = () => {
                     <div className="modal-content glass fade-in" style={{ maxWidth: '600px' }}>
                         <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)' }}>
                             <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>{editId ? 'Modify Ticket' : 'Submit a Complaint'}</h3>
-                            <button onClick={closeModal} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>✕</button>
+                            <button onClick={closeModal} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>close</span>
+                            </button>
                         </div>
 
                         <form onSubmit={handleSubmit} style={{ padding: '32px' }}>
@@ -447,7 +466,9 @@ const Complaints = () => {
                                         style={{ border: '2px dashed var(--border-color)', borderRadius: '20px', padding: '40px 20px', textAlign: 'center', cursor: 'pointer', background: 'rgba(183, 71, 42, 0.02)', transition: 'all 0.3s ease' }}
                                         onClick={() => document.getElementById('file-upload').click()}
                                     >
-                                        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📸</div>
+                                        <div style={{ color: 'var(--primary)', marginBottom: '12px' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>add_a_photo</span>
+                                        </div>
                                         <div style={{ fontWeight: 900, color: 'var(--primary)', marginBottom: '4px', fontSize: '1rem' }}>Click to upload file</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>JPG, PNG or PDF (Max 5MB)</div>
                                         <input
@@ -464,7 +485,9 @@ const Complaints = () => {
                                             {previewUrl ? (
                                                 <img src={previewUrl} alt="Preview" style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} />
                                             ) : (
-                                                <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: 'white' }}>📄</div>
+                                                <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '2rem' }}>description</span>
+                                                </div>
                                             )}
                                             <div>
                                                 <div style={{ fontWeight: 900, color: 'var(--text-deep-brown)', fontSize: '0.95rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{attachment.name}</div>
@@ -499,7 +522,9 @@ const Complaints = () => {
                     <div className="modal-content glass scale-in" style={{ maxWidth: '900px', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
                         <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)' }}>
                             <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>Attached Document</h3>
-                            <button onClick={() => setViewAttachmentUrl(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', fontWeight: 800 }}>✕</button>
+                            <button onClick={() => setViewAttachmentUrl(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
                         </div>
                         <div style={{ flex: 1, overflow: 'auto', background: 'rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px', minHeight: '60vh' }}>
                             {viewAttachmentUrl.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
@@ -521,7 +546,9 @@ const Complaints = () => {
             {showCancelConfirm && (
                 <div className="modal-overlay">
                     <div className="modal-content glass scale-in" style={{ maxWidth: '400px', padding: '40px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>⚠️</div>
+                        <div style={{ background: '#fee2e2', color: '#ef4444', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>warning</span>
+                        </div>
                         <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-deep-brown)', marginBottom: '16px' }}>Retract Ticket?</h3>
                         <p style={{ color: 'var(--text-muted)', marginBottom: '40px', lineHeight: '1.6', fontWeight: 500 }}>
                             Are you sure you want to retract this ticket? This action will archive the investigation.

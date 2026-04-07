@@ -83,52 +83,64 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                             <td style={{ padding: '20px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                     {!v.is_active ? (
-                                        <button
-                                            onClick={() => toggleStatus(v.id)}
-                                            style={{ 
-                                                padding: '8px 16px', 
-                                                background: 'var(--primary)', 
-                                                color: '#fff', 
-                                                border: 'none', 
-                                                borderRadius: '8px', 
-                                                fontWeight: 800, 
-                                                fontSize: '0.75rem',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.2)'
-                                            }}
-                                        >
-                                            🚀 Approve Access
-                                        </button>
+                                            <button
+                                                onClick={() => toggleStatus(v.id)}
+                                                style={{ 
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '8px 16px', 
+                                                    background: 'var(--primary)', 
+                                                    color: '#fff', 
+                                                    border: 'none', 
+                                                    borderRadius: '50px', 
+                                                    fontWeight: 800, 
+                                                    fontSize: '0.75rem',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.2)'
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>verified_user</span>
+                                                Approve
+                                            </button>
                                     ) : (
                                         <button
                                             onClick={() => toggleStatus(v.id)}
                                             style={{ 
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                                 padding: '8px 16px', 
                                                 background: 'rgba(216, 59, 1, 0.1)', 
                                                 color: 'var(--danger)', 
                                                 border: '1.5px solid var(--danger)', 
-                                                borderRadius: '8px', 
+                                                borderRadius: '50px', 
                                                 fontWeight: 800, 
                                                 fontSize: '0.75rem',
                                                 cursor: 'pointer' 
                                             }}
                                         >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>block</span>
                                             Suspend
                                         </button>
                                     )}
                                     <button
                                         onClick={() => { setSelectedUser(v); setShowUserModal(true); }}
                                         style={{ 
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
                                             padding: '8px 16px', 
                                             background: '#fff', 
                                             color: 'var(--text-deep-brown)', 
                                             border: '1.5px solid var(--border-color)', 
-                                            borderRadius: '8px', 
+                                            borderRadius: '50px', 
                                             fontWeight: 800, 
                                             fontSize: '0.75rem',
                                             cursor: 'pointer' 
                                         }}
                                     >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>monitoring</span>
                                         Stats
                                     </button>
                                 </div>
@@ -138,8 +150,10 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                     {vendors.length === 0 && (
                         <tr>
                             <td colSpan="5" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🏪</div>
-                                <div>No vendors found on the platform.</div>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.2 }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>storefront</span>
+                                </div>
+                                <div style={{ fontWeight: 700 }}>No vendors found on the platform.</div>
                             </td>
                         </tr>
                     )}

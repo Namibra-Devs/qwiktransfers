@@ -31,10 +31,10 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
     };
 
     const navLinks = [
-        { name: 'Dashboard', path: type === 'vendor' ? '/vendor' : '/dashboard', icon: '📊' },
-        { name: 'Refer & Earn', path: '/referrals', icon: '🎁' },
-        { name: 'Support', path: '/complaints', icon: '🎧' },
-        { name: 'Profile', path: '/profile', icon: '👤' }
+        { name: 'Dashboard', path: type === 'vendor' ? '/vendor' : '/dashboard', icon: 'bar_chart' },
+        { name: 'Refer & Earn', path: '/referrals', icon: 'redeem' },
+        { name: 'Support', path: '/complaints', icon: 'support_agent' },
+        { name: 'Profile', path: '/profile', icon: 'account_circle' }
     ].filter(link => {
         if (type === 'vendor' && link.name === 'Refer & Earn') return false;
         return true;
@@ -70,7 +70,10 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                         {user?.kyc_status && (
                             <Link to="/kyc" className="kyc-badge-link">
                                 {user?.kyc_status === 'verified' ? (
-                                    <span className="kyc-status verified">✓ Verified</span>
+                                    <span className="kyc-status verified">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem', marginRight: '4px' }}>check_circle</span>
+                                        Verified
+                                    </span>
                                 ) : (
                                     <span className="kyc-status unverified">Verify ID</span>
                                 )}
@@ -105,16 +108,14 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                         </Link>
 
                         <button onClick={logout} className="nav-signout-pill desktop-only" title="Sign Out">
-                            <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>logout</span>
                         </button>
 
                         {/* Mobile Trigger */}
                         <button className={`nav-mobile-trigger dashboard-trigger ${isMenuOpen ? 'active' : ''}`} onClick={toggleMenu}>
-                            {isMenuOpen ? '✕' : '☰'}
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.8rem' }}>
+                                {isMenuOpen ? 'close' : 'menu'}
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -130,7 +131,9 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                             <span className="signature-font">Q</span>
                         )}
                     </div>
-                    <button className="mobile-close-btn" onClick={closeMenu}>✕</button>
+                    <button className="mobile-close-btn" onClick={closeMenu}>
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
                 </div>
 
                 <div className="mobile-menu-links">
@@ -143,7 +146,7 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
 
                     {navLinks.map(link => (
                         <Link key={link.path} to={link.path} className="mobile-nav-item" onClick={closeMenu}>
-                            <span className="mobile-nav-icon">{link.icon}</span>
+                            <span className="material-symbols-outlined mobile-nav-icon">{link.icon}</span>
                             <span className="mobile-nav-text">{link.name}</span>
                         </Link>
                     ))}
@@ -164,10 +167,10 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                         </div>
                     </div>
 
-                    <Link to="#" className="mobile-nav-item" onClick={() => { closeMenu(); logout(); }}>
-                        <span className="mobile-nav-icon">🚪</span>
+                    <div className="mobile-nav-item" onClick={() => { closeMenu(); logout(); }} style={{ cursor: 'pointer' }}>
+                        <span className="material-symbols-outlined mobile-nav-icon">logout</span>
                         <span className="mobile-nav-text">Sign Out</span>
-                    </Link>
+                    </div>
                 </div>
 
                 <div className="mobile-menu-footer">

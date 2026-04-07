@@ -32,8 +32,9 @@ const UserTable = ({ users, setSelectedUser, setShowUserModal }) => {
                         <td style={{ textAlign: 'right' }}>
                             <button
                                 onClick={() => { setSelectedUser(u); setShowUserModal(true); }}
-                                style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'var(--text-deep-brown)', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }}
                             >
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>settings</span>
                                 Manage
                             </button>
                         </td>

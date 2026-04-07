@@ -8,7 +8,9 @@ const RegisterSuccess = () => {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
             <div className="card" style={{ maxWidth: '480px', width: '100%', textAlign: 'center' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🎉</div>
+                <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>celebration</span>
+                </div>
                 <h1 style={{ marginBottom: '16px' }}>Congratulations!</h1>
                 <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
                     Your account has been created successfully. We've sent a verification email to:

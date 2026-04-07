@@ -161,7 +161,7 @@ const SystemSettings = () => {
                             {logoPreview ? (
                                 <img src={logoPreview} alt="System Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                             ) : (
-                                <span style={{ fontSize: '2rem', opacity: 0.2 }}>🖼️</span>
+                                <span className="material-symbols-outlined" style={{ fontSize: '2.5rem', opacity: 0.2 }}>image</span>
                             )}
                         </div>
                         <div style={{ flex: 1 }}>
@@ -280,7 +280,10 @@ const SystemSettings = () => {
                                 gap: '8px'
                             }}
                         >
-                            {backingUp ? '🏗️ Processing...' : '🛡️ Backup Now'}
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+                                {backingUp ? 'sync' : 'shield'}
+                            </span>
+                            {backingUp ? 'Processing...' : 'Backup Now'}
                         </button>
                     </div>
 

@@ -60,8 +60,11 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                         <button 
                                             onClick={() => updateStatus(inquiry.id, 'replied')}
                                             style={{ 
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                                 padding: '6px 12px', 
-                                                borderRadius: '8px', 
+                                                borderRadius: '50px', 
                                                 border: 'none', 
                                                 background: 'var(--secondary)', 
                                                 color: 'white', 
@@ -70,6 +73,7 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                                 cursor: 'pointer'
                                             }}
                                         >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>reply</span>
                                             Mark Replied
                                         </button>
                                     )}
@@ -77,8 +81,11 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                         <button 
                                             onClick={() => updateStatus(inquiry.id, 'closed')}
                                             style={{ 
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                                 padding: '6px 12px', 
-                                                borderRadius: '8px', 
+                                                borderRadius: '50px', 
                                                 border: '1.5px solid var(--border-color)', 
                                                 background: '#fff', 
                                                 color: 'var(--text-deep-brown)', 
@@ -87,6 +94,7 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                                 cursor: 'pointer'
                                             }}
                                         >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>cancel</span>
                                             Close
                                         </button>
                                     )}
@@ -97,8 +105,10 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                     {inquiries.length === 0 && (
                         <tr>
                             <td colSpan="5" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>📨</div>
-                                <div>No support inquiries found. You're all caught up!</div>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.2 }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>mail</span>
+                                </div>
+                                <div style={{ fontWeight: 700 }}>No support inquiries found. You're all caught up!</div>
                             </td>
                         </tr>
                     )}

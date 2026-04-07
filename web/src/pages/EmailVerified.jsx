@@ -43,7 +43,9 @@ const EmailVerified = () => {
 
                 {(status === 'success' || status === 'already_verified') && (
                     <>
-                        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>✅</div>
+                        <div style={{ background: '#dcfce7', color: '#16a34a', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>verified</span>
+                        </div>
                         <h1 style={{ marginBottom: '16px' }}>
                             {status === 'already_verified' ? 'Already Verified!' : 'Email Verified!'}
                         </h1>
@@ -58,7 +60,9 @@ const EmailVerified = () => {
 
                 {status === 'expired' && (
                     <>
-                        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>⏳</div>
+                        <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>schedule</span>
+                        </div>
                         <h1 style={{ marginBottom: '16px' }}>Link Expired</h1>
                         <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '32px' }}>
                             The verification link has expired. Verification links are only valid for 24 hours.
@@ -69,7 +73,9 @@ const EmailVerified = () => {
 
                 {status === 'invalid' && (
                     <>
-                        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>❌</div>
+                        <div style={{ background: '#fee2e2', color: '#ef4444', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>error</span>
+                        </div>
                         <h1 style={{ marginBottom: '16px' }}>Invalid Link</h1>
                         <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '32px' }}>
                             The verification link is invalid. Please make sure you copied the correct URL from your email.

@@ -152,7 +152,17 @@ const RateWatchCard = () => {
                             border: '1px solid var(--border-color)'
                         }}>
                             1 CAD ≥ {new Big(alert.targetRate).toFixed(2)}
-                            <span onClick={() => deleteAlert(alert.id)} style={{ cursor: 'pointer', opacity: 0.6, fontSize: '1rem' }}>&times;</span>
+                            <span 
+                                onClick={() => deleteAlert(alert.id)} 
+                                style={{ 
+                                    cursor: 'pointer', 
+                                    opacity: 0.6, 
+                                    display: 'flex', 
+                                    alignItems: 'center' 
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>close</span>
+                            </span>
                         </div>
                     ))}
                 </div>
@@ -773,8 +783,8 @@ const UserDashboard = () => {
                                 />
 
                                 <div style={{ textAlign: 'center', margin: '-10px 0 10px 0' }}>
-                                    <button type="button" onClick={handleCurrencySwitch} style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        ⇅
+                                    <button type="button" onClick={handleCurrencySwitch} style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(180deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}>
+                                        <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>swap_vert</span>
                                     </button>
                                 </div>
 
@@ -1033,8 +1043,8 @@ const UserDashboard = () => {
 
                         {formStep === 4 && (
                             <div className="fade-in" style={{ textAlign: 'center', padding: '10px 0' }}>
-                                <div style={{ width: '64px', height: '64px', background: 'var(--success)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '2rem' }}>
-                                    ✓
+                                <div style={{ width: '64px', height: '64px', background: 'var(--success)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '2.5rem' }}>check_circle</span>
                                 </div>
                                 <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Transfer Initiated!</h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
@@ -1088,14 +1098,26 @@ const UserDashboard = () => {
                             <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Verification Status</h3>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 {user?.is_email_verified ? (
-                                    <span className="badge badge-processing">EMAIL ✓</span>
+                                    <span className="badge badge-processing" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        EMAIL
+                                    </span>
                                 ) : (
-                                    <span className="badge badge-pending">EMAIL ⚠</span>
+                                    <span className="badge badge-pending" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>warning</span>
+                                        EMAIL
+                                    </span>
                                 )}
                                 {user?.kyc_status === 'verified' ? (
-                                    <span className="badge badge-processing">ID ✓</span>
+                                    <span className="badge badge-processing" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
+                                        ID
+                                    </span>
                                 ) : (
-                                    <span className="badge badge-pending">ID {user?.kyc_status?.toUpperCase()}</span>
+                                    <span className="badge badge-pending" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>pending</span>
+                                        ID {user?.kyc_status?.toUpperCase()}
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -1206,21 +1228,25 @@ const UserDashboard = () => {
                                                         onChange={(e) => handleUploadProof(tx.id, e.target.files[0])}
                                                         style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
                                                     />
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>Upload Proof</span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>upload_file</span>
+                                                        Upload Proof
+                                                    </span>
                                                 </div>
                                             )}
                                             {tx.proof_url && (
-                                                <span
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setPreviewImage(getImageUrl(tx.proof_url));
-                                                        setPreviewDate(tx.proof_uploaded_at);
-                                                        setShowPreviewModal(true);
-                                                    }}
-                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
-                                                >
-                                                    View Proof
-                                                </span>
+                                                    <span
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPreviewImage(getImageUrl(tx.proof_url));
+                                                            setPreviewDate(tx.proof_uploaded_at);
+                                                            setShowPreviewModal(true);
+                                                        }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>visibility</span>
+                                                        View Proof
+                                                    </span>
                                             )}
                                         </td>
                                     </tr>
@@ -1272,7 +1298,9 @@ const UserDashboard = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass" style={{ maxWidth: '440px', padding: '40px' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '3.5rem', marginBottom: '24px' }}>🛡️</div>
+                            <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>shield_person</span>
+                            </div>
                             <h3 style={{ marginBottom: '12px', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Security Verification</h3>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.5 }}>
                                 {pinAction?.type === 'cancel'
@@ -1344,10 +1372,12 @@ const UserDashboard = () => {
                                             gap: '8px'
                                         }}
                                     >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>receipt_long</span>
                                         <span>Download Receipt</span>
-                                        <span>📄</span>
                                     </button>
-                                    <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
+                                    <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1386,7 +1416,7 @@ const UserDashboard = () => {
                                     gap: '12px',
                                     alignItems: 'center'
                                 }}>
-                                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                    <span className="material-symbols-outlined" style={{ color: '#dc2626', fontSize: '1.5rem' }}>error</span>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', marginBottom: '2px' }}>Vendor Feedback</label>
                                         <p style={{ color: 'var(--text-deep-brown)', fontWeight: 600, fontSize: '0.9rem', lineHeight: 1.4 }}>
@@ -1593,9 +1623,9 @@ const UserDashboard = () => {
                     <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
                         <button
                             onClick={() => setShowPreviewModal(false)}
-                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
+                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-deep-brown)' }}
                         >
-                            &times;
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>close</span>
                         </button>
                         {previewImage.endsWith('.pdf') ? (
                             <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>

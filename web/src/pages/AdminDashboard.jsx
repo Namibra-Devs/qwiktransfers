@@ -320,7 +320,9 @@ const AdminDashboard = () => {
             <div className="mobile-header-fixed mobile-only">
                 <div className="mobile-header-pill">
                     <button className="mobile-nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                        {sidebarOpen ? '✕' : '☰'}
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>
+                            {sidebarOpen ? 'close' : 'menu'}
+                        </span>
                     </button>
                     
                     <h1 className="mobile-brand-title">QWIK Admin</h1>
@@ -396,10 +398,10 @@ const AdminDashboard = () => {
                                             </h2>
                                             <button
                                                 onClick={() => setTab('help')}
-                                                style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
+                                                style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
                                                 title="How does this page work?"
                                             >
-                                                ?
+                                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
                                             </button>
                                         </div>
                                         {tab === 'transactions' ? (
@@ -423,7 +425,7 @@ const AdminDashboard = () => {
                                                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                                                         style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                     />
-                                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
+                                                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
                                                 </div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                                     {totalTransactions} total
@@ -454,7 +456,8 @@ const AdminDashboard = () => {
                                                                 width: 'auto'
                                                             }}
                                                         >
-                                                            📂 Export Logs
+                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>file_export</span>
+                                                            Export Logs
                                                         </button>
                                                         <button
                                                             onClick={async () => {
@@ -481,7 +484,8 @@ const AdminDashboard = () => {
                                                             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)'}
                                                             onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)'}
                                                         >
-                                                            🧹 Clean (90d)
+                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>cleaning_services</span>
+                                                            Clean (90d)
                                                         </button>
                                                     </>
                                                 )}
@@ -494,7 +498,7 @@ const AdminDashboard = () => {
                                                             onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
                                                             style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                         />
-                                                        <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
                                                     </div>
                                                 )}
                                                 {tab === 'vendors' && (
@@ -502,7 +506,7 @@ const AdminDashboard = () => {
                                                         onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
                                                         style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                     >
-                                                        <span style={{ fontSize: '1.2rem' }}>+</span> Add Vendor
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>person_add</span> Add Vendor
                                                     </button>
                                                 )}
                                                 {tab === 'inquiries' && (
@@ -587,7 +591,7 @@ const AdminDashboard = () => {
                                                             onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
                                                             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
                                                         />
-                                                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
                                                     </div>
                                                     <select
                                                         value={auditAction}
@@ -640,7 +644,7 @@ const AdminDashboard = () => {
                                                                     style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }}
                                                                     title="Copy IP"
                                                                 >
-                                                                    📋
+                                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>content_copy</span>
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -749,7 +753,9 @@ const AdminDashboard = () => {
                     <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ margin: 0 }}>Transaction Details (ID: {selectedTx.transaction_id})</h3>
-                            <button onClick={() => setShowTxModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                            <button onClick={() => setShowTxModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
                         </div>
                         <div style={{ padding: '24px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
@@ -779,7 +785,11 @@ const AdminDashboard = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Currency Pair</div>
-                                        <div style={{ fontWeight: 700 }}>{selectedTx.type?.replace('-', ' ➔ ') || 'GHS ➔ CAD'}</div>
+                                        <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {selectedTx.type?.split('-')[0]} 
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1rem', opacity: 0.5 }}>arrow_forward</span>
+                                            {selectedTx.type?.split('-')[1]}
+                                        </div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Exchange Rate</div>
@@ -902,7 +912,9 @@ const AdminDashboard = () => {
                     <div className="card scale-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ margin: 0 }}>User Management</h3>
-                            <button onClick={() => setShowUserModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                            <button onClick={() => setShowUserModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
                         </div>
                         <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
@@ -1062,7 +1074,9 @@ const AdminDashboard = () => {
                     <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ margin: 0 }}>Register New Workforce (Vendor)</h3>
-                            <button onClick={() => setShowAddVendorModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                            <button onClick={() => setShowAddVendorModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
                         </div>
                         <form onSubmit={handleCreateVendor}>
                             <div style={{ padding: '24px' }}>
@@ -1181,9 +1195,9 @@ const AdminDashboard = () => {
                     <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
                         <button
                             onClick={() => setShowPreviewModal(false)}
-                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
+                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                            &times;
+                            <span className="material-symbols-outlined" style={{ color: 'var(--text-deep-brown)' }}>close</span>
                         </button>
                         {previewImage.endsWith('.pdf') ? (
                             <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>

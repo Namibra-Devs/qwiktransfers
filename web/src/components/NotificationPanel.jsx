@@ -68,10 +68,7 @@ const NotificationPanel = () => {
                 onClick={() => setShowPanel(!showPanel)}
                 style={{ position: 'relative', cursor: 'pointer', padding: '8px', color: 'var(--text-deep-brown)' }}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', opacity: 0.8 }}>notifications</span>
                 {unreadCount > 0 && (
                     <span style={{
                         position: 'absolute',

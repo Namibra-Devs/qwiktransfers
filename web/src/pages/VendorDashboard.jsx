@@ -156,15 +156,9 @@ const VendorDashboard = () => {
     const getCountryBadge = (country) => {
         if (!country) return null;
 
-        const countryMap = {
-            'Ghana': { flag: '🇬🇭', label: 'Ghana' },
-            'Canada': { flag: '🇨🇦', label: 'Canada' },
-            'Nigeria': { flag: '🇳🇬', label: 'Nigeria' },
-            'UK': { flag: '🇬🇧', label: 'UK' },
-            'USA': { flag: '🇺🇸', label: 'USA' }
-        };
-
-        const cData = countryMap[country] || { flag: '🌍', label: country };
+        const cData = country === 'Canada' ? { icon: 'map', label: 'Canada' } : 
+                      country === 'Ghana' ? { icon: 'map', label: 'Ghana' } : 
+                      { icon: 'public', label: country };
 
         return (
             <span style={{
@@ -178,9 +172,10 @@ const VendorDashboard = () => {
                 verticalAlign: 'middle',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '6px'
             }}>
-                {cData.flag} {cData.label} Region
+                <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>{cData.icon}</span>
+                {cData.label} Region
             </span>
         );
     };
@@ -494,7 +489,9 @@ const VendorDashboard = () => {
                         border: '2px dashed var(--border-color)',
                         background: 'rgba(183, 71, 42, 0.03)'
                     }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>💤</div>
+                        <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '100px', height: '100px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '4rem' }}>power_settings_new</span>
+                        </div>
                         <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)', marginBottom: '16px' }}>Offline Mode Active</h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto 32px', lineHeight: 1.6 }}>
                             You are currently set to offline. While offline, you won't receive new transactions from the pool. Switch online to start claiming tasks.
@@ -541,7 +538,8 @@ const VendorDashboard = () => {
                                         height: 'fit-content'
                                     }}
                                 >
-                                    ↻ Refresh Pool
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>refresh</span>
+                                    Refresh Pool
                                 </button>
                             </div>
                         </div>
@@ -847,7 +845,9 @@ const VendorDashboard = () => {
                         <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid var(--border-color)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                                 <h1 style={{ fontSize: '1rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--primary)', opacity: 0.8 }}>Transaction Analysis</h1>
-                                <button onClick={() => setShowTxModal(false)} className="close-btn" style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+                                <button onClick={() => setShowTxModal(false)} className="close-btn" style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>close</span>
+                                </button>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
@@ -882,7 +882,11 @@ const VendorDashboard = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 700 }}>Exchange Vector</label>
-                                        <p style={{ fontWeight: 900, fontSize: '1.2rem' }}>{selectedTx.type?.split('-')[0]} ⚡ {selectedTx.type?.split('-')[1]}</p>
+                                        <p style={{ fontWeight: 900, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {selectedTx.type?.split('-')[0]} 
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>bolt</span>
+                                            {selectedTx.type?.split('-')[1]}
+                                        </p>
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 700 }}>Exchange Rate</label>
@@ -1001,7 +1005,10 @@ const VendorDashboard = () => {
                                     >
                                         <img src={getImageUrl(selectedTx.proof_url.startsWith('http') ? selectedTx.proof_url : `${selectedTx.proof_url}`)} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.6))', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px', color: 'white', fontWeight: 900 }}>
-                                            <span style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '10px 20px', borderRadius: '30px', fontSize: '0.8rem', letterSpacing: '1px' }}>Examine Evidence 🔍</span>
+                                            <span style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '10px 20px', borderRadius: '30px', fontSize: '0.8rem', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                Examine Evidence
+                                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>search</span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -1033,7 +1040,9 @@ const VendorDashboard = () => {
                 <div className="modal-overlay" onClick={() => setShowPreviewModal(false)} style={{ zIndex: 11000 }}>
                     <div className="modal-content glass" style={{ maxWidth: '90vw', maxHeight: '90vh', padding: '24px' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-                            <button onClick={() => setShowPreviewModal(false)} style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontWeight: 800 }}>×</button>
+                            <button onClick={() => setShowPreviewModal(false)} style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>close</span>
+                            </button>
                         </div>
                         <img
                             src={getImageUrl(previewImage.startsWith('http') ? previewImage : `${previewImage}`)}
@@ -1061,7 +1070,9 @@ const VendorDashboard = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass fade-in" style={{ maxWidth: '400px', padding: '40px' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '3.5rem', marginBottom: '24px' }}>🛡️</div>
+                            <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>shield_person</span>
+                            </div>
                             <h3 style={{ marginBottom: '12px', fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>Session Authorization</h3>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 600 }}>
                                 {pendingAction?.type === 'accept'
@@ -1111,7 +1122,9 @@ const VendorDashboard = () => {
                 <div className="modal-overlay" style={{ zIndex: 13000 }}>
                     <div className="modal-content glass fade-in" style={{ maxWidth: '450px', padding: '40px' }}>
                         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🚫</div>
+                            <div style={{ background: '#fee2e2', color: '#dc2626', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>block</span>
+                            </div>
                             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>Rejection Protocol</h2>
                             <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
                                 Provide a technical justification for returning this task to the pool. This detail will be logged.
@@ -1171,7 +1184,9 @@ const VendorDashboard = () => {
                 <div className="modal-overlay" style={{ zIndex: 13000 }}>
                     <div className="modal-content glass fade-in" style={{ maxWidth: '450px', padding: '40px' }}>
                         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🧾</div>
+                            <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>receipt_long</span>
+                            </div>
                             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>Payout Authentication</h2>
                             <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
                                 Upload official settlement documentation to finalize this capital movement.
@@ -1200,7 +1215,9 @@ const VendorDashboard = () => {
                                                 <img src={fulfillmentPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }} />
                                             </div>
                                         ) : (
-                                            <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>📄</div>
+                                            <div style={{ color: 'var(--primary)', marginBottom: '16px' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '4rem' }}>description</span>
+                                            </div>
                                         )}
                                         <div style={{ fontWeight: 800, color: 'var(--primary)', margin: '16px 0 4px', fontSize: '0.9rem', wordBreak: 'break-all' }}>{fulfillmentFile.name}</div>
                                         <button
@@ -1231,7 +1248,9 @@ const VendorDashboard = () => {
                                             style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', top: 0, left: 0, cursor: 'pointer', zIndex: 10 }}
                                         />
                                         <div>
-                                            <div style={{ fontSize: '3rem', marginBottom: '16px', opacity: 0.8 }}>📸</div>
+                                            <div style={{ color: 'var(--primary)', marginBottom: '16px', opacity: 0.8 }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '3.5rem' }}>add_a_photo</span>
+                                            </div>
                                             <div style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--text-deep-brown)' }}>Ingress Receipt Data</div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>JPG, PNG or PDF (Max 10MB)</div>
                                         </div>

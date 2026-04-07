@@ -24,7 +24,9 @@ const ThemeSwitcher = () => {
             }}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
-            {theme === 'light' ? '🌙' : '☀️'}
+            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+                {theme === 'light' ? 'dark_mode' : 'light_mode'}
+            </span>
         </button>
     );
 };

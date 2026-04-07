@@ -7,7 +7,7 @@ const HelpCenter = () => {
         {
             id: 'analytics',
             title: 'Advanced Analytics',
-            icon: '📈',
+            icon: 'trending_up',
             content: (
                 <div className="help-content">
                     <h3>Understanding the Analytics Suite</h3>
@@ -16,8 +16,8 @@ const HelpCenter = () => {
                     <div className="help-box">
                         <h4>MoM Volume Growth</h4>
                         <p>This percentage shows the change in total transaction volume compared to the daily average of the previous month.
-                            <br /><strong>Green (↑):</strong> You are outperforming last month's pace.
-                            <br /><strong>Red (↓):</strong> Volume is currently lower than last month's daily average.</p>
+                             <br /><strong>Green (<span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle' }}>trending_up</span>):</strong> You are outperforming last month's pace.
+                            <br /><strong>Red (<span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle' }}>trending_down</span>):</strong> Volume is currently lower than last month's daily average.</p>
                     </div>
 
                     <div className="help-box">
@@ -52,7 +52,7 @@ const HelpCenter = () => {
         {
             id: 'reports',
             title: 'Reporting & Exports',
-            icon: '📄',
+            icon: 'description',
             content: (
                 <div className="help-content">
                     <h3>Exporting Platform Data</h3>
@@ -73,7 +73,7 @@ const HelpCenter = () => {
         {
             id: 'system',
             title: 'Monitoring & Alerts',
-            icon: '🚨',
+            icon: 'notifications_active',
             content: (
                 <div className="help-content">
                     <h3>System Health & Monitoring</h3>
@@ -101,7 +101,7 @@ const HelpCenter = () => {
         {
             id: 'transactions',
             title: 'Transaction Pool',
-            icon: '📊',
+            icon: 'bar_chart',
             content: (
                 <div className="help-content">
                     <h3>Managing Global Transactions</h3>
@@ -127,7 +127,7 @@ const HelpCenter = () => {
         {
             id: 'kyc',
             title: 'KYC & Verification',
-            icon: '🆔',
+            icon: 'id_card',
             content: (
                 <div className="help-content">
                     <h3>Identity Verification (KYC)</h3>
@@ -152,7 +152,7 @@ const HelpCenter = () => {
         {
             id: 'vendors',
             title: 'Vendor Management',
-            icon: '🏢',
+            icon: 'corporate_fare',
             content: (
                 <div className="help-content">
                     <h3>Managing Platform Vendors</h3>
@@ -173,7 +173,7 @@ const HelpCenter = () => {
         {
             id: 'inquiries',
             title: 'Support Inquiries',
-            icon: '📩',
+            icon: 'mail',
             content: (
                 <div className="help-content">
                     <h3>Support & Ticket Management</h3>
@@ -198,7 +198,7 @@ const HelpCenter = () => {
         {
             id: 'system-mgmt',
             title: 'System Management',
-            icon: '⚙️',
+            icon: 'settings',
             content: (
                 <div className="help-content">
                     <h3>Global Configuration & Safety</h3>
@@ -251,7 +251,7 @@ const HelpCenter = () => {
                                     transition: 'all 0.2s ease'
                                 }}
                             >
-                                <span>{section.icon}</span>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>{section.icon}</span>
                                 {section.title}
                             </button>
                         ))}

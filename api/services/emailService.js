@@ -14,6 +14,15 @@ if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
     console.warn('WARNING: MAIL_USER or MAIL_PASS is not defined in .env');
 }
 
+// Verify email configuration on startup
+transporter.verify((error, success) => {
+    if (error) {
+        console.error('❌ Email Configuration Error:', error);
+    } else {
+        console.log('✅ Email Configuration: Connected successfully');
+    }
+});
+
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const PEACH = '#f2bc94';
 const DEEP_BROWN = '#4a1d17';

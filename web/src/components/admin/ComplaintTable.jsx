@@ -85,9 +85,10 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                                 <button
                                     onClick={() => handleOpenModal(complaint)}
                                     className="btn-outline"
-                                    style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '50px' }}
                                 >
-                                    Respond / View
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>rate_review</span>
+                                    Respond
                                 </button>
                             </td>
                         </tr>
@@ -105,7 +106,9 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                     <div className="modal-content scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0 }}>
                         <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Review Complaint</h3>
-                            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
                         </div>
                         <div style={{ padding: '20px' }}>
                             <div style={{ marginBottom: '16px', background: 'var(--bg-light-peach)', padding: '16px', borderRadius: '8px' }}>
@@ -117,8 +120,9 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                                 
                                 {selectedComplaint.attachment_url && (
                                     <div style={{ marginTop: '12px' }}>
-                                        <a href={selectedComplaint.attachment_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                                            📎 View Attached File
+                                        <a href={selectedComplaint.attachment_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>attachment</span>
+                                            View Attached File
                                         </a>
                                     </div>
                                 )}

@@ -74,7 +74,7 @@ const LandingLayout = ({ children }) => {
 
                 {/* Mobile Trigger */}
                 <button className={`nav-mobile-trigger ${isMenuOpen ? 'active' : ''}`} onClick={toggleMenu}>
-                    {isMenuOpen ? '✕' : '☰'}
+                    <span className="material-symbols-outlined">{isMenuOpen ? 'close' : 'menu'}</span>
                 </button>
             </nav>
 
@@ -88,39 +88,41 @@ const LandingLayout = ({ children }) => {
                             <span className="signature-font">Q</span>
                         )}
                     </div>
-                    <button className="landing-close-btn" onClick={closeMenu}>✕</button>
+                    <button className="landing-close-btn" onClick={closeMenu}>
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
                 </div>
 
                 <div className="landing-menu-links">
                     <Link to="/" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">🏠</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">home</span></span>
                         <span className="landing-nav-text">Home</span>
                     </Link>
                     <a href="/#how-it-works" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">🚀</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">rocket_launch</span></span>
                         <span className="landing-nav-text">Movement</span>
                     </a>
                     <Link to="/about-vendor" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">🤝</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">handshake</span></span>
                         <span className="landing-nav-text">Vendors</span>
                     </Link>
                     <Link to="/contact-us" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">📞</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">call</span></span>
                         <span className="landing-nav-text">Contact</span>
                     </Link>
                     <Link to="/privacy-policy" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">📄</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">description</span></span>
                         <span className="landing-nav-text">Privacy</span>
                     </Link>
 
                     <div className="landing-menu-divider"></div>
 
                     <Link to="/login" className="landing-nav-item" onClick={closeMenu}>
-                        <span className="landing-nav-icon">👤</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">person</span></span>
                         <span className="landing-nav-text">Log in</span>
                     </Link>
                     <Link to="/register" className="landing-nav-item highlight" onClick={closeMenu}>
-                        <span className="landing-nav-icon">✨</span>
+                        <span className="landing-nav-icon"><span className="material-symbols-outlined">auto_awesome</span></span>
                         <span className="landing-nav-text">Join Qwiktransfers</span>
                     </Link>
                 </div>

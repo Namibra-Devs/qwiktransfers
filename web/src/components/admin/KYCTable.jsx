@@ -40,8 +40,9 @@ const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPr
                                             setPreviewDate(u.updatedAt);
                                             setShowPreviewModal(true);
                                         }}
-                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
                                     >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>image</span>
                                         Front
                                     </span>
                                 )}
@@ -53,8 +54,9 @@ const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPr
                                             setPreviewDate(u.updatedAt);
                                             setShowPreviewModal(true);
                                         }}
-                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
                                     >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>image</span>
                                         Back
                                     </span>
                                 )}
@@ -64,8 +66,14 @@ const KYCTable = ({ users, updateKYC, setPreviewImage, setPreviewDate, setShowPr
                         <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
                         <td style={{ textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                <button onClick={() => updateKYC(u.id, 'verified')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Verify</button>
-                                <button onClick={() => updateKYC(u.id, 'rejected')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Reject</button>
+                                <button onClick={() => updateKYC(u.id, 'verified')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>check</span>
+                                    Verify
+                                </button>
+                                <button onClick={() => updateKYC(u.id, 'rejected')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>close</span>
+                                    Reject
+                                </button>
                             </div>
                         </td>
                     </tr>

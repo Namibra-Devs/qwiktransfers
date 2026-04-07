@@ -23,8 +23,9 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
                         </td>
                         <td>
                             <div style={{ fontWeight: 600 }}>{tx.user?.email}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                → {tx.recipient_details?.name} | <span style={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1rem', opacity: 0.5 }}>arrow_forward</span>
+                                {tx.recipient_details?.name} | <span style={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>
                                     {tx.recipient_details?.type === 'momo' ? (tx.recipient_details?.momo_provider || 'Momo') :
                                         tx.recipient_details?.type === 'bank' ? (tx.recipient_details?.bank_name || 'Bank') :
                                             tx.recipient_details?.type === 'interac' ? 'Interac' : 'Recipient'}
@@ -46,9 +47,10 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
                                             setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
                                             setShowPreviewModal(true);
                                         }}
-                                        style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                                     >
-                                        View Proof
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>visibility</span>
+                                        View
                                     </span>
                                 </div>
                             ) : (
@@ -57,9 +59,24 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
                         </td>
                         <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                {tx.status === 'pending' && <button onClick={() => updateStatus(tx.id, 'processing')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--warning)', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Process</button>}
-                                {tx.status === 'processing' && <button onClick={() => updateStatus(tx.id, 'sent')} style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}>Confirm</button>}
-                                {tx.status === 'sent' && <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>Complete</span>}
+                                {tx.status === 'pending' && (
+                                    <button onClick={() => updateStatus(tx.id, 'processing')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'var(--warning)', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>sync</span>
+                                        Process
+                                    </button>
+                                )}
+                                {tx.status === 'processing' && (
+                                    <button onClick={() => updateStatus(tx.id, 'sent')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>check</span>
+                                        Confirm
+                                    </button>
+                                )}
+                                {tx.status === 'sent' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>verified</span>
+                                        Done
+                                    </div>
+                                )}
                             </div>
                         </td>
                     </tr>

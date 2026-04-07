@@ -86,7 +86,9 @@ const KycVerification = () => {
         return (
             <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="card" style={{ textAlign: 'center', maxWidth: '400px' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+                    <div style={{ background: '#dcfce7', color: '#16a34a', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>verified</span>
+                    </div>
                     <h2>Fully Verified</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Your identity has been verified. You now have access to high-limit transfers.</p>
                     <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
@@ -99,7 +101,9 @@ const KycVerification = () => {
         return (
             <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="card" style={{ textAlign: 'center', maxWidth: '400px' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+                    <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>schedule</span>
+                    </div>
                     <h2>Review in Progress</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Our compliance team is currently reviewing your documents. This usually takes 24-48 hours.</p>
                     <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>

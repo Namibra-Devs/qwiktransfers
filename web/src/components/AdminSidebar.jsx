@@ -52,18 +52,18 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
     };
 
     const menuItems = [
-        { id: 'analytics', label: 'Analytics', icon: '📈' },
-        { id: 'transactions', label: 'Transactions', icon: '📊' },
-        { id: 'kyc', label: 'KYC Review', icon: '🆔', badge: pendingCounts.kyc },
-        { id: 'inquiries', label: 'Support Inquiries', icon: '📨', badge: pendingCounts.inquiries },
-        { id: 'complaints', label: 'User Complaints', icon: '⚠️' },
-        { id: 'users', label: 'Users', icon: '👥' },
-        { id: 'vendors', label: 'Vendors', icon: '🏢' },
-        { id: 'audit', label: 'Audit Logs', icon: '📜' },
-        { id: 'system-settings', label: 'System Settings', icon: '⚙️' },
-        { id: 'payment-settings', label: 'Payment Settings', icon: '💳' },
-        { id: 'profile', label: 'Profile', icon: '👤' },
-        { id: 'help', label: 'Help Center', icon: '❓' },
+        { id: 'analytics', label: 'Analytics', icon: 'trending_up' },
+        { id: 'transactions', label: 'Transactions', icon: 'bar_chart' },
+        { id: 'kyc', label: 'KYC Review', icon: 'id_card', badge: pendingCounts.kyc },
+        { id: 'inquiries', label: 'Support Inquiries', icon: 'mail', badge: pendingCounts.inquiries },
+        { id: 'complaints', label: 'User Complaints', icon: 'warning' },
+        { id: 'users', label: 'Users', icon: 'group' },
+        { id: 'vendors', label: 'Vendors', icon: 'corporate_fare' },
+        { id: 'audit', label: 'Audit Logs', icon: 'history' },
+        { id: 'system-settings', label: 'System Settings', icon: 'settings' },
+        { id: 'payment-settings', label: 'Payment Settings', icon: 'payments' },
+        { id: 'profile', label: 'Profile', icon: 'account_circle' },
+        { id: 'help', label: 'Help Center', icon: 'help_outline' },
     ];
 
     return (
@@ -72,7 +72,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
                 {systemLogo ? (
                     <img src={systemLogo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
                 ) : (
-                    <span style={{ fontSize: '1.5rem' }}>🌍</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>language</span>
                 )}
                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>QWIK Admin</h1>
             </div>
@@ -100,7 +100,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
                             position: 'relative'
                         }}
                     >
-                        <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                        <span className="material-symbols-outlined nav-icon">{item.icon}</span>
                         <span style={{ flex: 1 }}>{item.label}</span>
                         {item.badge > 0 && (
                             <span style={{ 
@@ -138,7 +138,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
                         transition: 'all 0.2s ease'
                     }}
                 >
-                    <span style={{ fontSize: '1.1rem' }}>🚪</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>logout</span>
                     Sign Out
                 </button>
             </div>

@@ -83,7 +83,7 @@ const Referrals = () => {
                                     onClick={() => copyToClipboard(stats?.referral_code)}
                                     style={{ background: 'var(--primary)', border: 'none', color: '#fff', padding: '16px', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 8px 16px rgba(216, 59, 1, 0.2)' }}
                                 >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>content_copy</span>
                                 </button>
                             </div>
                             <p style={{ color: 'var(--text-deep-brown)', fontWeight: 600 }}>Share this code with your friends to start earning!</p>
@@ -116,7 +116,9 @@ const Referrals = () => {
                             </div>
                             {referredUsers.length === 0 ? (
                                 <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    <div style={{ fontSize: '3rem', marginBottom: '16px', opacity: 0.3 }}>🤝</div>
+                                    <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>group_add</span>
+                                    </div>
                                     <p>You haven't referred anyone yet. Share your code to get started!</p>
                                 </div>
                             ) : (

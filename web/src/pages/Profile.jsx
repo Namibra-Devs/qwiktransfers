@@ -181,7 +181,7 @@ const Profile = () => {
                         gap: '12px',
                         backdropFilter: 'blur(8px)'
                     }}>
-                        <span style={{ fontSize: '1.2rem' }}>{msg.type === 'success' ? '✓' : '✕'}</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>{msg.type === 'success' ? 'check_circle' : 'cancel'}</span>
                         {msg.text}
                     </div>
                 )}
@@ -244,10 +244,7 @@ const Profile = () => {
                                 border: '3px solid white',
                                 color: 'white'
                             }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                    <circle cx="12" cy="13" r="4"></circle>
-                                </svg>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>add_a_photo</span>
                             </div>
                             <input
                                 type="file"
@@ -260,9 +257,15 @@ const Profile = () => {
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>{user?.email}</p>
                             <div style={{ marginTop: '12px' }}>
                                 {user?.kyc_status === 'verified' ? (
-                                    <span className="kyc-status verified" style={{ fontSize: '0.75rem' }}>✓ Fully Verified</span>
+                                    <span className="kyc-status verified" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>verified</span>
+                                        Fully Verified
+                                    </span>
                                 ) : (
-                                    <Link to="/kyc" className="kyc-status unverified" style={{ fontSize: '0.75rem', textDecoration: 'none' }}>Verify Identity</Link>
+                                    <Link to="/kyc" className="kyc-status unverified" style={{ fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>pending_actions</span>
+                                        Verify Identity
+                                    </Link>
                                 )}
                             </div>
                         </div>
@@ -272,11 +275,8 @@ const Profile = () => {
                         {/* Personal Info */}
                         <section className="card" style={{ padding: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ padding: '10px', background: 'rgba(183, 71, 42, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
+                                <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>person</span>
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Personal Details</h3>
                             </div>
@@ -324,11 +324,8 @@ const Profile = () => {
                         {/* Security */}
                         <section className="card" style={{ padding: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ padding: '10px', background: 'rgba(183, 71, 42, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
+                                <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>lock</span>
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Security Center</h3>
                             </div>
@@ -360,10 +357,8 @@ const Profile = () => {
                         {/* Transaction PIN */}
                         <section className="card" style={{ padding: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ padding: '10px', background: 'rgba(183, 71, 42, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                    </svg>
+                                <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>shield_person</span>
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Transaction PIN</h3>
                             </div>
@@ -398,12 +393,8 @@ const Profile = () => {
                         background: 'rgba(239, 68, 68, 0.02)'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                            <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', color: '#ef4444' }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                </svg>
+                            <div style={{ background: '#fee2e2', color: '#ef4444', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>warning</span>
                             </div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ef4444' }}>Danger Zone</h3>
                         </div>
@@ -479,10 +470,7 @@ const Profile = () => {
                                     color: 'var(--text-muted)'
                                 }}
                             >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
                             </button>
 
                             <h3 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-deep-brown)' }}>
