@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL + '/api' || '/api',
-    timeout: 15000, // 15 seconds timeout
+    timeout: 15000, // 15 seconds timeout. Add timeout for better error handling on mobile
     headers: {
         'Content-Type': 'application/json',
     },
@@ -39,7 +39,7 @@ export const getImageUrl = (path) => {
     if (path.startsWith('http')) return path;
     const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const baseUrl = rawBaseUrl.replace(/\/api$/, '');
-    
+
     // Ensure one slash between baseUrl and path
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
