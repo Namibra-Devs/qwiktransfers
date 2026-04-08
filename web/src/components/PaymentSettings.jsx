@@ -21,6 +21,7 @@ const PaymentSettings = () => {
         manual_rate_cad_ghs: 10.0,
         market_rate_cad_ghs: null
     });
+    const [rateLockTime, setRateLockTime] = useState(15);
 
     // Tiered Limits State
     const [limits, setLimits] = useState({
@@ -81,6 +82,9 @@ const PaymentSettings = () => {
             if (res.data.tiered_limits) {
                 setLimits(res.data.tiered_limits);
             }
+            if (res.data.rate_lock_time) {
+                setRateLockTime(parseInt(res.data.rate_lock_time));
+            }
         } catch (error) {
             console.error('Failed to fetch system config');
         }
@@ -132,6 +136,11 @@ const PaymentSettings = () => {
                 spread: rateSettings.spread,
                 manual_rate: rateSettings.manual_rate_cad_ghs
             });
+            
+            if (rateSettings.use_api) {
+                await api.post('/system/config', { key: 'rate_lock_time', value: rateLockTime });
+            }
+            
             toast.success('Exchange Rate Settings Updated');
             fetchRateSettings();
         } catch (error) {
@@ -276,6 +285,18 @@ const PaymentSettings = () => {
                                 />
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                                     The spread is added to the market rate (1 CAD = {rateSettings.market_rate_cad_ghs} GHS + Spread).
+                                </p>
+                                
+                                <label style={{ marginTop: '16px', display: 'block' }}>Rate Lock Time (Minutes)</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={rateLockTime}
+                                    onChange={(e) => setRateLockTime(parseInt(e.target.value) || 15)}
+                                    placeholder="e.g. 15"
+                                />
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                    How long the generated transfer rate is guaranteed for the user before it expires.
                                 </p>
                             </div>
                         ) : (

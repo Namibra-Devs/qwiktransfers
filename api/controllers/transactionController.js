@@ -88,7 +88,13 @@ const createTransaction = async (req, res) => {
             }
         }
 
-        const final_rate_locked_until = rate_locked_until || new Date(Date.now() + 15 * 60000); // 15 minutes
+        let lockTimeMinutes = 15;
+        const lockConfig = await SystemConfig.findOne({ where: { key: 'rate_lock_time' } });
+        if (lockConfig && lockConfig.value) {
+            lockTimeMinutes = parseInt(lockConfig.value) || 15;
+        }
+
+        const final_rate_locked_until = rate_locked_until || new Date(Date.now() + lockTimeMinutes * 60000);
 
         // Generate Custom Transaction ID: QT-YYYYMMDD-XXXX
         const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
