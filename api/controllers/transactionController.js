@@ -244,7 +244,15 @@ const getTransactionById = async (req, res) => {
 const assignVendor = async (req, res) => {
     try {
         const { id } = req.params;
-        const { vendorId } = req.body;
+        const { vendorId, pin } = req.body;
+        
+        if (!pin) return res.status(400).json({ error: 'Security PIN is required to assign vendor.' });
+        
+        const adminUser = await User.findByPk(req.user.id);
+        if (!adminUser.transaction_pin) return res.status(400).json({ error: 'Please set your Security PIN in your profile first.' });
+        
+        const isMatch = await bcrypt.compare(pin, adminUser.transaction_pin);
+        if (!isMatch) return res.status(400).json({ error: 'Invalid PIN' });
         
         const transaction = await Transaction.findByPk(id);
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
@@ -266,6 +274,15 @@ const assignVendor = async (req, res) => {
             details: `Admin reassigned transaction ${transaction.id} from ${oldVendorId || 'None'} to vendor ${vendorId || 'None'}`,
             ipAddress: req.ip
         });
+
+        // Notify the new vendor
+        if (vendorId) {
+            await createNotification({
+                userId: vendorId,
+                type: 'NEW_TRANSACTION_ASSIGNED',
+                message: `An admin has manually assigned Transaction #${transaction.transaction_id} to your active operations.`
+            });
+        }
 
         // Fetch updated transaction to return
         const updatedTransaction = await Transaction.findByPk(id, {

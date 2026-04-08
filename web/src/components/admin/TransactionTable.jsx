@@ -1,7 +1,7 @@
 import React from 'react';
 import { getImageUrl } from '../../services/api';
 
-const TransactionTable = ({ transactions, updateStatus, vendors, handleAssignVendor, setAdminConfirmData, setShowAdminConfirmModal, setSelectedTx, setShowTxModal, setPreviewImage, setPreviewDate, setShowPreviewModal }) => {
+const TransactionTable = ({ transactions, updateStatus, updatingTxId, vendors, openAssignVendorModal, setAdminConfirmData, setShowAdminConfirmModal, setSelectedTx, setShowTxModal, setPreviewImage, setPreviewDate, setShowPreviewModal }) => {
     return (
         <table style={{ marginTop: '0' }}>
             <thead>
@@ -46,9 +46,10 @@ const TransactionTable = ({ transactions, updateStatus, vendors, handleAssignVen
                                 </div>
                             ) : (
                                 <select 
-                                    onChange={(e) => handleAssignVendor(tx.id, e.target.value)}
+                                    onChange={(e) => openAssignVendorModal(tx.id, e.target.value)}
                                     value=""
-                                    style={{ padding: '6px', borderRadius: '6px', border: '1px dashed var(--primary)', fontSize: '0.8rem', background: 'transparent', cursor: 'pointer', maxWidth: '120px' }}
+                                    disabled={updatingTxId === tx.id}
+                                    style={{ padding: '6px', borderRadius: '6px', border: '1px dashed var(--primary)', fontSize: '0.8rem', background: 'transparent', cursor: updatingTxId === tx.id ? 'not-allowed' : 'pointer', maxWidth: '120px', opacity: updatingTxId === tx.id ? 0.5 : 1 }}
                                 >
                                     <option value="" disabled>Assign Vendor...</option>
                                     {vendors?.filter(v => v.is_online).map(v => (
@@ -80,16 +81,26 @@ const TransactionTable = ({ transactions, updateStatus, vendors, handleAssignVen
                         <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 {tx.status === 'pending' && (
-                                    <button onClick={() => updateStatus(tx.id, 'processing')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(183, 71, 42, 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '50px', fontWeight: 700, cursor: 'pointer' }} title="Force transaction to Processing state">
+                                    <button 
+                                        disabled={updatingTxId === tx.id}
+                                        onClick={() => updateStatus(tx.id, 'processing')} 
+                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(183, 71, 42, 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '50px', fontWeight: 700, cursor: updatingTxId === tx.id ? 'not-allowed' : 'pointer', opacity: updatingTxId === tx.id ? 0.5 : 1 }} 
+                                        title="Force transaction to Processing state"
+                                    >
                                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>manufacturing</span>
                                         Force Process
                                     </button>
                                 )}
                                 {tx.status === 'processing' && (
-                                    <button onClick={() => {
-                                        setAdminConfirmData({ transactionId: tx.id, pin: '', proofImage: null });
-                                        setShowAdminConfirmModal(true);
-                                    }} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: '#4A154B', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 10px rgba(74, 21, 75, 0.2)' }} title="Require PIN and Proof to confirm transaction">
+                                    <button 
+                                        disabled={updatingTxId === tx.id}
+                                        onClick={() => {
+                                            setAdminConfirmData({ transactionId: tx.id, pin: '', proofImage: null });
+                                            setShowAdminConfirmModal(true);
+                                        }} 
+                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '6px 12px', background: '#4A154B', color: '#fff', border: 'none', borderRadius: '50px', fontWeight: 700, cursor: updatingTxId === tx.id ? 'not-allowed' : 'pointer', boxShadow: '0 4px 10px rgba(74, 21, 75, 0.2)', opacity: updatingTxId === tx.id ? 0.5 : 1 }} 
+                                        title="Require PIN and Proof to confirm transaction"
+                                    >
                                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>gavel</span>
                                         Admin Confirm
                                     </button>

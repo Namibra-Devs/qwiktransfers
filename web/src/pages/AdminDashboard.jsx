@@ -63,9 +63,15 @@ const AdminDashboard = () => {
     const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
 
     // Admin Confirmation Modal States
+    const [updatingTxId, setUpdatingTxId] = useState(null);
     const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false);
     const [adminConfirmData, setAdminConfirmData] = useState({ transactionId: null, pin: '', proofImage: null });
     const [adminConfirmLoading, setAdminConfirmLoading] = useState(false);
+
+    // Assign Vendor Modal States
+    const [showAssignVendorModal, setShowAssignVendorModal] = useState(false);
+    const [assignVendorData, setAssignVendorData] = useState({ transactionId: null, vendorId: null, pin: '' });
+    const [assignVendorLoading, setAssignVendorLoading] = useState(false);
 
     // Preview Modal States
     const [previewImage, setPreviewImage] = useState('');
@@ -149,22 +155,40 @@ const AdminDashboard = () => {
     };
 
     const updateStatus = async (id, status) => {
+        setUpdatingTxId(id);
         try {
             await api.patch(`/transactions/${id}/status`, { status });
             fetchTransactions();
             toast.success('Status updated!');
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to update status');
+        } finally {
+            setUpdatingTxId(null);
         }
     };
 
-    const handleAssignVendor = async (transactionId, vendorId) => {
+    const openAssignVendorModal = (transactionId, vendorId) => {
+        setAssignVendorData({ transactionId, vendorId, pin: '' });
+        setShowAssignVendorModal(true);
+    };
+
+    const handleAssignVendorSubmit = async (e) => {
+        e.preventDefault();
+        if (assignVendorData.pin.length !== 4) return toast.error('4-digit PIN is required');
+        setAssignVendorLoading(true);
         try {
-            await api.patch(`/transactions/${transactionId}/assign`, { vendorId });
+            await api.patch(`/transactions/${assignVendorData.transactionId}/assign`, { 
+                vendorId: assignVendorData.vendorId, 
+                pin: assignVendorData.pin 
+            });
             toast.success('Vendor assigned successfully');
+            setShowAssignVendorModal(false);
+            setAssignVendorData({ transactionId: null, vendorId: null, pin: '' });
             fetchTransactions();
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to assign vendor');
+        } finally {
+            setAssignVendorLoading(false);
         }
     };
 
@@ -578,8 +602,9 @@ const AdminDashboard = () => {
                                         <TransactionTable
                                             transactions={transactions}
                                             updateStatus={updateStatus}
+                                            updatingTxId={updatingTxId}
                                             vendors={vendors}
-                                            handleAssignVendor={handleAssignVendor}
+                                            openAssignVendorModal={openAssignVendorModal}
                                             setAdminConfirmData={setAdminConfirmData}
                                             setShowAdminConfirmModal={setShowAdminConfirmModal}
                                             setSelectedTx={setSelectedTx}
@@ -1258,13 +1283,39 @@ const AdminDashboard = () => {
                         <form onSubmit={handleAdminForceConfirm} style={{ padding: '24px' }}>
                             <div className="form-group" style={{ marginBottom: '20px' }}>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Payment Proof</label>
-                                <input 
-                                    type="file" 
-                                    accept="image/*,.pdf" 
-                                    required 
-                                    onChange={(e) => setAdminConfirmData(prev => ({ ...prev, proofImage: e.target.files[0] }))}
-                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-                                />
+                                {!adminConfirmData.proofImage ? (
+                                    <div style={{ padding: '24px', border: '2px dashed var(--border-color)', borderRadius: '12px', textAlign: 'center', background: 'var(--input-bg)', cursor: 'pointer', position: 'relative' }}>
+                                        <input 
+                                            type="file" 
+                                            accept="image/*,.pdf" 
+                                            required 
+                                            onChange={(e) => setAdminConfirmData(prev => ({ ...prev, proofImage: e.target.files[0] }))}
+                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                        />
+                                        <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: 'var(--text-muted)', marginBottom: '8px' }}>cloud_upload</span>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Click or drag file to upload</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Images or PDF only</div>
+                                    </div>
+                                ) : (
+                                    <div style={{ position: 'relative', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', height: '120px', background: 'var(--input-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {adminConfirmData.proofImage.type === 'application/pdf' ? (
+                                            <div style={{ textAlign: 'center' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: 'var(--danger)' }}>picture_as_pdf</span>
+                                                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '4px' }}>{adminConfirmData.proofImage.name}</div>
+                                            </div>
+                                        ) : (
+                                            <img src={URL.createObjectURL(adminConfirmData.proofImage)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        )}
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setAdminConfirmData(prev => ({ ...prev, proofImage: null }))}
+                                            style={{ position: 'absolute', top: '8px', right: '8px', background: 'white', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+                                            title="Remove Image"
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', color: 'var(--danger)' }}>delete</span>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="form-group" style={{ marginBottom: '32px' }}>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Security PIN</label>
@@ -1286,6 +1337,48 @@ const AdminDashboard = () => {
                             >
                                 {adminConfirmLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">done_all</span>}
                                 {adminConfirmLoading ? 'Confirming...' : 'Force Confirm'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showAssignVendorModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
+                    <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', p: 0, borderRadius: '24px', overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>assignment_ind</span>
+                                Confirm Assignment
+                            </h2>
+                            <button onClick={() => setShowAssignVendorModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleAssignVendorSubmit} style={{ padding: '24px' }}>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                                You are about to assign this transaction. Please enter your Admin PIN to confirm and notify the vendor.
+                            </p>
+                            <div className="form-group" style={{ marginBottom: '32px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Security PIN</label>
+                                <input 
+                                    type="password" 
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    required 
+                                    placeholder="••••"
+                                    value={assignVendorData.pin}
+                                    onChange={(e) => setAssignVendorData(prev => ({ ...prev, pin: e.target.value.replace(/\D/g, '') }))}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '8px' }}
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={assignVendorLoading}
+                                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                            >
+                                {assignVendorLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">how_to_reg</span>}
+                                {assignVendorLoading ? 'Assigning...' : 'Assign Vendor'}
                             </button>
                         </form>
                     </div>
