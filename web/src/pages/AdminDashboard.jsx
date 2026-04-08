@@ -62,6 +62,11 @@ const AdminDashboard = () => {
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
     const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
 
+    // Admin Confirmation Modal States
+    const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false);
+    const [adminConfirmData, setAdminConfirmData] = useState({ transactionId: null, pin: '', proofImage: null });
+    const [adminConfirmLoading, setAdminConfirmLoading] = useState(false);
+
     // Preview Modal States
     const [previewImage, setPreviewImage] = useState('');
     const [previewDate, setPreviewDate] = useState(null);
@@ -84,6 +89,7 @@ const AdminDashboard = () => {
         fetchStats();
         if (tab === 'transactions') {
             fetchTransactions();
+            fetchVendors(); // Fetch vendors for assignment dropdown
         } else if (tab === 'kyc') {
             fetchUsersServerSide('pending');
         } else if (tab === 'users') {
@@ -148,7 +154,50 @@ const AdminDashboard = () => {
             fetchTransactions();
             toast.success('Status updated!');
         } catch (error) {
-            toast.error('Failed to update status');
+            toast.error(error.response?.data?.error || 'Failed to update status');
+        }
+    };
+
+    const handleAssignVendor = async (transactionId, vendorId) => {
+        try {
+            await api.patch(`/transactions/${transactionId}/assign`, { vendorId });
+            toast.success('Vendor assigned successfully');
+            fetchTransactions();
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to assign vendor');
+        }
+    };
+
+    const handleAdminForceConfirm = async (e) => {
+        e.preventDefault();
+        if (!adminConfirmData.proofImage) return toast.error('Proof image is required');
+        if (adminConfirmData.pin.length !== 4) return toast.error('4-digit PIN is required');
+        
+        setAdminConfirmLoading(true);
+        const formData = new FormData();
+        formData.append('proof', adminConfirmData.proofImage);
+        
+        try {
+            // First upload the proof
+            const uploadRes = await api.post(`/transactions/${adminConfirmData.transactionId}/upload-proof`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            // Then confirm with PIN and proof_url
+            await api.patch(`/transactions/${adminConfirmData.transactionId}/status`, {
+                status: 'sent',
+                pin: adminConfirmData.pin,
+                proof_url: uploadRes.data.proof_url
+            });
+            
+            toast.success('Transaction successfully confirmed (Admin Override)');
+            setShowAdminConfirmModal(false);
+            setAdminConfirmData({ transactionId: null, pin: '', proofImage: null });
+            fetchTransactions();
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to force confirm transaction');
+        } finally {
+            setAdminConfirmLoading(false);
         }
     };
 
@@ -529,6 +578,10 @@ const AdminDashboard = () => {
                                         <TransactionTable
                                             transactions={transactions}
                                             updateStatus={updateStatus}
+                                            vendors={vendors}
+                                            handleAssignVendor={handleAssignVendor}
+                                            setAdminConfirmData={setAdminConfirmData}
+                                            setShowAdminConfirmModal={setShowAdminConfirmModal}
                                             setSelectedTx={setSelectedTx}
                                             setShowTxModal={setShowTxModal}
                                             setPreviewImage={setPreviewImage}
@@ -1185,6 +1238,55 @@ const AdminDashboard = () => {
                                     Create Vendor
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showAdminConfirmModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
+                    <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', p: 0, borderRadius: '24px', overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="material-symbols-outlined" style={{ color: 'var(--success)' }}>verified</span>
+                                Admin Override Confirm
+                            </h2>
+                            <button onClick={() => setShowAdminConfirmModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleAdminForceConfirm} style={{ padding: '24px' }}>
+                            <div className="form-group" style={{ marginBottom: '20px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Payment Proof</label>
+                                <input 
+                                    type="file" 
+                                    accept="image/*,.pdf" 
+                                    required 
+                                    onChange={(e) => setAdminConfirmData(prev => ({ ...prev, proofImage: e.target.files[0] }))}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '32px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Security PIN</label>
+                                <input 
+                                    type="password" 
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    required 
+                                    placeholder="••••"
+                                    value={adminConfirmData.pin}
+                                    onChange={(e) => setAdminConfirmData(prev => ({ ...prev, pin: e.target.value.replace(/\D/g, '') }))}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '8px' }}
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={adminConfirmLoading}
+                                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--success)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                            >
+                                {adminConfirmLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">done_all</span>}
+                                {adminConfirmLoading ? 'Confirming...' : 'Force Confirm'}
+                            </button>
                         </form>
                     </div>
                 </div>

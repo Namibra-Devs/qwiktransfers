@@ -10,6 +10,7 @@ const AdminProfile = () => {
     const [phone, setPhone] = useState(user?.phone || '');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [newPin, setNewPin] = useState({ pin: '', confirm: '' });
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
 
@@ -69,6 +70,27 @@ const AdminProfile = () => {
             if (refreshProfile) await refreshProfile();
         } catch (error) {
             setMsg({ type: 'error', text: 'Avatar upload failed' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSetPin = async (e) => {
+        e.preventDefault();
+        if (newPin.pin.length !== 4) {
+            return setMsg({ type: 'error', text: 'PIN must be exactly 4 digits' });
+        }
+        if (newPin.pin !== newPin.confirm) {
+            return setMsg({ type: 'error', text: 'PINs do not match' });
+        }
+        setLoading(true);
+        try {
+            await api.post('/auth/set-pin', { pin: newPin.pin });
+            setMsg({ type: 'success', text: 'Security PIN updated successfully!' });
+            setNewPin({ pin: '', confirm: '' });
+            if (refreshProfile) await refreshProfile();
+        } catch (error) {
+            setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
         } finally {
             setLoading(false);
         }
@@ -162,6 +184,45 @@ const AdminProfile = () => {
                         </div>
                         <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
                             {loading ? 'Updating...' : 'Change Password'}
+                        </button>
+                    </form>
+                </section>
+
+                {/* Transaction PIN */}
+                <section className="card">
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Security PIN</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                        Required when manually confirming transactions as an Admin override.
+                    </p>
+                    <form onSubmit={handleSetPin}>
+                        <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
+                            <div>
+                                <label>New 4-Digit PIN</label>
+                                <input 
+                                    type="password" 
+                                    maxLength="4" 
+                                    pattern="\d{4}" 
+                                    value={newPin.pin} 
+                                    onChange={(e) => setNewPin({ ...newPin, pin: e.target.value.replace(/\D/g, '') })} 
+                                    placeholder="••••" 
+                                    required 
+                                />
+                            </div>
+                            <div>
+                                <label>Confirm PIN</label>
+                                <input 
+                                    type="password" 
+                                    maxLength="4" 
+                                    pattern="\d{4}" 
+                                    value={newPin.confirm} 
+                                    onChange={(e) => setNewPin({ ...newPin, confirm: e.target.value.replace(/\D/g, '') })} 
+                                    placeholder="••••" 
+                                    required 
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px', background: 'var(--accent-peach)', color: 'var(--primary)' }}>
+                            {loading ? 'Saving...' : 'Set PIN'}
                         </button>
                     </form>
                 </section>

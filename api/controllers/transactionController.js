@@ -2,6 +2,8 @@ const { Transaction, User, Rate, SystemConfig, Referral, sequelize } = require('
 const { Op } = require('sequelize');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const Big = require('big.js');
 const fs = require('fs');
 const path = require('path');
@@ -187,7 +189,10 @@ const getTransactions = async (req, res) => {
 
         const { count, rows: transactions } = await Transaction.findAndCountAll({
             where,
-            include: [{ model: User, as: 'user' }],
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'email', 'first_name', 'last_name', 'phone'] },
+                { model: User, as: 'vendor', attributes: ['id', 'email', 'first_name', 'last_name', 'country'] }
+            ],
             order: [['createdAt', 'DESC']],
             limit: parseInt(limit),
             offset: parseInt(offset),
@@ -221,7 +226,13 @@ const getTransactionById = async (req, res) => {
             where.userId = req.user.id;
         }
 
-        const transaction = await Transaction.findOne({ where, include: [{ model: User, as: 'user' }] });
+        const transaction = await Transaction.findOne({ 
+            where, 
+            include: [
+                { model: User, as: 'user' },
+                { model: User, as: 'vendor', attributes: ['id', 'email', 'first_name', 'last_name', 'country'] }
+            ] 
+        });
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
         res.json(transaction);
@@ -230,13 +241,69 @@ const getTransactionById = async (req, res) => {
     }
 };
 
+const assignVendor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { vendorId } = req.body;
+        
+        const transaction = await Transaction.findByPk(id);
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+        
+        const oldVendorId = transaction.vendorId;
+        transaction.vendorId = vendorId;
+        
+        // If reassigning a pending transaction, change it to processing
+        if (transaction.status === 'pending' && vendorId) {
+            transaction.status = 'processing';
+        }
+        
+        await transaction.save();
+        
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'REASSIGN_VENDOR',
+            details: `Admin reassigned transaction ${transaction.id} from ${oldVendorId || 'None'} to vendor ${vendorId || 'None'}`,
+            ipAddress: req.ip
+        });
+
+        // Fetch updated transaction to return
+        const updatedTransaction = await Transaction.findByPk(id, {
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'email', 'first_name', 'last_name', 'phone'] },
+                { model: User, as: 'vendor', attributes: ['id', 'email', 'first_name', 'last_name', 'country'] }
+            ]
+        });
+
+        res.json({ message: 'Vendor assigned successfully', transaction: updatedTransaction });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 const updateStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, pin, proof_url } = req.body;
         const transaction = await Transaction.findByPk(id, { include: ['user'] });
 
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+        // Enforce PIN and Proof for 'sent' (Admin Confirm) action
+        if (status === 'sent') {
+            if (!pin) return res.status(400).json({ error: 'Security PIN is required to confirm.' });
+            
+            const adminUser = await User.findByPk(req.user.id);
+            if (!adminUser.transaction_pin) return res.status(400).json({ error: 'Please set your Security PIN in your profile first.' });
+            
+            const isMatch = await bcrypt.compare(pin, adminUser.transaction_pin);
+            if (!isMatch) return res.status(400).json({ error: 'Invalid PIN' });
+
+            const finalProof = proof_url || transaction.vendor_proof_url;
+            if (!finalProof) return res.status(400).json({ error: 'Proof of payment is required.' });
+            
+            transaction.vendor_proof_url = finalProof;
+        }
 
         const result = await sequelize.transaction(async (t) => {
             transaction.status = status;
@@ -307,9 +374,10 @@ const updateStatus = async (req, res) => {
         }
 
         // Update Audit Log
+        const actionName = status === 'sent' ? 'ADMIN_FORCE_CONFIRM' : 'TRANSACTION_STATUS_CHANGE';
         await logAction({
             userId: req.user.id,
-            action: 'TRANSACTION_STATUS_CHANGE',
+            action: actionName,
             details: `Admin changed status of transaction ${transaction.id} to ${status}`,
             ipAddress: req.ip
         });
@@ -652,4 +720,4 @@ const getUserStats = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats, getUserStats, exportStats };
+module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats, getUserStats, exportStats, assignVendor };

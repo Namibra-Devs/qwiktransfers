@@ -10,6 +10,7 @@ router.get('/stats', verifyToken, verifyAdmin, transactionController.getAdminSta
 router.get('/export', verifyToken, transactionController.exportTransactions);
 router.get('/admin/stats/export', verifyToken, verifyAdmin, transactionController.exportStats);
 router.patch('/:id/status', verifyToken, verifyAdmin, transactionController.updateStatus);
+router.patch('/:id/assign', verifyToken, verifyAdmin, transactionController.assignVendor);
 router.patch('/:id/cancel', verifyToken, transactionController.cancelTransaction);
 router.post('/:id/upload-proof', verifyToken, upload.single('proof'), transactionController.uploadProof);
 router.get('/user/stats', verifyToken, transactionController.getUserStats);
