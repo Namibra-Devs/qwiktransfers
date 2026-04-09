@@ -1047,9 +1047,15 @@ const UserDashboard = () => {
                                     <span className="material-symbols-outlined" style={{ fontSize: '2.5rem' }}>check_circle</span>
                                 </div>
                                 <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Transfer Initiated!</h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
-                                    Your exchange rate is securely <strong>locked</strong>. Please complete your payment now.
-                                </p>
+                                {rateLockedUntil ? (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
+                                        Your exchange rate is securely <strong>locked</strong>. Please complete your payment now.
+                                    </p>
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
+                                        Please complete your payment using the instructions below.
+                                    </p>
+                                )}
 
                                 <div style={{ background: 'var(--text-deep-brown)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px', textAlign: 'left' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

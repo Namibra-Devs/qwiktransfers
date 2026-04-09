@@ -450,12 +450,12 @@ const AdminDashboard = () => {
                                 <div style={{ fontSize: '2rem', fontWeight: 800 }}>{adminStats.pendingTransactions}</div>
                             </div>
                             <div className="card" style={{ padding: '24px', background: '#fff' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending KYC Reviews</div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{adminStats.pendingKYC}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Processing Transactions</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>{adminStats.processingTransactions || 0}</div>
                             </div>
                             <div className="card" style={{ padding: '24px', background: '#fff' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Total Success Volume</div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669' }}>{adminStats.successVolume.toLocaleString()} <span style={{ fontSize: '1rem' }}>CAD</span></div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Completed Transactions</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>{adminStats.sentTransactions || 0}</div>
                             </div>
                         </section>
                     )}

@@ -36,6 +36,7 @@ const createTransaction = async (req, res) => {
         });
 
         const rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
+        // const rateRecord = await Rate.findOne();
         const liveRate = rateRecord ? parseFloat(rateRecord.rate) : 0.10;
 
         const getReferenceAmount = (amount, txType, rate) => {
@@ -66,8 +67,8 @@ const createTransaction = async (req, res) => {
         }
 
         const bigLiveRate = new Big(liveRate);
-        const final_exchange_rate = exchange_rate || (type === 'CAD-GHS' 
-            ? new Big(1).div(bigLiveRate).toFixed(6) 
+        const final_exchange_rate = exchange_rate || (type === 'CAD-GHS'
+            ? new Big(1).div(bigLiveRate).toFixed(6)
             : bigLiveRate.toFixed(6));
 
         const final_amount_received = amount_received || new Big(amount_sent).times(final_exchange_rate).toFixed(2);
@@ -88,13 +89,17 @@ const createTransaction = async (req, res) => {
             }
         }
 
-        let lockTimeMinutes = 15;
-        const lockConfig = await SystemConfig.findOne({ where: { key: 'rate_lock_time' } });
-        if (lockConfig && lockConfig.value) {
-            lockTimeMinutes = parseInt(lockConfig.value) || 15;
-        }
 
-        const final_rate_locked_until = rate_locked_until || new Date(Date.now() + lockTimeMinutes * 60000);
+        let final_rate_locked_until = null;
+        let lockTimeMinutes = 15;
+
+        if (rateRecord && rateRecord.use_api) {
+            const lockConfig = await SystemConfig.findOne({ where: { key: 'rate_lock_time' } });
+            if (lockConfig && lockConfig.value) {
+                lockTimeMinutes = parseInt(lockConfig.value) || 15;
+            }
+            final_rate_locked_until = rate_locked_until || new Date(Date.now() + lockTimeMinutes * 60000);
+        }
 
         // Generate Custom Transaction ID: QT-YYYYMMDD-XXXX
         const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -133,19 +138,23 @@ const createTransaction = async (req, res) => {
         try {
             if (user) {
                 await sendTransactionInitiatedEmail(user, transaction).catch(e => console.error("Email failed:", e.message));
-                
+
                 const fromCurr = type?.split('-')[0] || 'CAD';
                 const toCurr = type?.split('-')[1] || 'GHS';
-                
+
                 if (user.phone) {
                     const refMsg = recipient_details.admin_reference ? `Ref: ${recipient_details.admin_reference}` : '';
                     await sendSMS(user.phone, `QWIK: Transfer of ${amount_sent} ${fromCurr} to ${recipient_details.name} (${amount_received} ${toCurr}) initiated. ${refMsg}.`).catch(e => console.error("SMS failed:", e.message));
                 }
 
+                const lockMsg = final_rate_locked_until
+                    ? ` Your rate is locked for ${lockTimeMinutes} minutes.`
+                    : ` Please proceed to complete your payment.`;
+
                 await createNotification({
                     userId,
                     type: 'TRANSACTION_UPDATE',
-                    message: `Transaction of ${amount_sent} ${fromCurr} initiated. Your rate is locked for 15 minutes.`,
+                    message: `Transaction of ${amount_sent} ${fromCurr} initiated.${lockMsg}`,
                     link: `/dashboard?search=${transaction.transaction_id}`
                 }).catch(e => console.error("In-app notification failed:", e.message));
 
@@ -232,12 +241,12 @@ const getTransactionById = async (req, res) => {
             where.userId = req.user.id;
         }
 
-        const transaction = await Transaction.findOne({ 
-            where, 
+        const transaction = await Transaction.findOne({
+            where,
             include: [
                 { model: User, as: 'user' },
                 { model: User, as: 'vendor', attributes: ['id', 'email', 'first_name', 'last_name', 'country'] }
-            ] 
+            ]
         });
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
@@ -251,28 +260,28 @@ const assignVendor = async (req, res) => {
     try {
         const { id } = req.params;
         const { vendorId, pin } = req.body;
-        
+
         if (!pin) return res.status(400).json({ error: 'Security PIN is required to assign vendor.' });
-        
+
         const adminUser = await User.findByPk(req.user.id);
         if (!adminUser.transaction_pin) return res.status(400).json({ error: 'Please set your Security PIN in your profile first.' });
-        
+
         const isMatch = await bcrypt.compare(pin, adminUser.transaction_pin);
         if (!isMatch) return res.status(400).json({ error: 'Invalid PIN' });
-        
+
         const transaction = await Transaction.findByPk(id);
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
-        
+
         const oldVendorId = transaction.vendorId;
         transaction.vendorId = vendorId;
-        
+
         // If reassigning a pending transaction, change it to processing
         if (transaction.status === 'pending' && vendorId) {
             transaction.status = 'processing';
         }
-        
+
         await transaction.save();
-        
+
         // Audit log
         await logAction({
             userId: req.user.id,
@@ -315,16 +324,16 @@ const updateStatus = async (req, res) => {
         // Enforce PIN and Proof for 'sent' (Admin Confirm) action
         if (status === 'sent') {
             if (!pin) return res.status(400).json({ error: 'Security PIN is required to confirm.' });
-            
+
             const adminUser = await User.findByPk(req.user.id);
             if (!adminUser.transaction_pin) return res.status(400).json({ error: 'Please set your Security PIN in your profile first.' });
-            
+
             const isMatch = await bcrypt.compare(pin, adminUser.transaction_pin);
             if (!isMatch) return res.status(400).json({ error: 'Invalid PIN' });
 
             const finalProof = proof_url || transaction.vendor_proof_url;
             if (!finalProof) return res.status(400).json({ error: 'Proof of payment is required.' });
-            
+
             transaction.vendor_proof_url = finalProof;
         }
 
@@ -565,6 +574,8 @@ const getAdminStats = async (req, res) => {
 
         // Current KPIs
         const pendingTransactions = await Transaction.count({ where: { status: 'pending' } });
+        const processingTransactions = await Transaction.count({ where: { status: 'processing' } });
+        const sentTransactions = await Transaction.count({ where: { status: 'sent' } });
         const pendingKYC = await User.count({ where: { kyc_status: 'pending' } });
         const successVolume = await Transaction.sum('amount_received', { where: { status: 'sent' } });
 
@@ -634,6 +645,8 @@ const getAdminStats = async (req, res) => {
 
         res.json({
             pendingTransactions,
+            processingTransactions,
+            sentTransactions,
             pendingKYC,
             successVolume: successVolume || 0,
             volumeGrowth,
@@ -691,13 +704,13 @@ const getUserStats = async (req, res) => {
         // Current KPIs (User Specific)
         const totalSentCount = await Transaction.count({ where: { userId, status: 'sent' } });
         const pendingCount = await Transaction.count({ where: { userId, status: 'pending' } });
-        
-        const totalSentGHS = await Transaction.sum('amount_sent', { 
-            where: { userId, status: 'sent', type: 'GHS-CAD' } 
+
+        const totalSentGHS = await Transaction.sum('amount_sent', {
+            where: { userId, status: 'sent', type: 'GHS-CAD' }
         }) || 0;
 
-        const totalSentCAD = await Transaction.sum('amount_sent', { 
-            where: { userId, status: 'sent', type: 'CAD-GHS' } 
+        const totalSentCAD = await Transaction.sum('amount_sent', {
+            where: { userId, status: 'sent', type: 'CAD-GHS' }
         }) || 0;
 
         const volumeHistory = await Transaction.findAll({
