@@ -33,7 +33,7 @@ const AdminDashboard = () => {
     const [inquiryPage, setInquiryPage] = useState(1);
     const [inquiryTotalPages, setInquiryTotalPages] = useState(1);
     const [inquiryStatusFilter, setInquiryStatusFilter] = useState('pending');
-    
+
     // Complaints State
     const [complaints, setComplaints] = useState([]);
     const [complaintPage, setComplaintPage] = useState(1);
@@ -183,9 +183,9 @@ const AdminDashboard = () => {
         if (assignVendorData.pin.length !== 4) return toast.error('4-digit PIN is required');
         setAssignVendorLoading(true);
         try {
-            await api.patch(`/transactions/${assignVendorData.transactionId}/assign`, { 
-                vendorId: assignVendorData.vendorId, 
-                pin: assignVendorData.pin 
+            await api.patch(`/transactions/${assignVendorData.transactionId}/assign`, {
+                vendorId: assignVendorData.vendorId,
+                pin: assignVendorData.pin
             });
             toast.success('Vendor assigned successfully');
             setShowAssignVendorModal(false);
@@ -202,24 +202,24 @@ const AdminDashboard = () => {
         e.preventDefault();
         if (!adminConfirmData.proofImage) return toast.error('Proof image is required');
         if (adminConfirmData.pin.length !== 4) return toast.error('4-digit PIN is required');
-        
+
         setAdminConfirmLoading(true);
         const formData = new FormData();
         formData.append('proof', adminConfirmData.proofImage);
-        
+
         try {
             // First upload the proof
             const uploadRes = await api.post(`/transactions/${adminConfirmData.transactionId}/upload-proof`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
+
             // Then confirm with PIN and proof_url
             await api.patch(`/transactions/${adminConfirmData.transactionId}/status`, {
                 status: 'sent',
                 pin: adminConfirmData.pin,
                 proof_url: uploadRes.data.proof_url
             });
-            
+
             toast.success('Transaction successfully confirmed (Admin Override)');
             setShowAdminConfirmModal(false);
             setAdminConfirmData({ transactionId: null, pin: '', proofImage: null });
@@ -363,6 +363,19 @@ const AdminDashboard = () => {
 
 
 
+    const updateAdminRole = async (userId, subRole) => {
+        try {
+            await api.patch('/auth/update-role', { userId, sub_role: subRole });
+            toast.success(`Admin permissions updated to ${subRole.toUpperCase()}`);
+            fetchAdmins();
+            if (selectedUser && selectedUser.id === userId) {
+                setSelectedUser({ ...selectedUser, sub_role: subRole });
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to update admin role');
+        }
+    };
+
     const updateRegion = async (userId, country) => {
         try {
             await api.patch('/auth/update-region', { userId, country });
@@ -412,8 +425,8 @@ const AdminDashboard = () => {
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-peach)', transition: 'background-color 0.3s ease' }}>
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
-                <div 
-                    className="sidebar-overlay mobile-only" 
+                <div
+                    className="sidebar-overlay mobile-only"
                     onClick={() => setSidebarOpen(false)}
                     style={{
                         position: 'fixed',
@@ -434,9 +447,9 @@ const AdminDashboard = () => {
                             {sidebarOpen ? 'close' : 'menu'}
                         </span>
                     </button>
-                    
+
                     <h1 className="mobile-brand-title">QWIK Admin</h1>
-                    
+
                     <div className="mobile-header-actions">
                         <NotificationPanel />
                         <ThemeSwitcher />
@@ -498,13 +511,13 @@ const AdminDashboard = () => {
                     )}
 
                     <div className="fade-in">
-                        {['transactions', 'kyc', 'users', 'vendors', 'audit', 'inquiries', 'complaints'].includes(tab) && (
+                        {['transactions', 'kyc', 'users', 'vendors', 'admins', 'audit', 'inquiries', 'complaints'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
+                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'admins' ? 'Administrative Staff' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
                                             </h2>
                                             <button
                                                 onClick={() => setTab('help')}
@@ -919,7 +932,7 @@ const AdminDashboard = () => {
                                     <div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Currency Pair</div>
                                         <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            {selectedTx.type?.split('-')[0]} 
+                                            {selectedTx.type?.split('-')[0]}
                                             <span className="material-symbols-outlined" style={{ fontSize: '1rem', opacity: 0.5 }}>arrow_forward</span>
                                             {selectedTx.type?.split('-')[1]}
                                         </div>
@@ -1147,6 +1160,79 @@ const AdminDashboard = () => {
                                 </div>
                             )}
 
+                            {selectedUser.role === 'admin' && user?.sub_role === 'super' && selectedUser.id !== user.id && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>Administrative Permissions</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                        <button
+                                            onClick={() => updateAdminRole(selectedUser.id, 'super')}
+                                            style={{
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                border: selectedUser.sub_role === 'super' ? '2px solid #4A154B' : '1px solid var(--border-color)',
+                                                background: selectedUser.sub_role === 'super' ? 'rgba(74, 21, 75, 0.05)' : '#fff',
+                                                color: '#4A154B',
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>workspace_premium</span>
+                                            Promote to Super
+                                        </button>
+                                        <button
+                                            onClick={() => updateAdminRole(selectedUser.id, 'support')}
+                                            style={{
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                border: selectedUser.sub_role === 'support' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                                background: selectedUser.sub_role === 'support' ? 'rgba(183, 71, 42, 0.05)' : '#fff',
+                                                color: 'var(--primary)',
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>support_agent</span>
+                                            Demote to Support
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                        {selectedUser.sub_role === 'super'
+                                            ? 'Super Admins have unrestricted access to settings, financials, and logs.'
+                                            : 'Support Agents are restricted from sensitive platform configurations and overrides.'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedUser.role === 'admin' && user?.sub_role === 'super' && selectedUser.id !== user.id && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Role Revocation</label>
+                                    <button
+                                        onClick={async () => {
+                                            if (window.confirm('Are you sure you want to REVOKE admin privileges? This user will become a regular user and lose dashboard access.')) {
+                                                try {
+                                                    await api.patch('/auth/update-role', { userId: selectedUser.id, role: 'user' });
+                                                    toast.success('Admin privileges revoked');
+                                                    setShowUserModal(false);
+                                                    fetchAdmins();
+                                                    fetchUsersServerSide();
+                                                } catch (err) { toast.error('Revocation failed'); }
+                                            }
+                                        }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--danger)', background: 'rgba(216, 59, 1, 0.05)', color: 'var(--danger)', fontWeight: 800, cursor: 'pointer' }}
+                                    >
+                                        Revoke Admin Privileges
+                                    </button>
+                                </div>
+                            )}
+
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
                                     {selectedUser.role === 'vendor' ? 'Service History' : 'Transaction History'}
@@ -1216,40 +1302,40 @@ const AdminDashboard = () => {
                                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Fill in the details below to create a dedicated Vendor account. Vendors are managed separately from platform customers.</p>
 
                                 <div style={{ display: 'grid', gap: '16px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>First Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={newVendor.firstName}
-                                            onChange={(e) => setNewVendor({ ...newVendor, firstName: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                            placeholder="John"
-                                        />
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>First Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newVendor.firstName}
+                                                onChange={(e) => setNewVendor({ ...newVendor, firstName: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                placeholder="John"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Last Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newVendor.lastName}
+                                                onChange={(e) => setNewVendor({ ...newVendor, lastName: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                placeholder="Doe"
+                                            />
+                                        </div>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Last Name</label>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Middle Name (Optional)</label>
                                         <input
                                             type="text"
-                                            required
-                                            value={newVendor.lastName}
-                                            onChange={(e) => setNewVendor({ ...newVendor, lastName: e.target.value })}
+                                            value={newVendor.middleName}
+                                            onChange={(e) => setNewVendor({ ...newVendor, middleName: e.target.value })}
                                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                            placeholder="Doe"
+                                            placeholder="Moro"
                                         />
                                     </div>
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Middle Name (Optional)</label>
-                                    <input
-                                        type="text"
-                                        value={newVendor.middleName}
-                                        onChange={(e) => setNewVendor({ ...newVendor, middleName: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-                                        placeholder="Moro"
-                                    />
-                                </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Email Address</label>
                                         <input
@@ -1323,6 +1409,112 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Add Administrative Staff Modal */}
+            {showAddAdminModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                    <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0 }}>Register Administrative Staff</h3>
+                            <button onClick={() => setShowAddAdminModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateAdmin}>
+                            <div style={{ padding: '24px' }}>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Create an internal account for platform management. Staff members are granted access to the Admin Dashboard.</p>
+
+                                <div style={{ display: 'grid', gap: '16px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>First Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newAdmin.firstName}
+                                                onChange={(e) => setNewAdmin({ ...newAdmin, firstName: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                placeholder="Employee First Name"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Last Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newAdmin.lastName}
+                                                onChange={(e) => setNewAdmin({ ...newAdmin, lastName: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                placeholder="Last Name"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={newAdmin.email}
+                                            onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            placeholder="staff@qwiktransfers.com"
+                                        />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Phone Number</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newAdmin.phone}
+                                                onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={newAdmin.password}
+                                                onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Sub-Role (Permissions)</label>
+                                        <select
+                                            required
+                                            value={newAdmin.sub_role}
+                                            onChange={(e) => setNewAdmin({ ...newAdmin, sub_role: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                        >
+                                            <option value="support">Support Agent (Restricted Financials)</option>
+                                            <option value="super">Super Admin (Full Platform Access)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddAdminModal(false)}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#4A154B', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Create Admin
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {showAdminConfirmModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
                     <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', p: 0, borderRadius: '24px', overflow: 'hidden' }}>
@@ -1340,10 +1532,10 @@ const AdminDashboard = () => {
                                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Payment Proof</label>
                                 {!adminConfirmData.proofImage ? (
                                     <div style={{ padding: '24px', border: '2px dashed var(--border-color)', borderRadius: '12px', textAlign: 'center', background: 'var(--input-bg)', cursor: 'pointer', position: 'relative' }}>
-                                        <input 
-                                            type="file" 
-                                            accept="image/*,.pdf" 
-                                            required 
+                                        <input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            required
                                             onChange={(e) => setAdminConfirmData(prev => ({ ...prev, proofImage: e.target.files[0] }))}
                                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                                         />
@@ -1361,8 +1553,8 @@ const AdminDashboard = () => {
                                         ) : (
                                             <img src={URL.createObjectURL(adminConfirmData.proofImage)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         )}
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={() => setAdminConfirmData(prev => ({ ...prev, proofImage: null }))}
                                             style={{ position: 'absolute', top: '8px', right: '8px', background: 'white', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
                                             title="Remove Image"
@@ -1374,19 +1566,19 @@ const AdminDashboard = () => {
                             </div>
                             <div className="form-group" style={{ marginBottom: '32px' }}>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Security PIN</label>
-                                <input 
-                                    type="password" 
+                                <input
+                                    type="password"
                                     maxLength="4"
                                     pattern="\d{4}"
-                                    required 
+                                    required
                                     placeholder="••••"
                                     value={adminConfirmData.pin}
                                     onChange={(e) => setAdminConfirmData(prev => ({ ...prev, pin: e.target.value.replace(/\D/g, '') }))}
                                     style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '8px' }}
                                 />
                             </div>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 disabled={adminConfirmLoading}
                                 style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--success)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                             >
@@ -1416,19 +1608,19 @@ const AdminDashboard = () => {
                             </p>
                             <div className="form-group" style={{ marginBottom: '32px' }}>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Security PIN</label>
-                                <input 
-                                    type="password" 
+                                <input
+                                    type="password"
                                     maxLength="4"
                                     pattern="\d{4}"
-                                    required 
+                                    required
                                     placeholder="••••"
                                     value={assignVendorData.pin}
                                     onChange={(e) => setAssignVendorData(prev => ({ ...prev, pin: e.target.value.replace(/\D/g, '') }))}
                                     style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '8px' }}
                                 />
                             </div>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 disabled={assignVendorLoading}
                                 style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                             >
