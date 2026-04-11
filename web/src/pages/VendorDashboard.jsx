@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import GlobalNotice from '../components/GlobalNotice';
 import DashboardHeader from '../components/DashboardHeader';
 import NotificationPanel from '../components/NotificationPanel';
 import Button from '../components/Button';
@@ -453,6 +454,7 @@ const VendorDashboard = () => {
             />
 
             <main className="dashboard-main">
+                <GlobalNotice />
                 <div className="bento-grid">
                     <div className="glass-card premium-stat-card">
                         <div className="accent-glow green"></div>

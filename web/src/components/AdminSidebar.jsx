@@ -63,6 +63,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         { id: 'vendors', label: 'Vendors', icon: 'corporate_fare' },
         ...(user?.sub_role === 'super' ? [
             { id: 'admins', label: 'Administrative Staff', icon: 'admin_panel_settings' },
+            { id: 'announcements', label: 'Global Broadcasts', icon: 'campaign' },
             { id: 'audit', label: 'Audit Logs', icon: 'history' },
             { id: 'system-settings', label: 'System Settings', icon: 'settings' },
             { id: 'payment-settings', label: 'Payment Settings', icon: 'payments' }

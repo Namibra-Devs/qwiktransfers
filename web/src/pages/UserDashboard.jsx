@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import GlobalNotice from '../components/GlobalNotice';
 import DashboardHeader from '../components/DashboardHeader';
 import NotificationPanel from '../components/NotificationPanel';
 import Button from '../components/Button';
@@ -756,6 +757,9 @@ const UserDashboard = () => {
             />
 
             <main className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 460px) 1fr', gap: '32px', alignItems: 'start' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                    <GlobalNotice />
+                </div>
                 <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
 

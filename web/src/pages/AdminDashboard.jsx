@@ -17,6 +17,8 @@ import HelpCenter from '../components/admin/HelpCenter';
 import SystemSettings from '../components/admin/SystemSettings';
 import InquiryTable from '../components/admin/InquiryTable';
 import ComplaintTable from '../components/admin/ComplaintTable';
+import AnnouncementManager from '../components/admin/AnnouncementManager';
+import GlobalNotice from '../components/GlobalNotice';
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -37,7 +39,10 @@ const AdminDashboard = () => {
     // Complaints State
     const [complaints, setComplaints] = useState([]);
     const [complaintPage, setComplaintPage] = useState(1);
-    const [complaintTotalPages, setComplaintTotalPages] = useState(1);
+    // Announcements State
+    const [announcements, setAnnouncements] = useState([]);
+    const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false);
+    const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '', type: 'info', target: 'all', expires_at: '' });
 
     const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors', 'analytics', 'help', 'inquiries', 'complaints'
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -114,6 +119,8 @@ const AdminDashboard = () => {
             fetchInquiries();
         } else if (tab === 'complaints') {
             fetchComplaints();
+        } else if (tab === 'announcements') {
+            fetchAnnouncements();
         }
     }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, complaintPage, tab]);
 
@@ -247,6 +254,28 @@ const AdminDashboard = () => {
             setAdmins(res.data.users || []);
         } catch (error) {
             console.error('Fetch admins error:', error);
+        }
+    };
+
+    const fetchAnnouncements = async () => {
+        try {
+            const res = await api.get('/announcements/admin');
+            setAnnouncements(res.data);
+        } catch (error) {
+            console.error('Fetch announcements error:', error);
+        }
+    };
+
+    const handleCreateAnnouncement = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/announcements/admin', newAnnouncement);
+            toast.success('Broadcast sent successfully!');
+            fetchAnnouncements();
+            setShowAddAnnouncementModal(false);
+            setNewAnnouncement({ title: '', message: '', type: 'info', target: 'all', expires_at: '' });
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to send broadcast');
         }
     };
 
@@ -511,13 +540,14 @@ const AdminDashboard = () => {
                     )}
 
                     <div className="fade-in">
-                        {['transactions', 'kyc', 'users', 'vendors', 'admins', 'audit', 'inquiries', 'complaints'].includes(tab) && (
+                        <GlobalNotice />
+                        {['transactions', 'kyc', 'users', 'vendors', 'admins', 'announcements', 'audit', 'inquiries', 'complaints'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                                     <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'admins' ? 'Administrative Staff' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
+                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'admins' ? 'Administrative Staff' : tab === 'announcements' ? 'System-wide Broadcasts' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
                                             </h2>
                                             <button
                                                 onClick={() => setTab('help')}
@@ -722,6 +752,14 @@ const AdminDashboard = () => {
                                         <ComplaintTable
                                             complaints={complaints}
                                             updateComplaintStatus={updateComplaintStatus}
+                                        />
+                                    )}
+
+                                    {tab === 'announcements' && (
+                                        <AnnouncementManager
+                                            announcements={announcements}
+                                            fetchAnnouncements={fetchAnnouncements}
+                                            setShowAddModal={setShowAddAnnouncementModal}
                                         />
                                     )}
 
@@ -1627,6 +1665,103 @@ const AdminDashboard = () => {
                                 {assignVendorLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">how_to_reg</span>}
                                 {assignVendorLoading ? 'Assigning...' : 'Assign Vendor'}
                             </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showAddAnnouncementModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                    <div className="card scale-in" style={{ width: '100%', maxWidth: '600px', padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>campaign</span>
+                                New System-wide Broadcast
+                            </h3>
+                            <button onClick={() => setShowAddAnnouncementModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateAnnouncement}>
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ display: 'grid', gap: '20px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Announcement Title</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newAnnouncement.title}
+                                            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            placeholder="e.g., Weekend Maintenance, New Vendor Policy"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Broadcast Message</label>
+                                        <textarea
+                                            required
+                                            value={newAnnouncement.message}
+                                            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, message: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', minHeight: '120px', resize: 'vertical' }}
+                                            placeholder="Write your detailed message here..."
+                                        />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Broadcast Type</label>
+                                            <select
+                                                value={newAnnouncement.type}
+                                                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, type: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                            >
+                                                <option value="info">Information (Blue)</option>
+                                                <option value="warning">Warning (Orange)</option>
+                                                <option value="success">Success (Green)</option>
+                                                <option value="urgent">Urgent/Critical (Red)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Audience Targeting</label>
+                                            <select
+                                                value={newAnnouncement.target}
+                                                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, target: e.target.value })}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                            >
+                                                <option value="all">Everyone (Platform-wide)</option>
+                                                <option value="vendors">Vendors Only</option>
+                                                <option value="users">Regular Users Only</option>
+                                                <option value="support">Support Staff Only</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Expiry Date (Optional)</label>
+                                        <input
+                                            type="date"
+                                            value={newAnnouncement.expires_at}
+                                            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, expires_at: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                        />
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Notice will automatically vanish from user dashboards after this date.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddAnnouncementModal(false)}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>rocket_launch</span>
+                                    Broadcast Now
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
