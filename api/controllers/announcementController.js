@@ -42,23 +42,33 @@ const getUserAnnouncements = async (req, res) => {
         if (role === 'user') targets.push('users');
         if (role === 'admin' && sub_role === 'support') targets.push('support');
 
+        // Fetch dismissed announcements for this user
+        const dismissed = await AnnouncementDismissal.findAll({
+            where: { userId },
+            attributes: ['announcementId']
+        });
+        const dismissedIds = dismissed.map(d => d.announcementId);
+
         // Fetch announcements that:
         // 1. Target this user's group
         // 2. Are active
         // 3. Haven't expired
         // 4. Haven't been dismissed by this user
+        const whereClause = {
+            target: { [Op.in]: targets },
+            is_active: true,
+            [Op.or]: [
+                { expires_at: null },
+                { expires_at: { [Op.gt]: new Date() } }
+            ]
+        };
+
+        if (dismissedIds.length > 0) {
+            whereClause.id = { [Op.notIn]: dismissedIds };
+        }
+
         const announcements = await Announcement.findAll({
-            where: {
-                target: { [Op.in]: targets },
-                is_active: true,
-                [Op.or]: [
-                    { expires_at: null },
-                    { expires_at: { [Op.gt]: new Date() } }
-                ],
-                id: {
-                    [Op.notIn]: sequelize.literal(`(SELECT announcementId FROM AnnouncementDismissals WHERE userId = ${userId})`)
-                }
-            },
+            where: whereClause,
             order: [['createdAt', 'DESC']]
         });
 
