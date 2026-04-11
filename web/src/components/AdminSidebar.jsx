@@ -2,8 +2,10 @@ import React from 'react';
 import api from '../services/api';
 import NotificationPanel from './NotificationPanel';
 import ThemeSwitcher from './ThemeSwitcher';
+import { useAuth } from '../context/AuthContext';
 
 const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
+    const { user } = useAuth();
     const [systemLogo, setSystemLogo] = React.useState(null);
     const [systemName, setSystemName] = React.useState('QWIK Admin');
     const [pendingCounts, setPendingCounts] = React.useState({ kyc: 0, inquiries: 0 });
@@ -59,9 +61,12 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
         { id: 'complaints', label: 'User Complaints', icon: 'warning' },
         { id: 'users', label: 'Users', icon: 'group' },
         { id: 'vendors', label: 'Vendors', icon: 'corporate_fare' },
-        { id: 'audit', label: 'Audit Logs', icon: 'history' },
-        { id: 'system-settings', label: 'System Settings', icon: 'settings' },
-        { id: 'payment-settings', label: 'Payment Settings', icon: 'payments' },
+        ...(user?.sub_role === 'super' ? [
+            { id: 'admins', label: 'Administrative Staff', icon: 'admin_panel_settings' },
+            { id: 'audit', label: 'Audit Logs', icon: 'history' },
+            { id: 'system-settings', label: 'System Settings', icon: 'settings' },
+            { id: 'payment-settings', label: 'Payment Settings', icon: 'payments' }
+        ] : []),
         { id: 'profile', label: 'Profile', icon: 'account_circle' },
         { id: 'help', label: 'Help Center', icon: 'help_outline' },
     ];

@@ -4,7 +4,7 @@ const notificationController = require('../controllers/notificationController');
 const auditController = require('../controllers/auditController');
 const rateAlertController = require('../controllers/rateAlertController');
 const systemController = require('../controllers/systemController');
-const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const { verifyToken, verifyAdmin, verifySuperAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // Notification Routes
@@ -20,19 +20,19 @@ router.delete('/rate-alerts/:id', verifyToken, rateAlertController.deleteAlert);
 // System Settings Routes
 router.get('/config/public', systemController.getPublicConfig);
 router.get('/payment-methods', verifyToken, systemController.getPaymentMethods);
-router.post('/payment-methods', verifyToken, verifyAdmin, systemController.updatePaymentMethod);
-router.get('/config', verifyToken, verifyAdmin, systemController.getSystemConfig);
-router.post('/config', verifyToken, verifyAdmin, systemController.updateSystemConfig);
-router.post('/logo', verifyToken, verifyAdmin, upload.single('logo'), systemController.uploadLogo);
+router.post('/payment-methods', verifyToken, verifySuperAdmin, systemController.updatePaymentMethod);
+router.get('/config', verifyToken, verifySuperAdmin, systemController.getSystemConfig);
+router.post('/config', verifyToken, verifySuperAdmin, systemController.updateSystemConfig);
+router.post('/logo', verifyToken, verifySuperAdmin, upload.single('logo'), systemController.uploadLogo);
 
 // Backup Routes
-router.post('/backup/manual', verifyToken, verifyAdmin, systemController.manualBackup);
-router.get('/backups', verifyToken, verifyAdmin, systemController.getBackupsList);
-router.get('/backups/download/:filename', verifyToken, verifyAdmin, systemController.downloadBackup);
+router.post('/backup/manual', verifyToken, verifySuperAdmin, systemController.manualBackup);
+router.get('/backups', verifyToken, verifySuperAdmin, systemController.getBackupsList);
+router.get('/backups/download/:filename', verifyToken, verifySuperAdmin, systemController.downloadBackup);
 
 // Audit Log Routes (Admin Only)
-router.get('/admin/audit-logs', verifyToken, verifyAdmin, auditController.getAuditLogs);
-router.get('/admin/audit-logs/export', verifyToken, verifyAdmin, auditController.exportAuditLogs);
-router.delete('/admin/audit-logs/cleanup', verifyToken, verifyAdmin, auditController.cleanupAuditLogs);
+router.get('/admin/audit-logs', verifyToken, verifySuperAdmin, auditController.getAuditLogs);
+router.get('/admin/audit-logs/export', verifyToken, verifySuperAdmin, auditController.exportAuditLogs);
+router.delete('/admin/audit-logs/cleanup', verifyToken, verifySuperAdmin, auditController.cleanupAuditLogs);
 
 module.exports = router;

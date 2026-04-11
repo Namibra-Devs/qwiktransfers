@@ -1,0 +1,1 @@
+ALTER TABLE "Users" ADD COLUMN "sub_role" VARCHAR(255) DEFAULT 'super';

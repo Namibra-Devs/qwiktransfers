@@ -28,8 +28,13 @@ export const AuthProvider = ({ children }) => {
         init();
     }, []);
 
-    const login = async (email, password) => {
-        const response = await api.post('/auth/login', { email, password });
+    const login = async (email, password, otp = null) => {
+        const response = await api.post('/auth/login', { email, password, otp });
+        
+        if (response.data.requires_2fa) {
+            return response.data;
+        }
+
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
         return response.data;

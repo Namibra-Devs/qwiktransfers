@@ -203,7 +203,7 @@ const resendVerification = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, otp } = req.body;
         const user = await User.findOne({ where: { email } });
 
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -215,6 +215,24 @@ const login = async (req, res) => {
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+        // 2FA Challenge logic
+        if (user.two_factor_enabled) {
+            if (!otp) {
+                return res.json({ requires_2fa: true, message: 'Two-factor authentication required' });
+            }
+
+            const speakeasy = require('speakeasy');
+            const verified = speakeasy.totp.verify({
+                secret: user.two_factor_secret,
+                encoding: 'base32',
+                token: otp
+            });
+
+            if (!verified) {
+                return res.status(401).json({ error: 'Invalid 2FA code' });
+            }
+        }
 
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -500,6 +518,9 @@ const updateUserRole = async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         user.role = role;
+        if (req.body.sub_role) {
+            user.sub_role = req.body.sub_role;
+        }
         await user.save();
 
         res.json({ message: 'User role updated successfully', role });
@@ -703,6 +724,266 @@ const requestDeletion = async (req, res) => {
     }
 };
 
+const generate2FA = async (req, res) => {
+    try {
+        const speakeasy = require('speakeasy');
+        const qrcode = require('qrcode');
+        const user = await User.findByPk(req.user.id);
+        
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const secret = speakeasy.generateSecret({
+            name: `Qwiktransfers (${user.email})`
+        });
+
+        user.two_factor_secret = secret.base32;
+        await user.save();
+
+        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) return res.status(500).json({ error: 'Failed to generate QR Code' });
+            res.json({ secret: secret.base32, qr_code: data_url });
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const verify2FA = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const speakeasy = require('speakeasy');
+        const verified = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token
+        });
+
+        if (verified) {
+            user.two_factor_enabled = true;
+            await user.save();
+            await logAction({ userId: user.id, action: 'ENABLE_2FA', details: 'Setup and enabled 2FA successfully', ipAddress: req.ip });
+            res.json({ message: 'Two-factor authentication successfully enabled' });
+        } else {
+            res.status(400).json({ error: 'Invalid 2FA code' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const disable2FA = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.two_factor_enabled = false;
+        user.two_factor_secret = null;
+        await user.save();
+
+        await logAction({ userId: user.id, action: 'DISABLE_2FA', details: 'Disabled 2FA successfully', ipAddress: req.ip });
+        res.json({ message: 'Two-factor authentication disabled' });
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'UPDATE_USER_REGION',
+            details: `Admin updated region for user ${userId} to ${country}`,
+            ipAddress: req.ip
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const toggleUserStatus = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.is_active = !user.is_active;
+        await user.save();
+
+        res.json({ message: `User account ${user.is_active ? 'enabled' : 'disabled'}`, is_active: user.is_active });
+
+        // Audit log
+        await logAction({
+            userId: req.user.id,
+            action: 'TOGGLE_USER_STATUS',
+            details: `Admin ${user.is_active ? 'enabled' : 'disabled'} account for user ${userId}`,
+            ipAddress: req.ip
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const updateAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Please upload an image file' });
+        }
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Delete old profile picture if it exists
+        if (user.profile_picture) {
+            const oldPath = path.join(__dirname, '..', user.profile_picture);
+            fs.access(oldPath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(oldPath, (unlinkErr) => {
+                        if (unlinkErr) console.error("Error deleting old avatar:", unlinkErr);
+                    });
+                }
+            });
+        }
+
+        user.profile_picture = `/uploads/${req.file.filename}`;
+        await user.save();
+
+        res.json({
+            message: 'Avatar updated successfully',
+            profile_picture: user.profile_picture
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const updatePushToken = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findByPk(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        user.expo_push_token = token;
+        await user.save();
+
+        res.json({ message: 'Push token updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const disableAccount = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.is_active = false;
+        user.deactivation_reason = reason || 'No reason provided';
+        await user.save();
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'DISABLE_ACCOUNT',
+            details: `User disabled account. Reason: ${reason || 'N/A'}`,
+            ipAddress: req.ip
+        });
+
+        res.json({ message: 'Account disabled successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const requestDeletion = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.deletion_requested_at = new Date();
+        user.deletion_reason = reason || 'No reason provided';
+        await user.save();
+
+        // Audit log
+        await logAction({
+            userId: user.id,
+            action: 'REQUEST_DELETION',
+            details: `User requested account deletion. Reason: ${reason || 'N/A'}`,
+            ipAddress: req.ip
+        });
+
+        res.json({ message: 'Account deletion request submitted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const generate2FA = async (req, res) => {
+    try {
+        const speakeasy = require('speakeasy');
+        const qrcode = require('qrcode');
+        const user = await User.findByPk(req.user.id);
+        
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const secret = speakeasy.generateSecret({
+            name: `Qwiktransfers (${user.email})`
+        });
+
+        user.two_factor_secret = secret.base32;
+        await user.save();
+
+        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) return res.status(500).json({ error: 'Failed to generate QR Code' });
+            res.json({ secret: secret.base32, qr_code: data_url });
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const verify2FA = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const speakeasy = require('speakeasy');
+        const verified = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token
+        });
+
+        if (verified) {
+            user.two_factor_enabled = true;
+            await user.save();
+            await logAction({ userId: user.id, action: 'ENABLE_2FA', details: 'Setup and enabled 2FA successfully', ipAddress: req.ip });
+            res.json({ message: 'Two-factor authentication successfully enabled' });
+        } else {
+            res.status(400).json({ error: 'Invalid 2FA code' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const disable2FA = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.two_factor_enabled = false;
+        user.two_factor_secret = null;
+        await user.save();
+
+        await logAction({ userId: user.id, action: 'DISABLE_2FA', details: 'Disabled 2FA successfully', ipAddress: req.ip });
+        res.json({ message: 'Two-factor authentication disabled' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -720,10 +1001,14 @@ module.exports = {
     verifyPin,
     updateUserRole,
     createVendor,
+    createAdmin,
     updateUserRegion,
     toggleUserStatus,
     updateAvatar,
     updatePushToken,
     disableAccount,
-    requestDeletion
+    requestDeletion,
+    generate2FA,
+    verify2FA,
+    disable2FA
 };

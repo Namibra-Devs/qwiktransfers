@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       User.hasMany(models.Transaction, { foreignKey: 'userId', as: 'transactions' });
       User.hasMany(models.Transaction, { foreignKey: 'vendorId', as: 'handledTransactions' });
-      
+
       // Referral Associations
       User.belongsTo(models.User, { as: 'referrer', foreignKey: 'referred_by_id' });
       User.hasMany(models.User, { as: 'referredUsers', foreignKey: 'referred_by_id' });
@@ -92,7 +92,16 @@ module.exports = (sequelize, DataTypes) => {
     },
     deletion_requested_at: DataTypes.DATE,
     deletion_reason: DataTypes.TEXT,
-    deactivation_reason: DataTypes.TEXT
+    deactivation_reason: DataTypes.TEXT,
+    two_factor_secret: DataTypes.STRING,
+    two_factor_enabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    sub_role: {
+      type: DataTypes.STRING,
+      defaultValue: 'super'
+    }
   }, {
     sequelize,
     modelName: 'User',

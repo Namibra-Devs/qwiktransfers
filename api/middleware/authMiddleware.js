@@ -48,4 +48,14 @@ const verifyVendor = (req, res, next) => {
     });
 };
 
-module.exports = { verifyToken, verifyAdmin, verifyVendor };
+const verifySuperAdmin = (req, res, next) => {
+    verifyToken(req, res, () => {
+        if (req.user.role === 'admin' && req.user.sub_role === 'super') {
+            next();
+        } else {
+            res.status(403).json({ error: 'Require Super Admin Privileges!' });
+        }
+    });
+};
+
+module.exports = { verifyToken, verifyAdmin, verifyVendor, verifySuperAdmin };

@@ -2,14 +2,18 @@ const express = require('express');
 const router = express.Router();
 const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole,
     createVendor,
+    createAdmin,
     updateUserRegion,
     toggleUserStatus,
     updateAvatar,
     updatePushToken,
     disableAccount,
-    requestDeletion
+    requestDeletion,
+    generate2FA,
+    verify2FA,
+    disable2FA
 } = require('../controllers/authController');
-const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const { verifyToken, verifyAdmin, verifySuperAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 router.post('/register', register);
@@ -28,11 +32,17 @@ router.post('/verify-pin', verifyToken, verifyPin);
 router.post('/disable-account', verifyToken, disableAccount);
 router.post('/delete-account', verifyToken, requestDeletion);
 
+// 2FA Routes
+router.post('/2fa/generate', verifyToken, generate2FA);
+router.post('/2fa/verify', verifyToken, verify2FA);
+router.post('/2fa/disable', verifyToken, disable2FA);
+
 router.get('/users', verifyAdmin, getAllUsers);
 router.patch('/kyc/status', verifyAdmin, updateKYCStatus);
-router.patch('/update-role', verifyAdmin, updateUserRole);
-router.post('/create-vendor', verifyAdmin, createVendor);
-router.patch('/update-region', verifyAdmin, updateUserRegion);
+router.patch('/update-role', verifySuperAdmin, updateUserRole);
+router.post('/create-vendor', verifySuperAdmin, createVendor);
+router.post('/create-admin', verifySuperAdmin, createAdmin);
+router.patch('/update-region', verifySuperAdmin, updateUserRegion);
 router.patch('/toggle-status', verifyAdmin, toggleUserStatus);
 
 // Avatar & Device Info

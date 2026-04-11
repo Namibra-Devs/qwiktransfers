@@ -14,6 +14,10 @@ const AdminProfile = () => {
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
 
+    const [qrCode, setQrCode] = useState(null);
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [show2FASetup, setShow2FASetup] = useState(false);
+
     useEffect(() => {
         if (user) {
             setFirstName(user.first_name || '');
@@ -91,6 +95,49 @@ const AdminProfile = () => {
             if (refreshProfile) await refreshProfile();
         } catch (error) {
             setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGenerate2FA = async () => {
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/2fa/generate');
+            setQrCode(res.data.qr_code);
+            setShow2FASetup(true);
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Failed to generate 2FA' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerify2FA = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.post('/auth/2fa/verify', { token: twoFactorCode });
+            setMsg({ type: 'success', text: '2FA Enabled!' });
+            setShow2FASetup(false);
+            setTwoFactorCode('');
+            if (refreshProfile) await refreshProfile();
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Invalid 2FA Code' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!window.confirm('Are you sure you want to disable 2FA? This makes your account less secure.')) return;
+        setLoading(true);
+        try {
+            await api.post('/auth/2fa/disable');
+            setMsg({ type: 'success', text: '2FA Disabled' });
+            if (refreshProfile) await refreshProfile();
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Failed to disable 2FA' });
         } finally {
             setLoading(false);
         }
@@ -186,6 +233,60 @@ const AdminProfile = () => {
                             {loading ? 'Updating...' : 'Change Password'}
                         </button>
                     </form>
+                </section>
+
+                {/* Two Factor Authentication */}
+                <section className="card">
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Two-Factor Authentication (2FA)</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                        Protect your admin account with an authenticator app (like Google Authenticator or Authy).
+                    </p>
+                    
+                    {user?.two_factor_enabled ? (
+                        <div style={{ padding: '16px', background: 'rgba(5, 150, 105, 0.1)', borderRadius: '8px', border: '1px solid var(--success)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h4 style={{ color: 'var(--success)', margin: '0 0 4px 0' }}>2FA is Currently Enabled</h4>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Your account is highly secure.</p>
+                                </div>
+                                <button onClick={handleDisable2FA} disabled={loading} className="btn-primary" style={{ width: 'auto', padding: '8px 16px', background: 'var(--danger)', border: 'none' }}>
+                                    Disable 2FA
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            {!show2FASetup ? (
+                                <button onClick={handleGenerate2FA} disabled={loading} className="btn-primary" style={{ width: 'auto', padding: '10px 24px' }}>
+                                    Setup 2FA Now
+                                </button>
+                            ) : (
+                                <div style={{ border: '1px dashed var(--border-color)', padding: '24px', borderRadius: '12px', textAlign: 'center' }}>
+                                    <h4 style={{ margin: '0 0 16px 0' }}>Scan this QR Code</h4>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>Open your Authenticator app and scan this code.</p>
+                                    <img src={qrCode} alt="2FA QR Code" style={{ background: '#fff', padding: '8px', borderRadius: '8px', marginBottom: '24px', width: '200px', height: '200px' }} />
+                                    
+                                    <form onSubmit={handleVerify2FA} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', maxWidth: '300px', margin: '0 auto' }}>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter 6-digit code" 
+                                            maxLength="6"
+                                            value={twoFactorCode}
+                                            onChange={(e) => setTwoFactorCode(e.target.value)}
+                                            style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                                            required
+                                        />
+                                        <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%' }}>
+                                            {loading ? 'Verifying...' : 'Enable 2FA'}
+                                        </button>
+                                        <button type="button" onClick={() => setShow2FASetup(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                            Cancel Setup
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </section>
 
                 {/* Transaction PIN */}

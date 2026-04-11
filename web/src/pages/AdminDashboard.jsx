@@ -11,6 +11,7 @@ import TransactionTable from '../components/admin/TransactionTable';
 import KYCTable from '../components/admin/KYCTable';
 import UserTable from '../components/admin/UserTable';
 import VendorTable from '../components/admin/VendorTable';
+import AdminTable from '../components/admin/AdminTable';
 import AnalyticsContainer from '../components/admin/AnalyticsContainer';
 import HelpCenter from '../components/admin/HelpCenter';
 import SystemSettings from '../components/admin/SystemSettings';
@@ -22,6 +23,7 @@ const AdminDashboard = () => {
     const [transactions, setTransactions] = useState([]);
     const [users, setUsers] = useState([]);
     const [vendors, setVendors] = useState([]);
+    const [admins, setAdmins] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
     const [auditTotalPages, setAuditTotalPages] = useState(1);
     const [auditPage, setAuditPage] = useState(1);
@@ -61,6 +63,8 @@ const AdminDashboard = () => {
     const [showUserModal, setShowUserModal] = useState(false);
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
     const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
+    const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+    const [newAdmin, setNewAdmin] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', sub_role: 'support' });
 
     // Admin Confirmation Modal States
     const [updatingTxId, setUpdatingTxId] = useState(null);
@@ -102,6 +106,8 @@ const AdminDashboard = () => {
             fetchUsersServerSide('');
         } else if (tab === 'vendors') {
             fetchVendors();
+        } else if (tab === 'admins') {
+            fetchAdmins();
         } else if (tab === 'audit') {
             fetchAuditLogs();
         } else if (tab === 'inquiries') {
@@ -235,6 +241,15 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchAdmins = async () => {
+        try {
+            const res = await api.get('/auth/users', { params: { role: 'admin' } });
+            setAdmins(res.data.users || []);
+        } catch (error) {
+            console.error('Fetch admins error:', error);
+        }
+    };
+
     const fetchVendors = async () => {
         try {
             const res = await api.get('/auth/users', { params: { role: 'vendor' } });
@@ -289,6 +304,27 @@ const AdminDashboard = () => {
         // Obsolete as we separate flows
     };
 
+    const handleCreateAdmin = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/auth/create-admin', {
+                email: newAdmin.email,
+                first_name: newAdmin.firstName,
+                middle_name: newAdmin.middleName,
+                last_name: newAdmin.lastName,
+                phone: newAdmin.phone,
+                password: newAdmin.password,
+                sub_role: newAdmin.sub_role
+            });
+            toast.success('Administrative Staff created successfully');
+            fetchAdmins();
+            setShowAddAdminModal(false);
+            setNewAdmin({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', sub_role: 'support' });
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to create admin');
+        }
+    };
+
     const handleCreateVendor = async (e) => {
         e.preventDefault();
         try {
@@ -316,6 +352,7 @@ const AdminDashboard = () => {
             toast.success(res.data.message);
             if (tab === 'users') fetchUsersServerSide();
             if (tab === 'vendors') fetchVendors();
+            if (tab === 'admins') fetchAdmins();
             if (selectedUser && selectedUser.id === userId) {
                 setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
             }
@@ -582,6 +619,14 @@ const AdminDashboard = () => {
                                                         <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>person_add</span> Add Vendor
                                                     </button>
                                                 )}
+                                                {tab === 'admins' && (
+                                                    <button
+                                                        onClick={() => setShowAddAdminModal(true)}
+                                                        style={{ padding: '8px 16px', borderRadius: '8px', background: '#4A154B', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(74, 21, 75, 0.2)' }}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>admin_panel_settings</span> Add Staff
+                                                    </button>
+                                                )}
                                                 {tab === 'inquiries' && (
                                                     <select
                                                         value={inquiryStatusFilter}
@@ -600,6 +645,7 @@ const AdminDashboard = () => {
 
                                     {tab === 'transactions' && (
                                         <TransactionTable
+                                            subRole={user?.sub_role}
                                             transactions={transactions}
                                             updateStatus={updateStatus}
                                             updatingTxId={updatingTxId}
@@ -640,6 +686,15 @@ const AdminDashboard = () => {
                                             setSelectedUser={setSelectedUser}
                                             setShowUserModal={setShowUserModal}
                                             updateRegion={updateRegion}
+                                        />
+                                    )}
+
+                                    {tab === 'admins' && (
+                                        <AdminTable
+                                            admins={admins}
+                                            toggleStatus={toggleStatus}
+                                            setSelectedUser={setSelectedUser}
+                                            setShowAdminModal={setShowUserModal}
                                         />
                                     )}
 
@@ -962,7 +1017,7 @@ const AdminDashboard = () => {
                                 >
                                     Close
                                 </button>
-                                {selectedTx.status === 'pending' && (
+                                {user?.sub_role === 'super' && selectedTx.status === 'pending' && (
                                     <button
                                         onClick={() => { updateStatus(selectedTx.id, 'processing'); setShowTxModal(false); }}
                                         style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--warning)', fontWeight: 700, cursor: 'pointer' }}
@@ -970,7 +1025,7 @@ const AdminDashboard = () => {
                                         Start Processing
                                     </button>
                                 )}
-                                {selectedTx.status === 'processing' && (
+                                {user?.sub_role === 'super' && selectedTx.status === 'processing' && (
                                     <button
                                         onClick={() => { updateStatus(selectedTx.id, 'sent'); setShowTxModal(false); }}
                                         style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
