@@ -579,7 +579,64 @@ const getAdminStats = async (req, res) => {
         const pendingKYC = await User.count({ where: { kyc_status: 'pending' } });
         const successVolume = await Transaction.sum('amount_received', { where: { status: 'sent' } });
 
-        // Time-series Volume (CAD & GHS) - Group by day
+        // 1. Currency Specific Totals (Sent & Pending)
+        const sentGHS = await Transaction.sum('amount_sent', { where: { status: 'sent', type: { [Op.like]: 'GHS%' } } }) || 0;
+        const sentCAD = await Transaction.sum('amount_sent', { where: { status: 'sent', type: { [Op.like]: 'CAD%' } } }) || 0;
+        const pendingGHS = await Transaction.sum('amount_sent', { where: { status: { [Op.in]: ['pending', 'processing'] }, type: { [Op.like]: 'GHS%' } } }) || 0;
+        const pendingCAD = await Transaction.sum('amount_sent', { where: { status: { [Op.in]: ['pending', 'processing'] }, type: { [Op.like]: 'CAD%' } } }) || 0;
+
+        // 2. Top 5 Vendors (by volume)
+        const topVendors = await Transaction.findAll({
+            attributes: [
+                'vendorId',
+                [fn('SUM', col('amount_sent')), 'total_volume']
+            ],
+            where: { status: 'sent', vendorId: { [Op.ne]: null } },
+            include: [{ model: User, as: 'vendor', attributes: ['first_name', 'last_name', 'email'] }],
+            group: ['vendorId', 'vendor.id'],
+            order: [[fn('SUM', col('amount_sent')), 'DESC']],
+            limit: 5
+        });
+
+        // 3. Top 5 Customers (by volume)
+        const topCustomers = await Transaction.findAll({
+            attributes: [
+                'userId',
+                [fn('SUM', col('amount_sent')), 'total_volume']
+            ],
+            where: { status: 'sent' },
+            include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }],
+            group: ['userId', 'user.id'],
+            order: [[fn('SUM', col('amount_sent')), 'DESC']],
+            limit: 5
+        });
+
+        // 4. Payment Method Distribution
+        // Note: Raw query since we're grouping by a JSON field attribute
+        const methodCounts = await Transaction.findAll({
+            attributes: [
+                [sequelize.json('recipient_details.type'), 'method'],
+                [fn('COUNT', col('id')), 'count']
+            ],
+            where: { status: 'sent' },
+            group: [sequelize.json('recipient_details.type')],
+        });
+
+        // 5. Historical Profit (Daily breakdown)
+        const profitHistory = await Transaction.findAll({
+            attributes: [
+                [fn('DATE', col('createdAt')), 'date'],
+                [fn('SUM', col('base_currency_profit')), 'profit']
+            ],
+            where: {
+                status: 'sent',
+                createdAt: { [Op.gte]: thirtyDaysAgo }
+            },
+            group: [fn('DATE', col('createdAt'))],
+            order: [[fn('DATE', col('createdAt')), 'ASC']]
+        });
+
+        // 6. Time-series Volume (CAD & GHS) - Group by day
         const volumeHistory = await Transaction.findAll({
             attributes: [
                 [fn('DATE', col('createdAt')), 'date'],
@@ -594,7 +651,7 @@ const getAdminStats = async (req, res) => {
             order: [[fn('DATE', col('createdAt')), 'ASC']]
         });
 
-        // Time-series Transaction count
+        // 7. Time-series Transaction count
         const txHistory = await Transaction.findAll({
             attributes: [
                 [fn('DATE', col('createdAt')), 'date'],
@@ -607,7 +664,7 @@ const getAdminStats = async (req, res) => {
             order: [[fn('DATE', col('createdAt')), 'ASC']]
         });
 
-        // User Growth History
+        // 8. User Growth History
         const userHistory = await User.findAll({
             attributes: [
                 [fn('DATE', col('createdAt')), 'date'],
@@ -651,10 +708,18 @@ const getAdminStats = async (req, res) => {
             successVolume: successVolume || 0,
             volumeGrowth,
             totalProfit: parseFloat(totalProfitSum).toFixed(2),
+            sentGHS,
+            sentCAD,
+            pendingGHS,
+            pendingCAD,
+            topVendors,
+            topCustomers,
+            methodCounts,
             history: {
                 volume: volumeHistory,
                 transactions: txHistory,
-                users: userHistory
+                users: userHistory,
+                profit: profitHistory
             }
         });
     } catch (error) {

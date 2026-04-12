@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import api from '../../services/api';
-import { toast } from 'react-hot-toast';
+import React from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -8,12 +6,13 @@ import {
     PointElement,
     LineElement,
     BarElement,
+    ArcElement,
     Title,
     Tooltip,
     Legend,
     Filler
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
     CategoryScale,
@@ -21,6 +20,7 @@ ChartJS.register(
     PointElement,
     LineElement,
     BarElement,
+    ArcElement,
     Title,
     Tooltip,
     Legend,
@@ -28,9 +28,14 @@ ChartJS.register(
 );
 
 const AnalyticsContainer = ({ stats }) => {
-    if (!stats || !stats.history) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading analytics data...</div>;
+    if (!stats || !stats.history) return (
+        <div style={{ padding: '80px 40px', textAlign: 'center', background: 'rgba(255,255,255,0.5)', borderRadius: '24px', margin: '20px' }} className="glass">
+            <div className="spinner" style={{ margin: '0 auto 20px', width: '40px', height: '40px', border: '3px solid rgba(183, 71, 42, 0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <p style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Assembling business intelligence...</p>
+        </div>
+    );
 
-    const { volume, transactions, users } = stats.history;
+    const { volume, transactions, users, profit } = stats.history;
 
     // Helper to format date
     const formatDate = (dateStr) => {
@@ -38,27 +43,74 @@ const AnalyticsContainer = ({ stats }) => {
         return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     };
 
-    // Prepare Volume Data (CAD vs GHS)
+    // Helper to format currency
+    const formatCurrency = (val, currency = 'CAD') => {
+        return new Intl.NumberFormat('en-CA', { style: 'currency', currency }).format(val);
+    };
+
+    // 1. Profitability Trend Data (New)
+    const profitData = {
+        labels: profit.map(p => formatDate(p.date)),
+        datasets: [{
+            label: 'Daily Profit (CAD)',
+            data: profit.map(p => p.profit),
+            borderColor: '#b7472a',
+            backgroundColor: 'rgba(183, 71, 42, 0.15)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#b7472a'
+        }]
+    };
+
+    // 2. Payment Method Distribution (New)
+    const methodData = {
+        labels: stats.methodCounts.map(m => (m.method || 'General').toUpperCase()),
+        datasets: [{
+            data: stats.methodCounts.map(m => m.count),
+            backgroundColor: ['#b7472a', '#210a08', '#059669', '#d97706'],
+            borderWidth: 0,
+            hoverOffset: 12
+        }]
+    };
+
+    // 3. Top Vendors / Customers Data (New)
+    const topVendorData = {
+        labels: stats.topVendors.map(v => `${v.vendor?.first_name || 'Vendor'} ${v.vendor?.last_name?.charAt(0) || ''}.`),
+        datasets: [{
+            label: 'Volume processed',
+            data: stats.topVendors.map(v => v.total_volume),
+            backgroundColor: '#210a08',
+            borderRadius: 8,
+            barThickness: 20
+        }]
+    };
+
+    const topCustomerData = {
+        labels: stats.topCustomers.map(c => `${c.user?.first_name || 'User'} ${c.user?.last_name?.charAt(0) || ''}.`),
+        datasets: [{
+            label: 'Total Sent',
+            data: stats.topCustomers.map(c => c.total_volume),
+            backgroundColor: '#b7472a',
+            borderRadius: 8,
+            barThickness: 20
+        }]
+    };
+
+    // Legacy Volume Data (Consolidated)
     const dates = [...new Set(volume.map(v => v.date))].sort();
     const volumeData = {
         labels: dates.map(formatDate),
         datasets: [
             {
-                label: 'CAD Volume',
+                label: 'Volume (CAD Equiv)',
                 data: dates.map(d => {
-                    const match = volume.find(v => v.date === d && v.type.startsWith('CAD'));
-                    return match ? parseFloat(match.total_sent) : 0;
-                }),
-                borderColor: '#b7472a',
-                backgroundColor: 'rgba(183, 71, 42, 0.1)',
-                fill: true,
-                tension: 0.4
-            },
-            {
-                label: 'GHS Volume (Ref CAD)',
-                data: dates.map(d => {
-                    const match = volume.find(v => v.date === d && v.type.startsWith('GHS'));
-                    return match ? parseFloat(match.total_sent) * 0.1 : 0; // Estimated reference
+                    const CAD = volume.find(v => v.date === d && v.type.startsWith('CAD'));
+                    const GHS = volume.find(v => v.date === d && v.type.startsWith('GHS'));
+                    let total = 0;
+                    if (CAD) total += parseFloat(CAD.total_sent);
+                    if (GHS) total += parseFloat(GHS.total_sent) * 0.1; // Simple reference for visual
+                    return total;
                 }),
                 borderColor: '#210a08',
                 backgroundColor: 'rgba(33, 10, 8, 0.05)',
@@ -68,118 +120,142 @@ const AnalyticsContainer = ({ stats }) => {
         ]
     };
 
-    // Prepare Transaction Count Data
-    const txDates = transactions.map(t => t.date);
-    const txCountData = {
-        labels: txDates.map(formatDate),
-        datasets: [{
-            label: 'Daily Transactions',
-            data: transactions.map(t => t.count),
-            backgroundColor: 'var(--primary)',
-            borderRadius: 6
-        }]
-    };
-
-    // Prepare User Growth Data
-    const userDates = users.map(u => u.date);
-    const userGrowthData = {
-        labels: userDates.map(formatDate),
-        datasets: [{
-            label: 'New Users',
-            data: users.map(u => u.count),
-            borderColor: '#059669',
-            backgroundColor: '#059669',
-            borderWidth: 2,
-            pointRadius: 4,
-            tension: 0.1
-        }]
-    };
-
     const chartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'top', labels: { font: { weight: 'bold' } } },
+            legend: { position: 'top', labels: { font: { weight: 'bold', family: 'Inter' }, usePointStyle: true } },
+            tooltip: { backgroundColor: 'rgba(33, 10, 8, 0.9)', padding: 12, bodySpacing: 6, titleMarginBottom: 8 }
         },
         scales: {
-            y: { beginAtZero: true, grid: { display: false } },
-            x: { grid: { display: false } }
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false } },
+            x: { grid: { display: false }, border: { display: false } }
         }
     };
 
     return (
-        <div className="analytics-dashboard fade-in">
-            {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--primary)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Growth Metric</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.75rem', fontWeight: 800, color: stats.volumeGrowth >= 0 ? '#059669' : '#d83b01', background: stats.volumeGrowth >= 0 ? 'rgba(5, 150, 105, 0.1)' : 'rgba(216, 59, 1, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
-                                {stats.volumeGrowth >= 0 ? 'trending_up' : 'trending_down'}
-                            </span>
-                            {Math.abs(stats.volumeGrowth)}%
+        <div className="analytics-dashboard fade-in" style={{ padding: '0 0 40px' }}>
+            {/* KPI Cards Row 1: High Level */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                <div className="glass card" style={{ padding: '28px', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                        <div style={{ background: 'rgba(183, 71, 42, 0.1)', color: 'var(--primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>monitoring</span>
+                        </div>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 800, color: stats.volumeGrowth >= 0 ? '#059669' : '#d83b01', background: stats.volumeGrowth >= 0 ? 'rgba(5, 150, 105, 0.1)' : 'rgba(216, 59, 1, 0.1)', padding: '4px 10px', borderRadius: '20px' }}>
+                            {stats.volumeGrowth >= 0 ? '+' : ''}{stats.volumeGrowth}%
                         </span>
                     </div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>MoM Volume</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>Compared to previous month average</p>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>MTD Volume Growth</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>{stats.volumeGrowth >= 0 ? 'Thriving' : 'Declining'}</div>
                 </div>
 
-                <div className="card" style={{ padding: '24px', borderLeft: '4px solid #059669' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Acquisition</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#059669' }}>{users.reduce((a, b) => a + parseInt(b.count), 0)}</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>New users in last 30 days</p>
+                <div className="glass card" style={{ padding: '28px', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '24px' }}>
+                    <div style={{ background: 'rgba(5, 150, 105, 0.1)', color: '#059669', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>group_add</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>New Acquisitions</div>
+                    <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#059669' }}>{users.reduce((a, b) => a + parseInt(b.count), 0)}</div>
                 </div>
 
-                <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--warning)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Efficiency</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{(transactions.reduce((a, b) => a + parseInt(b.count), 0) / (users.reduce((a, b) => a + parseInt(b.count), 0) || 1)).toFixed(1)}</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>TX per new user ratio</p>
-                </div>
-
-                <div className="card" style={{ padding: '24px', borderLeft: '4px solid #b7472a', background: 'rgba(183, 71, 42, 0.05)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Est. Revenue (CAD)</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#b7472a' }}>${stats.totalProfit || '0.00'}</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>Total margin from sent transactions</p>
+                <div className="glass card" style={{ padding: '28px', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '24px' }}>
+                    <div style={{ background: 'rgba(183, 71, 42, 0.1)', color: 'var(--primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>payments</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Est. Net Profit</div>
+                    <div style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--text-deep-brown)' }}>{formatCurrency(stats.totalProfit, 'CAD')}</div>
                 </div>
             </div>
 
-            <div style={{ marginBottom: '32px', display: 'flex', gap: '12px' }}>
-                <button
-                    onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/admin/stats/export`, '_blank')}
-                    className="btn btn-secondary"
-                    style={{ background: '#fff', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>download</span>
-                    Export Full Analytics (XLSX)
-                </button>
+            {/* User Requested: Currency Breakdown Section */}
+            <div style={{ marginBottom: '40px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>account_balance_wallet</span>
+                    Real-time Currency Liquidity
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                    <div className="glass" style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(183,71,42,0.1)' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>SENT GHS</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#b7472a' }}>{formatCurrency(stats.sentGHS, 'GHS')}</div>
+                    </div>
+                    <div className="glass" style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(183,71,42,0.1)' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>SENT CAD</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#210a08' }}>{formatCurrency(stats.sentCAD, 'CAD')}</div>
+                    </div>
+                    <div className="glass" style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(183,71,42,0.1)', background: 'rgba(217, 119, 6, 0.05)' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>PENDING GHS</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#d97706' }}>{formatCurrency(stats.pendingGHS, 'GHS')}</div>
+                    </div>
+                    <div className="glass" style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(183,71,42,0.1)', background: 'rgba(217, 119, 6, 0.05)' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>PENDING CAD</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#d97706' }}>{formatCurrency(stats.pendingCAD, 'CAD')}</div>
+                    </div>
+                </div>
             </div>
 
             {/* Charts Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                <div className="card" style={{ padding: '32px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Transaction Volume Trend</h3>
-                        <button
-                            onClick={() => window.dispatchEvent(new CustomEvent('switch-tab', { detail: 'help' }))}
-                            style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
-                        >
-                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>help_outline</span>
-                        </button>
-                    </div>
-                    <Line data={volumeData} options={chartOptions} />
-                </div>
-
-                <div className="card" style={{ padding: '32px' }}>
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '24px' }}>Daily Transaction Activity</h3>
-                    <Bar data={txCountData} options={chartOptions} />
-                </div>
-
-                <div className="card" style={{ padding: '32px', gridColumn: 'span 2' }}>
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '24px' }}>User Registration Growth</h3>
-                    <div style={{ height: '300px' }}>
-                        <Line data={userGrowthData} options={{ ...chartOptions, maintainAspectRatio: false }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', marginBottom: '32px' }}>
+                <div className="glass card" style={{ padding: '32px', borderRadius: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '24px' }}>Profitability & Revenue Trend</h3>
+                    <div style={{ height: '350px' }}>
+                        <Line data={profitData} options={chartOptions} />
                     </div>
                 </div>
+
+                <div className="glass card" style={{ padding: '32px', borderRadius: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '24px' }}>Payout Methods</h3>
+                    <div style={{ height: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Doughnut data={methodData} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, legend: { position: 'bottom' } } }} />
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px', marginBottom: '32px' }}>
+                <div className="glass card" style={{ padding: '32px', borderRadius: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 900, margin: 0 }}>Top Performing Vendors</h3>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)' }}>BY SENT VOLUME</span>
+                    </div>
+                    <div style={{ height: '250px' }}>
+                        <Bar data={topVendorData} options={{ ...chartOptions, indexAxis: 'y' }} />
+                    </div>
+                </div>
+
+                <div className="glass card" style={{ padding: '32px', borderRadius: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 900, margin: 0 }}>Top Value Customers</h3>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)' }}>BY TOTAL TRANSFERS</span>
+                    </div>
+                    <div style={{ height: '250px' }}>
+                        <Bar data={topCustomerData} options={{ ...chartOptions, indexAxis: 'y' }} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="glass card" style={{ padding: '32px', borderRadius: '24px', marginBottom: '40px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '24px' }}>Daily Activity Volume</h3>
+                <div style={{ height: '300px' }}>
+                    <Bar data={{
+                        labels: transactions.map(t => formatDate(t.date)),
+                        datasets: [{
+                            label: 'Number of Transactions',
+                            data: transactions.map(t => t.count),
+                            backgroundColor: '#210a08',
+                            borderRadius: 6
+                        }]
+                    }} options={chartOptions} />
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button
+                    onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/admin/stats/export`, '_blank')}
+                    className="complete-cta"
+                    style={{ width: 'auto', padding: '16px 40px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem' }}
+                >
+                    <span className="material-symbols-outlined">analytics</span>
+                    Export Detailed Intelligence Report (XLSX)
+                </button>
             </div>
         </div>
     );
