@@ -1,99 +1,112 @@
 import React, { useState } from 'react';
 
 const HelpCenter = () => {
-    const [activeSection, setActiveSection] = useState('analytics');
+    const [activeSection, setActiveSection] = useState('staff');
 
     const sections = [
         {
+            id: 'staff',
+            title: 'Administrative Staffing',
+            icon: 'badge',
+            content: (
+                <div className="help-content">
+                    <h3>Managing Your Admin Team</h3>
+                    <p>Qwiktransfers supports a multi-tier administrative structure to help you delegate tasks without compromising platform security.</p>
+
+                    <div className="help-box">
+                        <h4>Administrative Roles</h4>
+                        <ul>
+                            <li><strong>Super Admin:</strong> Full platform access. Only Supers can manage other administrative staff, modify bank/market rates, and access the Help Center and System Management pages.</li>
+                            <li><strong>Support Admin:</strong> Focused on operations. Can manage Users, Vendors, and Transactions, but cannot add/remove other admins or change sensitive system configurations.</li>
+                        </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Security & 2FA</h4>
+                        <p>All admins can enable Two-Factor Authentication (2FA) in their profile for added security. This is highly recommended for any account with 'Super' privileges.</p>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Security PIN</h4>
+                        <p>A 4-digit Security PIN is required for high-risk actions such as assigning vendors to transactions or confirming a manual payout override. <strong>Admins must set this in their Profile settings before processing transactions.</strong></p>
+                    </div>
+                </div>
+            )
+        },
+        {
             id: 'analytics',
             title: 'Advanced Analytics',
-            icon: 'trending_up',
+            icon: 'analytics',
             content: (
                 <div className="help-content">
-                    <h3>Understanding the Analytics Suite</h3>
-                    <p>The Analytics tab provides a high-level view of platform health and growth trends over the last 30 days.</p>
+                    <h3>The Intelligence Hub</h3>
+                    <p>The Analytics dashboard provides deep business intelligence into your platform's liquidity, growth, and profitability.</p>
 
                     <div className="help-box">
-                        <h4>MoM Volume Growth</h4>
-                        <p>This percentage shows the change in total transaction volume compared to the daily average of the previous month.
-                             <br /><strong>Green (<span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle' }}>trending_up</span>):</strong> You are outperforming last month's pace.
-                            <br /><strong>Red (<span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle' }}>trending_down</span>):</strong> Volume is currently lower than last month's daily average.</p>
+                        <h4>MTD Volume Growth</h4>
+                        <p>This percentage tracks your performance relative to the previous month:
+                             <br /><strong>Formula:</strong> <code>((Current Month Volume - Last Month Volume) / Last Month Volume) x 100</code>.
+                             <br /><strong>Benchmark:</strong> It compares the total successful volume of the current calendar month against the total volume of the entire previous calendar month. It helps you see if your platform is scaling month-over-month.</p>
                     </div>
 
                     <div className="help-box">
-                        <h4>Transaction Volume Trend</h4>
-                        <p>Displays daily successful transfers.
-                            <br /><strong>CAD Volume:</strong> Total dollars sent from Canada.
-                            <br /><strong>GHS Volume:</strong> Total Cedis sent from Ghana (displayed with a CAD-reference value for comparison).</p>
+                        <h4>New Acquisitions</h4>
+                        <p>This metric tracks user growth velocity. It displays the total number of new accounts created with the <strong>'User'</strong> role within the last 30 days. It is a key indicator of your marketing and referral success.</p>
                     </div>
 
                     <div className="help-box">
-                        <h4>Acquisition (New Users)</h4>
-                        <p>Tracks how many new 'User' roles were created within the 30-day window. This helps measure the success of marketing efforts.</p>
+                        <h4>Currency Liquidity (Sent vs Pending)</h4>
+                        <p>Track exactly how much capital is flowing and locked in the system:
+                             <br /><strong>SENT GHS/CAD:</strong> Total successful volume finalized today.
+                             <br /><strong>PENDING GHS/CAD:</strong> Volume that is currently "Pending" or "Processing" in the dispatch pool.</p>
                     </div>
 
                     <div className="help-box">
-                        <h4>TX per User Ratio</h4>
-                        <p>Calculated as <code>Total Transactions / New Users</code>. A higher number indicates strong engagement and repeat use by your newer customer base.</p>
+                        <h4>Profitability Trend</h4>
+                        <p>This area chart tracks your **Net Margin** over time. It subtracts the base market rate cost from your provided transaction rate to show your actual earnings in CAD.</p>
                     </div>
 
                     <div className="help-box">
-                        <h4>Revenue & Profit Analysis</h4>
-                        <p>Total Revenue is calculated based on the <strong>Market Rate Baseline</strong> System.</p>
+                        <h4>Top Performers</h4>
                         <ul>
-                            <li><strong>Market Rate:</strong> The real mid-market exchange rate at the time of the transaction.</li>
-                            <li><strong>Actual Rate:</strong> The rate provided to the user (can be manually adjusted in settings).</li>
-                            <li><strong>Profit calculation:</strong> The system automatically calculates the difference between the Market Rate and your Actual Rate to determine your exact margin in CAD.</li>
+                            <li><strong>Vendors:</strong> Ranked by the total volume they have successfully processed. Helps you identify your most reliable payout partners.</li>
+                            <li><strong>Customers:</strong> Ranked by their lifetime volume. Use this to identify and reward your "Whale" users.</li>
                         </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Payout Methods Distribution</h4>
+                        <p>A visual breakdown of which platforms your users prefer (Momo, Bank, or Interac). Essential for ensuring your vendors are primed with the right liquidity types.</p>
                     </div>
                 </div>
             )
         },
         {
-            id: 'reports',
-            title: 'Reporting & Exports',
-            icon: 'description',
+            id: 'broadcasts',
+            title: 'Global Broadcasts',
+            icon: 'campaign',
             content: (
                 <div className="help-content">
-                    <h3>Exporting Platform Data</h3>
-                    <p>You can export various datasets to Microsoft Excel (XLSX) for offline analysis or tax reporting.</p>
+                    <h3>Communication & Alerts</h3>
+                    <p>The Broadcast module allows you to send persistent, high-visibility notices to specific segments of your users.</p>
 
                     <div className="help-box">
-                        <h4>Analytics Report</h4>
-                        <p>Go to the Analytics tab and click <strong>"Export Full Analytics"</strong>. This generates a detailed list of all successful transactions, including their market rate, actual rate, and specific profit margin for each.</p>
-                    </div>
-
-                    <div className="help-box">
-                        <h4>Audit Log Export</h4>
-                        <p>In the Audit Logs tab, click <strong>"Export XLSX"</strong>. This provides a complete history of all administrative actions, including logo updates, system backups, configuration changes, and user logins.</p>
-                    </div>
-                </div>
-            )
-        },
-        {
-            id: 'system',
-            title: 'Monitoring & Alerts',
-            icon: 'notifications_active',
-            content: (
-                <div className="help-content">
-                    <h3>System Health & Monitoring</h3>
-                    <p>The system automatically monitors platform health every hour to protect against business dips or security risks.</p>
-
-                    <div className="help-box">
-                        <h4>Autonomous Alerts</h4>
+                        <h4>Targeting Segments</h4>
                         <ul>
-                            <li><strong>Volume Drop:</strong> Triggered if transaction volume falls 70% below your 7-day average. You will receive a Push Notification.</li>
-                            <li><strong>KYC Spikes:</strong> Triggered if 5 or more KYC rejections occur within a single hour (indicates potential bot activity).</li>
+                            <li><strong>All Users:</strong> Notice appears for everyone (Vendors, Users, Admins).</li>
+                            <li><strong>Vendors Only:</strong> Essential for holiday announcements or liquidity warnings.</li>
+                            <li><strong>Regular Users:</strong> Good for promotional offers or maintenance updates.</li>
                         </ul>
                     </div>
 
                     <div className="help-box">
-                        <h4>Audit Table Cleanup</h4>
-                        <p>To prevent the database from slowing down, you should periodically prune the Audit Logs.</p>
-                        <ul>
-                            <li><strong>Manual Cleanup:</strong> Use the "Clean Old Logs" button in the Audit tab to delete logs older than 90 days.</li>
-                            <li><strong>Automatic Option:</strong> Can be toggled in System Settings to run once a week automatically at 3 AM.</li>
-                        </ul>
+                        <h4>Smart Persistence</h4>
+                        <p>Broadcasts use a "Dismissal" system. Once a user reads and closes a notice, it will not reappear for them, even across different devices, while the notice remains active for others.</p>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Expiry Dates</h4>
+                        <p>You can set an optional expiry date for any broadcast. After this date, the system automatically stops displaying it, preventing stale information from cluttering the dashboard.</p>
                     </div>
                 </div>
             )
@@ -118,8 +131,29 @@ const HelpCenter = () => {
                     </div>
 
                     <div className="help-box">
-                        <h4>Payment Proofs</h4>
-                        <p>Users must upload a screenshot (Interac/Momo/Bank confirmation) within 15 minutes to lock their rate. Review these by clicking the image icon in the table.</p>
+                        <h4>Vendor Assignment</h4>
+                        <p>Transactions in the pool can be manually assigned to a specific vendor by a Super Admin. Use this if a specific vendor has better liquidity for a certain type of payout.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'reports',
+            title: 'Reporting & Exports',
+            icon: 'description',
+            content: (
+                <div className="help-content">
+                    <h3>Exporting Platform Data</h3>
+                    <p>You can export various datasets to Microsoft Excel (XLSX) for offline analysis or tax reporting.</p>
+
+                    <div className="help-box">
+                        <h4>Intelligence Report</h4>
+                        <p>The <strong>"Export Detailed Intelligence"</strong> button in Analytics provides a row-by-row breakdown of profit per transaction, including market rates and vendor IDs.</p>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>Audit Log Export</h4>
+                        <p>In the Audit Logs tab, click <strong>"Export XLSX"</strong>. This provides a complete history of all administrative actions, from system reboots to logo changes.</p>
                     </div>
                 </div>
             )
@@ -171,31 +205,6 @@ const HelpCenter = () => {
             )
         },
         {
-            id: 'inquiries',
-            title: 'Support Inquiries',
-            icon: 'mail',
-            content: (
-                <div className="help-content">
-                    <h3>Support & Ticket Management</h3>
-                    <p>Users can send messages via the Contact Us page. These appear in the Inquiries tab for administrative review.</p>
-
-                    <div className="help-box">
-                        <h4>Status Filtering</h4>
-                        <ul>
-                            <li><strong>Pending:</strong> New messages requiring attention.</li>
-                            <li><strong>Replied:</strong> Messages that have received an administrative response.</li>
-                            <li><strong>Closed:</strong> Resolved issues hidden from the active list.</li>
-                        </ul>
-                    </div>
-
-                    <div className="help-box">
-                        <h4>Action Buttons</h4>
-                        <p>You can mark an inquiry as <strong>Replied</strong> to track progress, or <strong>Close</strong> it once the user's issue is fully resolved.</p>
-                    </div>
-                </div>
-            )
-        },
-        {
             id: 'system-mgmt',
             title: 'System Management',
             icon: 'settings',
@@ -205,20 +214,13 @@ const HelpCenter = () => {
                     <p>The System Settings page controls the core identity and security of the Qwiktransfers platform.</p>
 
                     <div className="help-box">
-                        <h4>Branding & Identity</h4>
-                        <ul>
-                            <li><strong>System Name:</strong> Updates the name shown in emails, the dashboard, and the browser tab.</li>
-                            <li><strong>Logo Management:</strong> Upload a high-resolution transparent PNG. The system automatically performs cleanup of older versions.</li>
-                        </ul>
+                        <h4>Manual Backup</h4>
+                        <p>Instantly trigger a full database dump to the server's secure storage. Keep these safe in case of server failure.</p>
                     </div>
 
                     <div className="help-box">
-                        <h4>Security & Backups</h4>
-                        <ul>
-                            <li><strong>Manual Backup:</strong> Instantly trigger a full database dump to the server's secure storage.</li>
-                            <li><strong>Auto-Backup:</strong> If enabled, the system performs a rollover backup every 24 hours.</li>
-                            <li><strong>Maintenance Mode:</strong> Toggles a fallback screen for users during critical updates or security patches.</li>
-                        </ul>
+                        <h4>Maintenance Mode</h4>
+                        <p>Toggles a fallback screen for users during critical updates or security patches. While active, users cannot initiate new transfers.</p>
                     </div>
                 </div>
             )
@@ -227,10 +229,13 @@ const HelpCenter = () => {
 
     return (
         <div className="help-center-container fade-in">
-            <div className="card" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '600px', padding: 0, overflow: 'hidden' }}>
+            <div className="glass card" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '700px', padding: 0, overflow: 'hidden', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.4)' }}>
                 {/* Sidebar */}
-                <div style={{ background: 'var(--bg-peach)', borderRight: '1px solid var(--border-color)', padding: '24px' }}>
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: '24px', color: 'var(--primary)' }}>Help Center</h2>
+                <div style={{ background: 'rgba(255, 255, 255, 0.4)', borderRight: '1px solid var(--border-color)', padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', color: 'var(--primary)' }}>
+                        <span className="material-symbols-outlined">help_center</span>
+                        <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Help Center</h2>
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {sections.map(section => (
                             <button
@@ -269,30 +274,35 @@ const HelpCenter = () => {
                     font-size: 1.5rem;
                     margin-bottom: 16px;
                     color: var(--text-deep-brown);
+                    font-weight: 900;
                 }
                 .help-content p {
                     color: var(--text-muted);
                     line-height: 1.6;
                     margin-bottom: 32px;
+                    font-size: 1rem;
                 }
                 .help-box {
-                    background: #fff;
-                    border: 1px solid var(--border-color);
-                    border-radius: 12px;
+                    background: rgba(255,255,255,0.6);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(183,71,42,0.1);
+                    border-radius: 16px;
                     padding: 24px;
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                 }
                 .help-box h4 {
                     margin: 0 0 12px 0;
                     color: var(--primary);
-                    font-size: 1rem;
-                    font-weight: 800;
+                    font-size: 0.9rem;
+                    font-weight: 900;
                     text-transform: uppercase;
+                    letter-spacing: 0.05em;
                 }
                 .help-box p, .help-box li {
                     margin: 0;
                     font-size: 0.95rem;
                     color: var(--text-deep-brown);
+                    line-height: 1.6;
                 }
                 .help-box ul {
                     padding-left: 20px;
