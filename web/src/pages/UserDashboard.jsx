@@ -153,13 +153,13 @@ const RateWatchCard = () => {
                             border: '1px solid var(--border-color)'
                         }}>
                             1 CAD ≥ {new Big(alert.targetRate).toFixed(2)}
-                            <span 
-                                onClick={() => deleteAlert(alert.id)} 
-                                style={{ 
-                                    cursor: 'pointer', 
-                                    opacity: 0.6, 
-                                    display: 'flex', 
-                                    alignItems: 'center' 
+                            <span
+                                onClick={() => deleteAlert(alert.id)}
+                                style={{
+                                    cursor: 'pointer',
+                                    opacity: 0.6,
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 }}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>close</span>
@@ -309,7 +309,7 @@ const UserDashboard = () => {
             const res = await api.get('/system/config/public');
             const { system_name, system_logo } = res.data;
             let base64 = null;
-            
+
             if (system_logo) {
                 try {
                     const logoUrl = getImageUrl(system_logo);
@@ -334,7 +334,7 @@ const UserDashboard = () => {
             const img = new Image();
             // Timeout after 5 seconds to avoid hanging
             const timeout = setTimeout(() => {
-                img.src = ''; 
+                img.src = '';
                 reject(new Error('Image load timeout'));
             }, 5000);
 
@@ -414,6 +414,7 @@ const UserDashboard = () => {
     const [previewImage, setPreviewImage] = useState('');
     const [previewDate, setPreviewDate] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [isPreviewImageLoading, setIsPreviewImageLoading] = useState(true);
 
     // Pagination & Search States
     const [search, setSearch] = useState('');
@@ -427,15 +428,22 @@ const UserDashboard = () => {
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportDates, setExportDates] = useState({ start: '', end: '' });
 
+    // Upload Modal States
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadFile, setUploadFile] = useState(null);
+    const [uploadPreview, setUploadPreview] = useState(null);
+    const [uploadTxId, setUploadTxId] = useState(null);
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
     // Body scroll lock for modals
     useEffect(() => {
-        if (showDetailsModal || showPreviewModal || showPinModal || showExportModal) {
+        if (showDetailsModal || showPreviewModal || showPinModal || showExportModal || showUploadModal) {
             document.body.classList.add('no-scroll');
         } else {
             document.body.classList.remove('no-scroll');
         }
         return () => document.body.classList.remove('no-scroll');
-    }, [showDetailsModal, showPreviewModal, showPinModal, showExportModal]);
+    }, [showDetailsModal, showPreviewModal, showPinModal, showExportModal, showUploadModal]);
 
     // Payment Methods State
     const [ghsPaymentMethod, setGhsPaymentMethod] = useState(null);
@@ -641,13 +649,14 @@ const UserDashboard = () => {
             await api.post('/auth/verify-pin', { pin });
             setShowPinModal(false);
             setShowDetailsModal(false); // Hide details modal so processing UI covers screen
+            setShowUploadModal(false); // Hide upload modal so processing UI covers screen
             setPin('');
             setIsGlobalLoading(true); // Start processing loader AFTER pin vanishes
 
             if (pinAction.type === 'send') {
                 await executeSend();
             } else if (pinAction.type === 'upload') {
-                await executeUpload(pinAction.data.txId, pinAction.data.file);
+                await executeUpload();
             } else if (pinAction.type === 'cancel') {
                 await executeCancel(pinAction.data);
             }
@@ -695,24 +704,61 @@ const UserDashboard = () => {
         }
     };
 
-    const handleUploadProof = (txId, file) => {
+    const handleUploadClick = (txId) => {
+        setUploadTxId(txId);
+        setShowUploadModal(true);
+    };
+
+    const handleFileSelect = (file) => {
         if (!file) return;
-        setPinAction({ type: 'upload', data: { txId, file } });
+        setUploadFile(file);
+        setIsPreviewLoading(true);
+
+        // Generate preview if image
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setUploadPreview(reader.result);
+                setIsPreviewLoading(false);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setUploadPreview('pdf-icon');
+            setIsPreviewLoading(false);
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setUploadFile(null);
+        setUploadPreview(null);
+    };
+
+    const handleUploadSubmit = () => {
+        if (!uploadFile) return toast.error('Please select a file first');
+        setPinAction({ type: 'upload' });
         setShowPinModal(true);
     };
 
-    const executeUpload = async (txId, file) => {
+    const executeUpload = async () => {
         const formData = new FormData();
-        formData.append('proof', file);
+        formData.append('proof', uploadFile);
         try {
-            await api.post(`/transactions/${txId}/upload-proof`, formData, {
+            await api.post(`/transactions/${uploadTxId}/upload-proof`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchTransactions();
             toast.success('Proof uploaded!');
             window.dispatchEvent(new CustomEvent('refresh-notifications'));
+            setShowUploadModal(false);
+            handleRemoveFile(); // Reset state
+            setShowDetailsModal(false);
         } catch (error) {
-            toast.error('Failed to upload proof');
+            if (error.code === 'ECONNABORTED') {
+                toast.error('Upload timed out. Please try a smaller file or checking your internet connection.');
+            } else {
+                const errorMsg = error.response?.data?.error || 'Failed to upload proof';
+                toast.error(errorMsg);
+            }
         }
     };
 
@@ -749,11 +795,11 @@ const UserDashboard = () => {
                 </div>
             )}
 
-            <DashboardHeader 
-                user={user} 
-                logout={logout} 
-                config={config} 
-                type="user" 
+            <DashboardHeader
+                user={user}
+                logout={logout}
+                config={config}
+                type="user"
             />
 
             <main className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 460px) 1fr', gap: '32px', alignItems: 'start' }}>
@@ -1231,32 +1277,29 @@ const UserDashboard = () => {
                                         </td>
                                         <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                             {tx.status === 'pending' && !tx.proof_url && (
-                                                <div style={{ position: 'relative', display: 'inline-block' }}>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*,.pdf"
-                                                        onChange={(e) => handleUploadProof(tx.id, e.target.files[0])}
-                                                        style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
-                                                    />
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>upload_file</span>
-                                                        Upload Proof
-                                                    </span>
-                                                </div>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleUploadClick(tx.id); }}
+                                                    className="btn-action-upload"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', background: 'rgba(183, 71, 42, 0.05)', border: '1px solid rgba(183, 71, 42, 0.1)', padding: '6px 12px', borderRadius: '8px', marginLeft: 'auto' }}
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>upload_file</span>
+                                                    Upload Proof
+                                                </button>
                                             )}
                                             {tx.proof_url && (
-                                                    <span
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setPreviewImage(getImageUrl(tx.proof_url));
-                                                            setPreviewDate(tx.proof_uploaded_at);
-                                                            setShowPreviewModal(true);
-                                                        }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>visibility</span>
-                                                        View Proof
-                                                    </span>
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewImage(getImageUrl(tx.proof_url));
+                                                        setPreviewDate(tx.proof_uploaded_at);
+                                                        setIsPreviewImageLoading(true);
+                                                        setShowPreviewModal(true);
+                                                    }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>visibility</span>
+                                                    View Proof
+                                                </span>
                                             )}
                                         </td>
                                     </tr>
@@ -1305,7 +1348,7 @@ const UserDashboard = () => {
 
             {/* PIN Verification Modal */}
             {showPinModal && (
-                <div className="modal-overlay">
+                <div className="modal-overlay" style={{ zIndex: 30000 }}>
                     <div className="modal-content glass" style={{ maxWidth: '440px', padding: '40px' }}>
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
@@ -1366,14 +1409,14 @@ const UserDashboard = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)' }}>Transaction Breakdown</h1>
                                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <button 
+                                    <button
                                         onClick={async () => await generateReceiptPDF(selectedTx, systemBranding.name, systemBranding.base64Logo)}
                                         className="btn btn-sm"
-                                        style={{ 
-                                            background: 'var(--primary)', 
-                                            color: 'white', 
-                                            border: 'none', 
-                                            padding: '8px 16px', 
+                                        style={{
+                                            background: 'var(--primary)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '8px 16px',
                                             borderRadius: '8px',
                                             fontSize: '0.85rem',
                                             fontWeight: 700,
@@ -1567,13 +1610,14 @@ const UserDashboard = () => {
                             {selectedTx.status === 'sent' && selectedTx.vendor_proof_url && (
                                 <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(34, 197, 94, 0.05)', border: '1px dashed var(--success)', borderRadius: '12px', textAlign: 'center' }}>
                                     <p style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '12px', fontSize: '0.9rem' }}>Vendor has uploaded proof of payment.</p>
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         variant="outline"
                                         onClick={() => {
                                             const url = selectedTx.vendor_proof_url;
                                             setPreviewImage(url.startsWith('http') ? url : getImageUrl(url));
                                             setPreviewDate(selectedTx.updatedAt);
+                                            setIsPreviewImageLoading(true);
                                             setShowPreviewModal(true);
                                         }}
                                         style={{ padding: '10px 24px', fontSize: '0.9rem' }}
@@ -1587,14 +1631,8 @@ const UserDashboard = () => {
                             {selectedTx.status === 'pending' && !selectedTx.proof_url && (
                                 <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(183, 71, 42, 0.05)', border: '1px dashed var(--primary)', borderRadius: '12px', textAlign: 'center' }}>
                                     <p style={{ color: 'var(--text-deep-brown)', fontWeight: 700, marginBottom: '12px', fontSize: '0.9rem' }}>Awaiting your payment proof to process this transfer.</p>
-                                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                                        <input
-                                            type="file"
-                                            accept="image/*,.pdf"
-                                            onChange={(e) => handleUploadProof(selectedTx.id, e.target.files[0])}
-                                            style={{ position: 'absolute', opacity: 0, cursor: 'pointer', width: '100%', height: '100%', top: 0, left: 0, zIndex: 10 }}
-                                        />
-                                        <Button type="button" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'inline-block' }}>
+                                        <Button type="button" onClick={() => handleUploadClick(selectedTx.id)} style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
                                             Upload Payment Proof
                                         </Button>
                                     </div>
@@ -1637,13 +1675,27 @@ const UserDashboard = () => {
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>close</span>
                         </button>
+                        {isPreviewImageLoading && (
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'white', zIndex: 1 }}>
+                                <div className="spinner" style={{ marginBottom: '16px' }}></div>
+                                <span style={{ fontWeight: 600 }}>Loading Proof...</span>
+                            </div>
+                        )}
                         {previewImage.endsWith('.pdf') ? (
-                            <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
+                            <iframe 
+                                src={previewImage} 
+                                onLoad={() => setIsPreviewImageLoading(false)}
+                                onError={() => setIsPreviewImageLoading(false)}
+                                style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px', opacity: isPreviewImageLoading ? 0 : 1, transition: 'opacity 0.3s ease', position: 'relative', zIndex: 2 }} 
+                                title="Proof PDF"
+                            ></iframe>
                         ) : (
                             <img
                                 src={previewImage}
                                 alt="Payment Proof"
-                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                                onLoad={() => setIsPreviewImageLoading(false)}
+                                onError={() => setIsPreviewImageLoading(false)}
+                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', opacity: isPreviewImageLoading ? 0 : 1, transition: 'opacity 0.3s ease', position: 'relative', zIndex: 2 }}
                             />
                         )}
                         {previewDate && (
@@ -1688,6 +1740,66 @@ const UserDashboard = () => {
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <Button variant="outline" onClick={() => setShowExportModal(false)} style={{ flex: 1 }}>Cancel</Button>
                             <Button onClick={handleExport} style={{ flex: 1 }}>Download CSV</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Upload Proof Modal */}
+            {showUploadModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass fade-in" style={{ padding: '32px', maxWidth: '450px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Upload Payment Proof</h2>
+                            <button onClick={() => { setShowUploadModal(false); handleRemoveFile(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>close</span>
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            {!uploadFile ? (
+                                <div style={{ border: '2px dashed var(--border-color)', borderRadius: '16px', padding: '40px 20px', textAlign: 'center', background: 'rgba(0,0,0,0.01)', position: 'relative' }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*,.pdf"
+                                        onChange={(e) => handleFileSelect(e.target.files[0])}
+                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                    />
+                                    <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--primary)', marginBottom: '16px' }}>cloud_upload</span>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>Click or drag file to upload</h4>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, PDF (Max 5MB)</p>
+                                </div>
+                            ) : (
+                                <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', background: '#fff' }}>
+                                    <button
+                                        onClick={handleRemoveFile}
+                                        style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                                    >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>close</span>
+                                    </button>
+
+                                    {isPreviewLoading ? (
+                                        <div style={{ height: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.02)' }}>
+                                            <div className="spinner" style={{ marginBottom: '16px' }}></div>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Processing file preview...</span>
+                                        </div>
+                                    ) : uploadPreview === 'pdf-icon' ? (
+                                        <div style={{ height: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.02)' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '4rem', color: 'var(--danger)', marginBottom: '12px' }}>picture_as_pdf</span>
+                                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{uploadFile.name}</span>
+                                        </div>
+                                    ) : (
+                                        <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)' }}>
+                                            <img src={uploadPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Button type="button" variant="outline" onClick={() => { setShowUploadModal(false); handleRemoveFile(); }} style={{ flex: 1 }}>Cancel</Button>
+                            <Button type="button" onClick={handleUploadSubmit} disabled={!uploadFile} style={{ flex: 1 }}>Submit Proof</Button>
                         </div>
                     </div>
                 </div>

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL + '/api' || '/api',
-    timeout: 15000, // 15 seconds timeout. Add timeout for better error handling on mobile
+    timeout: 60000, // 60 seconds timeout to accommodate large image uploads
     headers: {
         'Content-Type': 'application/json',
     },

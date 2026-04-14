@@ -194,6 +194,7 @@ const getTransactions = async (req, res) => {
             const sequelize = Transaction.sequelize;
             where[Op.or] = [
                 sequelize.where(sequelize.cast(sequelize.col('Transaction.id'), 'TEXT'), { [Op.like]: `%${search}%` }),
+                { transaction_id: { [Op.like]: `%${search}%` } },
                 sequelize.where(sequelize.cast(sequelize.col('amount_sent'), 'TEXT'), { [Op.like]: `%${search}%` }),
                 { '$user.first_name$': { [Op.like]: `%${search}%` } },
                 { '$user.middle_name$': { [Op.like]: `%${search}%` } },
