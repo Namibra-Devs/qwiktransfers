@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Big from 'big.js';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import GlobalNotice from '../components/GlobalNotice';
 import DashboardHeader from '../components/DashboardHeader';
@@ -417,10 +417,34 @@ const UserDashboard = () => {
     const [isPreviewImageLoading, setIsPreviewImageLoading] = useState(true);
 
     // Pagination & Search States
-    const [search, setSearch] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [search, setSearch] = useState(searchParams.get('search') || '');
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalTransactions, setTotalTransactions] = useState(0);
+
+    // Sync URL params to search if changed externally
+    useEffect(() => {
+        const query = searchParams.get('search');
+        if (query !== null && query !== search) {
+            setSearch(query);
+            setPage(1);
+        }
+    }, [searchParams]);
+
+    // Handle Search Debouncing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            if (search) {
+                setSearchParams({ search });
+            } else {
+                setSearchParams({});
+            }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [search, setSearchParams]);
 
     const [rateLockedUntil, setRateLockedUntil] = useState(null);
 
@@ -501,7 +525,7 @@ const UserDashboard = () => {
     useEffect(() => {
         fetchTransactions();
         fetchRate();
-    }, [page, search]);
+    }, [page, debouncedSearch]);
 
     // Reset recipient details when destination currency changes
     useEffect(() => {
@@ -524,7 +548,7 @@ const UserDashboard = () => {
     const fetchTransactions = async () => {
         setIsHistoryLoading(true);
         try {
-            const res = await api.get(`/transactions?page=${page}&limit=10&search=${search}`);
+            const res = await api.get(`/transactions?page=${page}&limit=10&search=${debouncedSearch}`);
             setTransactions(res.data.transactions);
             setTotalPages(res.data.pages);
             setTotalTransactions(res.data.total);
@@ -1210,18 +1234,39 @@ const UserDashboard = () => {
                     <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ width: '220px' }}>
-                                <Input
+                            <div style={{ position: 'relative', width: '250px' }}>
+                                <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem', color: 'var(--text-muted)' }}>search</span>
+                                <input
+                                    type="text"
                                     placeholder="Search transactions..."
                                     value={search}
                                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                    style={{ padding: '8px 12px' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 36px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        background: 'var(--bg-card)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.9rem',
+                                        outline: 'none',
+                                        transition: 'all 0.3s ease'
+                                    }}
                                 />
+                                {search && (
+                                    <span 
+                                        className="material-symbols-outlined" 
+                                        onClick={() => { setSearch(''); setPage(1); }}
+                                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                    >
+                                        close
+                                    </span>
+                                )}
                             </div>
                             <Button
                                 variant="outline"
                                 onClick={() => setShowExportModal(true)}
-                                style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto', height: '42px', marginTop: '-15px' }}
+                                style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto', height: '42px' }}
                             >
                                 Export CSV
                             </Button>

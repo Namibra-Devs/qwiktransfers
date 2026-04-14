@@ -199,7 +199,7 @@ const getTransactions = async (req, res) => {
                 { '$user.first_name$': { [Op.like]: `%${search}%` } },
                 { '$user.middle_name$': { [Op.like]: `%${search}%` } },
                 { '$user.last_name$': { [Op.like]: `%${search}%` } },
-                { recipient_details: { [Op.contains]: { name: search } } }
+                sequelize.where(sequelize.cast(sequelize.col('recipient_details'), 'TEXT'), { [Op.like]: `%${search}%` })
             ];
         }
 
