@@ -8,7 +8,7 @@ const UserTable = ({ users, setSelectedUser, setShowUserModal }) => {
                     <th>User</th>
                     <th>Contact</th>
                     <th>ID Level</th>
-                    <th>Balances</th>
+                    <th>Lifetime Transfers</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
             </thead>
@@ -25,9 +25,9 @@ const UserTable = ({ users, setSelectedUser, setShowUserModal }) => {
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.phone}</div>
                         </td>
                         <td><span className={`badge badge-${u.kyc_status}`}>{u.kyc_status}</span></td>
-                        <td>
-                            <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_ghs).toFixed(2)} GHS</div>
-                            <div style={{ fontWeight: 700 }}>{parseFloat(u.balance_cad).toFixed(2)} CAD</div>
+                        <td style={{ fontSize: '0.85rem' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{parseFloat(u.balance_ghs).toLocaleString()} GHS</div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{parseFloat(u.balance_cad).toLocaleString()} CAD</div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
                             <button

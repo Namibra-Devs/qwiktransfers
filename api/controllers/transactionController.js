@@ -361,6 +361,15 @@ const updateStatus = async (req, res) => {
                     transaction.base_currency_profit = bigAmountSent.minus(actualCADEquivalent).toFixed(4);
                 }
 
+                // Update User Lifetime Transfers
+                const amount = parseFloat(transaction.amount_sent);
+                if (type.startsWith('GHS')) {
+                    transaction.user.balance_ghs = (parseFloat(transaction.user.balance_ghs || 0) + amount).toFixed(2);
+                } else if (type.startsWith('CAD')) {
+                    transaction.user.balance_cad = (parseFloat(transaction.user.balance_cad || 0) + amount).toFixed(2);
+                }
+                await transaction.user.save({ transaction: t });
+
                 // Async email notification
                 sendTransactionCompletedEmail(transaction.user, transaction).catch(err => console.error("Completion email failed:", err));
 

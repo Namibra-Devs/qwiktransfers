@@ -30,6 +30,9 @@ router.post('/backup/manual', verifyToken, verifySuperAdmin, systemController.ma
 router.get('/backups', verifyToken, verifySuperAdmin, systemController.getBackupsList);
 router.get('/backups/download/:filename', verifyToken, verifySuperAdmin, systemController.downloadBackup);
 
+// Health Check Route
+router.get('/health', verifyToken, verifySuperAdmin, systemController.getSystemHealth);
+
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifySuperAdmin, auditController.getAuditLogs);
 router.get('/admin/audit-logs/export', verifyToken, verifySuperAdmin, auditController.exportAuditLogs);

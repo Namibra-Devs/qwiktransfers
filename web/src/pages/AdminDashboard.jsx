@@ -1115,11 +1115,11 @@ const AdminDashboard = () => {
 
                             <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>GHS Balance</label>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Lifetime Transfers (GHS)</label>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_ghs).toLocaleString()} GHS</div>
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>CAD Balance</label>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Lifetime Transfers (CAD)</label>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_cad).toLocaleString()} CAD</div>
                                 </div>
                             </div>

@@ -10,6 +10,12 @@ const SystemSettings = () => {
     const [backups, setBackups] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
+    const [health, setHealth] = useState({
+        database: { status: 'loading', message: 'Checking...' },
+        internet: { status: 'loading', message: 'Checking...' },
+        email: { status: 'loading', message: 'Checking...' },
+        system: { status: 'active', message: 'Operational' }
+    });
 
     // Form states for contact info
     const [contactInfo, setContactInfo] = useState({
@@ -22,7 +28,20 @@ const SystemSettings = () => {
     useEffect(() => {
         fetchConfigs();
         fetchBackups();
+        fetchHealth();
+        
+        const interval = setInterval(fetchHealth, 30000); // Auto-refresh every 30s
+        return () => clearInterval(interval);
     }, []);
+
+    const fetchHealth = async () => {
+        try {
+            const res = await api.get('/system/health');
+            setHealth(res.data);
+        } catch (error) {
+            console.error('Failed to fetch health status');
+        }
+    };
 
     const fetchConfigs = async () => {
         try {
@@ -103,22 +122,30 @@ const SystemSettings = () => {
         }
     };
 
-    const handleUploadLogo = async () => {
-        if (!logoFile) return;
+    const handleSaveBranding = async () => {
         setSaving(true);
-        const formData = new FormData();
-        formData.append('logo', logoFile);
-
         try {
-            const res = await api.post('/system/logo', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            // 1. Save System Name
+            await api.post('/system/config', { 
+                key: 'system_name', 
+                value: contactInfo.system_name 
             });
-            toast.success('Logo updated successfully');
-            setConfigs(prev => ({ ...prev, system_logo: res.data.logo_url }));
-            // Trigger a sidebar refresh if needed (e.g., via event)
+
+            // 2. Save Logo (if file selected)
+            if (logoFile) {
+                const formData = new FormData();
+                formData.append('logo', logoFile);
+                const res = await api.post('/system/logo', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                setConfigs(prev => ({ ...prev, system_logo: res.data.logo_url }));
+            }
+
+            toast.success('Branding updated successfully');
+            // Trigger a sidebar refresh
             window.dispatchEvent(new CustomEvent('system-config-updated'));
         } catch (error) {
-            toast.error('Failed to upload logo');
+            toast.error('Failed to update branding');
         } finally {
             setSaving(false);
         }
@@ -183,12 +210,12 @@ const SystemSettings = () => {
                                 style={{ display: 'block', marginBottom: '16px', fontSize: '0.85rem' }}
                             />
                             <button
-                                onClick={handleUploadLogo}
+                                onClick={handleSaveBranding}
                                 className="btn-primary"
-                                disabled={saving || !logoFile}
+                                disabled={saving}
                                 style={{ width: 'auto', padding: '8px 24px', fontSize: '0.85rem' }}
                             >
-                                Upload New Logo
+                                {saving ? 'Saving...' : 'Save Branding Changes'}
                             </button>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
                                 The name and logo will appear in the browser tab and sidebar.
@@ -342,25 +369,56 @@ const SystemSettings = () => {
 
                 {/* System Health Overview */}
                 <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>System Health & Monitoring</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ fontSize: '1.1rem', margin: 0 }}>System Health & Monitoring</h3>
+                        <button 
+                            onClick={fetchHealth} 
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>refresh</span>
+                            Refresh
+                        </button>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                        <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Database Connectivity</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: health.database.status === 'active' ? 'var(--success)' : health.database.status === 'loading' ? '#ccc' : 'var(--danger)' }}></span>
+                                <span style={{ fontWeight: 700 }}>{health.database.status === 'active' ? 'Operational' : health.database.status === 'loading' ? 'Checking...' : 'Error'}</span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{health.database.message}</div>
+                        </div>
+
+                        <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Internet Status</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: health.internet.status === 'active' ? 'var(--success)' : health.internet.status === 'loading' ? '#ccc' : 'var(--danger)' }}></span>
+                                <span style={{ fontWeight: 700 }}>{health.internet.status === 'active' ? 'Connected' : health.internet.status === 'loading' ? 'Checking...' : 'Offline'}</span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{health.internet.message}</div>
+                        </div>
+
+                        <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Email Configuration</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: health.email.status === 'active' ? 'var(--success)' : health.email.status === 'loading' ? '#ccc' : 'var(--danger)' }}></span>
+                                <span style={{ fontWeight: 700 }}>{health.email.status === 'active' ? 'Verified' : health.email.status === 'loading' ? 'Checking...' : 'Invalid Config'}</span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{health.email.message}</div>
+                        </div>
+
                         <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Monitoring Engine</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
-                                <span style={{ fontWeight: 700 }}>Active</span>
+                                <span style={{ fontWeight: 700 }}>{health.system.status === 'active' ? 'Operational' : 'Idle'}</span>
                             </div>
-                        </div>
-                        <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Platform Alerts</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
-                                <span style={{ fontWeight: 700 }}>Operational</span>
-                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{health.system.message}</div>
                         </div>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '16px' }}>
-                        * Alerts are triggered automatically for volume drops or suspicious KYC activity.
+                        * These health checks are performed in real-time. Statuses are verified every 30 seconds.
                     </p>
                 </div>
 

@@ -140,36 +140,38 @@ const completeTransaction = async (req, res) => {
             return res.status(400).json({ error: 'Vendor payment proof is required to complete transaction' });
         }
 
-        transaction.status = 'sent';
-        transaction.vendor_proof_url = finalProof;
-        await transaction.save();
+        await sequelize.transaction(async (t) => {
+            transaction.status = 'sent';
+            transaction.vendor_proof_url = finalProof;
+            await transaction.save({ transaction: t });
 
-        // Audit log
-        await logAction({
-            userId: req.user.id,
-            action: 'VENDOR_COMPLETE_TRANSACTION',
-            details: `Vendor sent transaction ${transaction.id} and uploaded proof.`,
-            ipAddress: req.ip
-        });
+            // Update User Lifetime Transfers
+            const user = await User.findByPk(transaction.userId, { transaction: t });
+            if (user) {
+                const amount = parseFloat(transaction.amount_sent);
+                const type = transaction.type || 'GHS-CAD';
+                if (type.startsWith('GHS')) {
+                    user.balance_ghs = (parseFloat(user.balance_ghs || 0) + amount).toFixed(2);
+                } else if (type.startsWith('CAD')) {
+                    user.balance_cad = (parseFloat(user.balance_cad || 0) + amount).toFixed(2);
+                }
+                await user.save({ transaction: t });
 
-        // Notification for User
-        await createNotification({
-            userId: transaction.userId,
-            type: 'TRANSACTION_COMPLETE',
-            message: `Your transaction #${transaction.id} has been completed! You can view the payment proof in your dashboard.`
-        });
+                // Notification for User (outside transaction or after commit is better, but sequelize transaction helper handles callback)
+                createNotification({
+                    userId: transaction.userId,
+                    type: 'TRANSACTION_COMPLETE',
+                    message: `Your transaction #${transaction.id} has been completed! You can view the payment proof in your dashboard.`
+                }).catch(err => console.error("Notification failed:", err));
 
-        // Fetch user for notifications
-        const user = await User.findByPk(transaction.userId);
-        if (user) {
-            // SMS
-            if (user.phone) {
-                const toCurr = transaction.type?.split('-')[1] || 'CAD';
-                await sendSMS(user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`).catch(err => console.error("Vendor completion SMS failed:", err));
+                // Communications
+                if (user.phone) {
+                    const toCurr = transaction.type?.split('-')[1] || 'CAD';
+                    sendSMS(user.phone, `Success! Your transfer of ${transaction.amount_received} ${toCurr} to ${transaction.recipient_details.name} is COMPLETED.`).catch(err => console.error("Vendor completion SMS failed:", err));
+                }
+                sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
             }
-            // Email
-            sendTransactionCompletedEmail(user, transaction).catch(err => console.error("Vendor completion email failed:", err));
-        }
+        });
 
         res.json({ message: 'Transaction sent successfully', transaction });
     } catch (error) {

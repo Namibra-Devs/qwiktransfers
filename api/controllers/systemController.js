@@ -1,7 +1,9 @@
-const { PaymentMethod, SystemConfig } = require('../models');
+const { PaymentMethod, SystemConfig, sequelize } = require('../models');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const backupService = require('../services/backupService');
+const emailService = require('../services/emailService');
 const { logAction } = require('../services/auditService');
 
 const getPaymentMethods = async (req, res) => {
@@ -213,6 +215,43 @@ const getPublicConfig = async (req, res) => {
     }
 };
 
+const getSystemHealth = async (req, res) => {
+    try {
+        const health = {
+            database: { status: 'loading', message: '' },
+            internet: { status: 'loading', message: '' },
+            email: { status: 'loading', message: '' },
+            system: { status: 'active', message: 'Monitoring engine operational' }
+        };
+
+        // 1. Database Check
+        try {
+            await sequelize.authenticate();
+            health.database = { status: 'active', message: 'PostgreSQL Connected' };
+        } catch (dbErr) {
+            health.database = { status: 'error', message: 'Database Connection Failed' };
+        }
+
+        // 2. Internet Check
+        try {
+            const start = Date.now();
+            await axios.get('https://www.google.com', { timeout: 3000 });
+            const latency = Date.now() - start;
+            health.internet = { status: 'active', message: `Connected (${latency}ms)` };
+        } catch (netErr) {
+            health.internet = { status: 'error', message: 'Outbound Internet Restricted' };
+        }
+
+        // 3. Email Check
+        const emailHealth = await emailService.verifyConnection();
+        health.email = emailHealth;
+
+        res.json(health);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     getPaymentMethods,
     updatePaymentMethod,
@@ -222,5 +261,6 @@ module.exports = {
     manualBackup,
     getBackupsList,
     downloadBackup,
-    getPublicConfig
+    getPublicConfig,
+    getSystemHealth
 };

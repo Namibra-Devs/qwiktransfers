@@ -218,11 +218,21 @@ const sendTransactionCompletedEmail = async (user, transaction) => {
     );
 };
 
+const verifyConnection = () => {
+    return new Promise((resolve) => {
+        transporter.verify((error) => {
+            if (error) resolve({ status: 'error', message: error.message });
+            else resolve({ status: 'active', message: 'Connected successfully' });
+        });
+    });
+};
+
 module.exports = {
     sendVerificationEmail,
     sendVerificationSuccessEmail,
     sendResetPasswordEmail,
     sendEmail,
     sendTransactionInitiatedEmail,
-    sendTransactionCompletedEmail
+    sendTransactionCompletedEmail,
+    verifyConnection
 };
