@@ -408,9 +408,8 @@ const UserDashboard = () => {
     const [pin, setPin] = useState('');
     const [pinAction, setPinAction] = useState(null); // { type: 'send' | 'upload', data: any }
 
-    // Details Modal States
+    // Details View States
     const [selectedTx, setSelectedTx] = useState(null);
-    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [previewImage, setPreviewImage] = useState('');
     const [previewDate, setPreviewDate] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -461,13 +460,13 @@ const UserDashboard = () => {
 
     // Body scroll lock for modals
     useEffect(() => {
-        if (showDetailsModal || showPreviewModal || showPinModal || showExportModal || showUploadModal) {
+        if (showPreviewModal || showPinModal || showExportModal || showUploadModal) {
             document.body.classList.add('no-scroll');
         } else {
             document.body.classList.remove('no-scroll');
         }
         return () => document.body.classList.remove('no-scroll');
-    }, [showDetailsModal, showPreviewModal, showPinModal, showExportModal, showUploadModal]);
+    }, [showPreviewModal, showPinModal, showExportModal, showUploadModal]);
 
     // Payment Methods State
     const [ghsPaymentMethod, setGhsPaymentMethod] = useState(null);
@@ -571,7 +570,7 @@ const UserDashboard = () => {
             toast.success('Transaction cancelled successfully');
             fetchTransactions();
             window.dispatchEvent(new CustomEvent('refresh-notifications'));
-            setShowDetailsModal(false);
+            setSelectedTx(null); // Return to history list after cancel success
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to cancel transaction');
         }
@@ -672,7 +671,9 @@ const UserDashboard = () => {
         try {
             await api.post('/auth/verify-pin', { pin });
             setShowPinModal(false);
-            setShowDetailsModal(false); // Hide details modal so processing UI covers screen
+            if (pinAction.type !== 'send') {
+                setSelectedTx(null); // Return to history list for cancel/upload success
+            }
             setShowUploadModal(false); // Hide upload modal so processing UI covers screen
             setPin('');
             setIsGlobalLoading(true); // Start processing loader AFTER pin vanishes
@@ -806,7 +807,7 @@ const UserDashboard = () => {
 
     const openDetails = (tx) => {
         setSelectedTx(tx);
-        setShowDetailsModal(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -1228,6 +1229,7 @@ const UserDashboard = () => {
                     </section>
                 </aside>
 
+                {!selectedTx ? (
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
                     <TransactionAnalytics data={userStats} loading={statsLoading} />
 
@@ -1389,71 +1391,17 @@ const UserDashboard = () => {
                         </div>
                     )}
                 </section>
-            </main>
-
-            {/* PIN Verification Modal */}
-            {showPinModal && (
-                <div className="modal-overlay" style={{ zIndex: 30000 }}>
-                    <div className="modal-content glass" style={{ maxWidth: '440px', padding: '40px' }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>shield_person</span>
-                            </div>
-                            <h3 style={{ marginBottom: '12px', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Security Verification</h3>
-                            <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.5 }}>
-                                {pinAction?.type === 'cancel'
-                                    ? 'Confirm this action by entering your security PIN.'
-                                    : 'Enter your 4-digit security PIN to proceed with this transfer.'}
-                            </p>
-                        </div>
-
-                        <form onSubmit={handlePinSubmit}>
-                            <div style={{ marginBottom: '40px' }}>
-                                <input
-                                    type="password"
-                                    maxLength="4"
-                                    value={pin}
-                                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                                    style={{
-                                        textAlign: 'center',
-                                        fontSize: '2.5rem',
-                                        letterSpacing: '24px',
-                                        width: '100%',
-                                        background: 'var(--bg-peach)',
-                                        border: '1px solid var(--border-color)',
-                                        color: 'var(--primary)',
-                                        borderRadius: '20px',
-                                        padding: '24px 0',
-                                        boxSizing: 'border-box',
-                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                                    }}
-                                    placeholder="••••"
-                                    autoFocus
-                                    required
-                                />
-                            </div>
-                            <div style={{ display: 'flex', gap: '20px' }}>
-                                <Button type="button" variant="outline" onClick={() => { setShowPinModal(false); setPin(''); }} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" loading={loading} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
-                                    Verify
-                                </Button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Transaction Details Modal (Premium Redesign) */}
-            {showDetailsModal && selectedTx && (
-                <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
-                    <div className="card fade-in" style={{ padding: '0', maxWidth: '650px', width: '95%', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            ) : (
+                <>
+                    {/* Transaction Details Modal (Premium Redesign) */}
+            
+                <div className="fade-in" style={{ width: "100%", marginBottom: "40px" }}>
+                    <div className="card" style={{ padding: "0", width: "100%", overflow: "hidden" }}>
                         {/* Modal Header/Upper Section */}
                         <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)' }}>Transaction Breakdown</h1>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)', margin: 0 }}>Transaction Breakdown</h1>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
                                     <button
                                         onClick={async () => await generateReceiptPDF(selectedTx, systemBranding.name, systemBranding.base64Logo)}
                                         className="btn btn-sm"
@@ -1473,24 +1421,25 @@ const UserDashboard = () => {
                                         <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>receipt_long</span>
                                         <span>Download Receipt</span>
                                     </button>
-                                    <button onClick={() => setShowDetailsModal(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
+                                    <button onClick={() => setSelectedTx(null)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>arrow_back</span>
+                                        Back to History
                                     </button>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Reference</label>
-                                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px' }}>#{selectedTx.transaction_id.toUpperCase()}</h2>
+                                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px', wordBreak: 'break-all' }}>#{selectedTx.transaction_id.toUpperCase()}</h2>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
+                                <div style={{ flex: '1 1 120px' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Status</label>
-                                    <span className={`status-badge ${selectedTx.status}`} style={{ margin: 0, padding: '8px 20px', borderRadius: '30px' }}>{selectedTx.status}</span>
+                                    <span className={`status-badge ${selectedTx.status}`} style={{ margin: 0, padding: '8px 20px', borderRadius: '30px', display: 'inline-block' }}>{selectedTx.status}</span>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                                 <div>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Initiated At</label>
                                     <p style={{ fontWeight: 700, fontSize: '1rem' }}>{new Date(selectedTx.createdAt).toLocaleString()}</p>
@@ -1535,7 +1484,7 @@ const UserDashboard = () => {
                                 marginBottom: '24px'
                             }}>
                                 <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '20px' }}>Financial Summary</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Currency Pair</label>
                                         <p style={{ fontWeight: 800, fontSize: '1.2rem' }}>{selectedTx.type?.split('-')[0]} → {selectedTx.type?.split('-')[1]}</p>
@@ -1685,8 +1634,8 @@ const UserDashboard = () => {
                             )}
 
                             {/* User Actions */}
-                            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
-                                <Button variant="outline" onClick={() => setShowDetailsModal(false)} style={{ flex: 1 }}>Close Modal</Button>
+                            <div style={{ marginTop: '32px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                                <Button variant="outline" onClick={() => setSelectedTx(null)} style={{ flex: '1 1 200px' }}>Back</Button>
                                 {selectedTx.status === 'pending' && !selectedTx.proof_url && (
                                     <button
                                         onClick={() => handleCancelTransaction(selectedTx.id)}
@@ -1694,7 +1643,7 @@ const UserDashboard = () => {
                                             background: '#fee2e2',
                                             color: '#dc2626',
                                             border: 'none',
-                                            flex: 1,
+                                            flex: '1 1 200px',
                                             borderRadius: '8px',
                                             fontWeight: 700,
                                             cursor: 'pointer',
@@ -1710,8 +1659,65 @@ const UserDashboard = () => {
                         </div>
                     </div>
                 </div>
+                </>
             )}
-            {showPreviewModal && (
+            </main>
+
+            {/* PIN Verification Modal */}
+            {showPinModal && (
+                <div className="modal-overlay" style={{ zIndex: 30000 }}>
+                    <div className="modal-content glass" style={{ maxWidth: '440px', padding: '40px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>shield_person</span>
+                            </div>
+                            <h3 style={{ marginBottom: '12px', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>Security Verification</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.5 }}>
+                                {pinAction?.type === 'cancel'
+                                    ? 'Confirm this action by entering your security PIN.'
+                                    : 'Enter your 4-digit security PIN to proceed with this transfer.'}
+                            </p>
+                        </div>
+
+                        <form onSubmit={handlePinSubmit}>
+                            <div style={{ marginBottom: '40px' }}>
+                                <input
+                                    type="password"
+                                    maxLength="4"
+                                    value={pin}
+                                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                    style={{
+                                        textAlign: 'center',
+                                        fontSize: '2.5rem',
+                                        letterSpacing: '24px',
+                                        width: '100%',
+                                        background: 'var(--bg-peach)',
+                                        border: '1px solid var(--border-color)',
+                                        color: 'var(--primary)',
+                                        borderRadius: '20px',
+                                        padding: '24px 0',
+                                        boxSizing: 'border-box',
+                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                                    }}
+                                    placeholder="••••"
+                                    autoFocus
+                                    required
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '20px' }}>
+                                <Button type="button" variant="outline" onClick={() => { setShowPinModal(false); setPin(''); }} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" loading={loading} style={{ flex: 1, height: '60px', borderRadius: '30px' }}>
+                                    Verify
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+                        {showPreviewModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20000, backdropFilter: 'blur(10px)' }}>
                     <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
                         <button
