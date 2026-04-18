@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import Button from '../Button';
 import Input from '../Input';
 import { toast } from 'react-hot-toast';
@@ -42,8 +43,9 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
     };
 
     return (
-        <div style={{ overflowX: 'auto' }}>
-            <table className="admin-table">
+        <>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -100,23 +102,24 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                     )}
                 </tbody>
             </table>
+            </div>
 
-            {showModal && selectedComplaint && (
-                <div className="modal-overlay" style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="modal-content scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0 }}>
-                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Review Complaint</h3>
+            {showModal && selectedComplaint && createPortal(
+                <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                    <div className="modal-content scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', borderRadius: '16px', overflow: 'hidden', background: 'var(--card-bg)' }}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-deep-brown)' }}>Review Complaint</h3>
                             <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
                             </button>
                         </div>
-                        <div style={{ padding: '20px' }}>
-                            <div style={{ marginBottom: '16px', background: 'var(--bg-light-peach)', padding: '16px', borderRadius: '8px' }}>
+                        <div style={{ padding: '20px', background: 'var(--card-bg)' }}>
+                            <div style={{ marginBottom: '16px', background: 'rgba(183,71,42,0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(183,71,42,0.1)' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
                                     {selectedComplaint.user?.full_name} ({selectedComplaint.user?.email})
                                 </div>
                                 <div style={{ fontWeight: 700, marginBottom: '8px', color: 'var(--text-deep-brown)' }}>{selectedComplaint.subject}</div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-deep-brown)', whiteSpace: 'pre-wrap' }}>{selectedComplaint.description}</div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-deep-brown)', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{selectedComplaint.description}</div>
                                 
                                 {selectedComplaint.attachment_url && (
                                     <div style={{ marginTop: '12px' }}>
@@ -133,7 +136,7 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                                 <select 
                                     value={statusOption}
                                     onChange={(e) => setStatusOption(e.target.value)}
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                 >
                                     <option value="open">Open</option>
                                     <option value="resolved">Resolved</option>
@@ -148,7 +151,7 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                                     onChange={(e) => setReplyText(e.target.value)}
                                     placeholder="Type your response here..."
                                     rows={4}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', resize: 'vertical' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', resize: 'vertical' }}
                                 />
                             </div>
 
@@ -158,9 +161,10 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
-        </div>
+        </>
     );
 };
 

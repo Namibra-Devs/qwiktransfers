@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import api from '../../services/api';
+import { toast } from 'react-hot-toast';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -28,6 +30,32 @@ ChartJS.register(
 );
 
 const AnalyticsContainer = ({ stats }) => {
+    const [exporting, setExporting] = useState(false);
+
+    const handleExport = async () => {
+        if (exporting) return;
+        setExporting(true);
+        const toastId = toast.loading('Generating Intelligence Report...');
+        
+        try {
+            const response = await api.get('/transactions/admin/stats/export', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `intelligence_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('Report successfully exported', { id: toastId });
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Failed to export report', { id: toastId });
+        } finally {
+            setExporting(false);
+        }
+    };
+
     if (!stats || !stats.history) return (
         <div style={{ padding: '80px 40px', textAlign: 'center', background: 'rgba(255,255,255,0.5)', borderRadius: '24px', margin: '20px' }} className="glass">
             <div className="spinner" style={{ margin: '0 auto 20px', width: '40px', height: '40px', border: '3px solid rgba(183, 71, 42, 0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -249,12 +277,13 @@ const AnalyticsContainer = ({ stats }) => {
 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <button
-                    onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/admin/stats/export`, '_blank')}
+                    onClick={handleExport}
+                    disabled={exporting}
                     className="complete-cta"
-                    style={{ width: 'auto', padding: '16px 40px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem' }}
+                    style={{ width: 'auto', padding: '16px 40px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', opacity: exporting ? 0.7 : 1, cursor: exporting ? 'not-allowed' : 'pointer' }}
                 >
                     <span className="material-symbols-outlined">analytics</span>
-                    Export Detailed Intelligence Report (XLSX)
+                    {exporting ? 'Generating Report...' : 'Export Detailed Intelligence Report (XLSX)'}
                 </button>
             </div>
         </div>

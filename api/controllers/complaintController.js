@@ -138,15 +138,41 @@ exports.cancelComplaint = async (req, res) => {
 // Admin: Get all complaints
 exports.getAllComplaints = async (req, res) => {
     try {
-        const complaints = await Complaint.findAll({
+        const { page = 1, limit = 10, status, search } = req.query;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+        if (status) where.status = status;
+
+        if (search) {
+            const { Op } = require('sequelize');
+            where[Op.or] = [
+                { subject: { [Op.like]: `%${search}%` } },
+                { description: { [Op.like]: `%${search}%` } },
+                { '$user.email$': { [Op.like]: `%${search}%` } },
+                { '$user.first_name$': { [Op.like]: `%${search}%` } },
+                { '$user.last_name$': { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const { count, rows: complaints } = await Complaint.findAndCountAll({
+            where,
             order: [['createdAt', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            subQuery: false,
             include: [
                 { model: User, as: 'user', attributes: ['id', 'first_name', 'middle_name', 'last_name', 'email'] },
                 { model: Transaction, as: 'transaction', attributes: ['transaction_id', 'amount_sent', 'status'] }
             ]
         });
 
-        res.json({ complaints });
+        res.json({ 
+            complaints,
+            total: count,
+            pages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         console.error('Error fetching all complaints:', error);
         res.status(500).json({ error: 'Failed to fetch complaints' });

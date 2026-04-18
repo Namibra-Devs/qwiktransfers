@@ -1,4 +1,5 @@
 const { Inquiry } = require('../models');
+const { Op } = require('sequelize');
 const { logAction } = require('../services/auditService');
 
 const submitInquiry = async (req, res) => {
@@ -37,11 +38,18 @@ const submitInquiry = async (req, res) => {
 
 const getInquiries = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status } = req.query;
+        const { page = 1, limit = 10, status, search } = req.query;
         const offset = (page - 1) * limit;
 
         const where = {};
         if (status) where.status = status;
+        if (search) {
+            where[Op.or] = [
+                { full_name: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } },
+                { subject: { [Op.like]: `%${search}%` } }
+            ];
+        }
 
         const { count, rows: inquiries } = await Inquiry.findAndCountAll({
             where,

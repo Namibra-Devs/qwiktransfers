@@ -138,6 +138,31 @@ const HelpCenter = () => {
             )
         },
         {
+            id: 'support-inquiries',
+            title: 'Support Desk',
+            icon: 'support_agent',
+            content: (
+                <div className="help-content">
+                    <h3>Managing Customer Support</h3>
+                    <p>The Support Inquiries desk allows you to review and manage direct contact submissions from the public site and user dashboard.</p>
+
+                    <div className="help-box">
+                        <h4>Ticket Statuses</h4>
+                        <ul>
+                            <li><strong>Pending:</strong> A new, untouched inquiry. It sits in your default view until action is taken.</li>
+                            <li><strong>Replied:</strong> Use the "Mark Replied" button after you have sent an email response to the user. This flags to other admins that the issue is being handled, but keeps the conversation nominally open in case further follow-up is needed.</li>
+                            <li><strong>Closed:</strong> Use the "Close" button when the issue is fully resolved or if the inquiry is spam. This archives the ticket because no further action is required.</li>
+                        </ul>
+                    </div>
+
+                    <div className="help-box">
+                        <h4>"Disappearing" Tickets</h4>
+                        <p>By default, the inquiries table only displays <strong>Pending</strong> tickets to keep your workflow clean. When you click "Mark Replied" or "Close", the ticket updates its status and naturally filters out of the default view. To view them again, simply change the <strong>Status Filter</strong> at the top of the table to "All Statuses" or the specific status you are hunting for.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
             id: 'reports',
             title: 'Reporting & Exports',
             icon: 'description',

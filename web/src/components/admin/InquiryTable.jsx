@@ -28,7 +28,7 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                 </thead>
                 <tbody>
                     {inquiries.map(inquiry => (
-                        <tr key={inquiry.id} className="row-hover" style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <tr key={inquiry.id} className="row-hover" style={{ background: 'var(--card-bg)', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                             <td style={{ padding: '20px' }}>
                                 <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{inquiry.full_name}</div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{inquiry.email}</div>
@@ -66,8 +66,8 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                                 padding: '6px 12px', 
                                                 borderRadius: '50px', 
                                                 border: 'none', 
-                                                background: 'var(--secondary)', 
-                                                color: 'white', 
+                                                background: 'var(--primary)', 
+                                                color: '#fff', 
                                                 fontSize: '0.75rem', 
                                                 fontWeight: 700,
                                                 cursor: 'pointer'
@@ -87,7 +87,7 @@ const InquiryTable = ({ inquiries, fetchInquiries }) => {
                                                 padding: '6px 12px', 
                                                 borderRadius: '50px', 
                                                 border: '1.5px solid var(--border-color)', 
-                                                background: '#fff', 
+                                                background: 'var(--card-bg)', 
                                                 color: 'var(--text-deep-brown)', 
                                                 fontSize: '0.75rem', 
                                                 fontWeight: 700,

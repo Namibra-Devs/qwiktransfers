@@ -35,10 +35,14 @@ const AdminDashboard = () => {
     const [inquiryPage, setInquiryPage] = useState(1);
     const [inquiryTotalPages, setInquiryTotalPages] = useState(1);
     const [inquiryStatusFilter, setInquiryStatusFilter] = useState('pending');
+    const [inquirySearch, setInquirySearch] = useState('');
 
     // Complaints State
     const [complaints, setComplaints] = useState([]);
     const [complaintPage, setComplaintPage] = useState(1);
+    const [complaintTotalPages, setComplaintTotalPages] = useState(1);
+    const [complaintStatusFilter, setComplaintStatusFilter] = useState('open');
+    const [complaintSearch, setComplaintSearch] = useState('');
     // Announcements State
     const [announcements, setAnnouncements] = useState([]);
     const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false);
@@ -86,6 +90,11 @@ const AdminDashboard = () => {
     const [previewImage, setPreviewImage] = useState('');
     const [previewDate, setPreviewDate] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
+
+    useEffect(() => {
+        if (showPreviewModal) setImageLoading(true);
+    }, [previewImage, showPreviewModal]);
 
     // Individual User/Vendor Transaction History & Stats
     const [userTransactions, setUserTransactions] = useState([]);
@@ -122,7 +131,7 @@ const AdminDashboard = () => {
         } else if (tab === 'announcements') {
             fetchAnnouncements();
         }
-    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, complaintPage, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -301,7 +310,7 @@ const AdminDashboard = () => {
 
     const fetchInquiries = async () => {
         try {
-            const res = await api.get(`/support/inquiries?page=${inquiryPage}&limit=10&status=${inquiryStatusFilter === 'all' ? '' : inquiryStatusFilter}`);
+            const res = await api.get(`/support/inquiries?page=${inquiryPage}&limit=10&status=${inquiryStatusFilter === 'all' ? '' : inquiryStatusFilter}&search=${inquirySearch}`);
             setInquiries(res.data.inquiries);
             setInquiryTotalPages(res.data.pages);
         } catch (error) {
@@ -311,9 +320,9 @@ const AdminDashboard = () => {
 
     const fetchComplaints = async () => {
         try {
-            const res = await api.get(`/complaints/admin`);
+            const res = await api.get(`/complaints/admin?page=${complaintPage}&limit=10&status=${complaintStatusFilter === 'all' ? '' : complaintStatusFilter}&search=${complaintSearch}`);
             setComplaints(res.data.complaints);
-            setComplaintTotalPages(1); // Backend doesn't paginate complaints yet
+            setComplaintTotalPages(res.data.pages || 1);
         } catch (error) {
             console.error('Fetch complaints error:', error);
         }
@@ -528,11 +537,11 @@ const AdminDashboard = () => {
                                 <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending Transactions</div>
                                 <div style={{ fontSize: '2rem', fontWeight: 800 }}>{adminStats.pendingTransactions}</div>
                             </div>
-                            <div className="card" style={{ padding: '24px', background: '#fff' }}>
+                            <div className="card" style={{ padding: '24px' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Processing Transactions</div>
                                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>{adminStats.processingTransactions || 0}</div>
                             </div>
-                            <div className="card" style={{ padding: '24px', background: '#fff' }}>
+                            <div className="card" style={{ padding: '24px' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Completed Transactions</div>
                                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>{adminStats.sentTransactions || 0}</div>
                             </div>
@@ -557,34 +566,7 @@ const AdminDashboard = () => {
                                                 <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
                                             </button>
                                         </div>
-                                        {tab === 'transactions' ? (
-                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <select
-                                                    value={statusFilter}
-                                                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                                                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', fontWeight: 600, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                >
-                                                    <option value="all">All Status</option>
-                                                    <option value="pending">Pending</option>
-                                                    <option value="processing">Processing</option>
-                                                    <option value="sent">Sent</option>
-                                                    <option value="cancelled">Cancelled</option>
-                                                </select>
-                                                <div style={{ position: 'relative' }}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search..."
-                                                        value={search}
-                                                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                                        style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                    />
-                                                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
-                                                </div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                                    {totalTransactions} total
-                                                </div>
-                                            </div>
-                                        ) : (
+                                        {tab !== 'transactions' && (
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                                 {tab === 'audit' && (
                                                     <>
@@ -642,7 +624,7 @@ const AdminDashboard = () => {
                                                         </button>
                                                     </>
                                                 )}
-                                                {tab !== 'audit' && (
+                                                {!['audit', 'transactions', 'inquiries'].includes(tab) && (
                                                     <div style={{ position: 'relative' }}>
                                                         <input
                                                             type="text"
@@ -670,38 +652,57 @@ const AdminDashboard = () => {
                                                         <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>admin_panel_settings</span> Add Staff
                                                     </button>
                                                 )}
-                                                {tab === 'inquiries' && (
-                                                    <select
-                                                        value={inquiryStatusFilter}
-                                                        onChange={(e) => { setInquiryStatusFilter(e.target.value); setInquiryPage(1); }}
-                                                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                    >
-                                                        <option value="all">All Status</option>
-                                                        <option value="pending">Pending</option>
-                                                        <option value="replied">Replied</option>
-                                                        <option value="closed">Closed</option>
-                                                    </select>
-                                                )}
                                             </div>
                                         )}
                                     </div>
 
                                     {tab === 'transactions' && (
-                                        <TransactionTable
-                                            subRole={user?.sub_role}
-                                            transactions={transactions}
-                                            updateStatus={updateStatus}
-                                            updatingTxId={updatingTxId}
-                                            vendors={vendors}
-                                            openAssignVendorModal={openAssignVendorModal}
-                                            setAdminConfirmData={setAdminConfirmData}
-                                            setShowAdminConfirmModal={setShowAdminConfirmModal}
-                                            setSelectedTx={setSelectedTx}
-                                            setShowTxModal={setShowTxModal}
-                                            setPreviewImage={setPreviewImage}
-                                            setPreviewDate={setPreviewDate}
-                                            setShowPreviewModal={setShowPreviewModal}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search transactions..."
+                                                            value={search}
+                                                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none', transition: 'all 0.2s ease' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                    <select
+                                                        value={statusFilter}
+                                                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                                                        style={{ flex: 0.3, padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)', cursor: 'pointer', outline: 'none' }}
+                                                    >
+                                                        <option value="all">All Statuses</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="processing">Processing</option>
+                                                        <option value="sent">Sent</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                    </select>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(183, 71, 42, 0.05)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(183, 71, 42, 0.1)', whiteSpace: 'nowrap' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>monitoring</span>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800 }}>{totalTransactions} Results</span>
+                                                </div>
+                                            </div>
+                                            <TransactionTable
+                                                subRole={user?.sub_role}
+                                                transactions={transactions}
+                                                updateStatus={updateStatus}
+                                                updatingTxId={updatingTxId}
+                                                vendors={vendors}
+                                                openAssignVendorModal={openAssignVendorModal}
+                                                setAdminConfirmData={setAdminConfirmData}
+                                                setShowAdminConfirmModal={setShowAdminConfirmModal}
+                                                setSelectedTx={setSelectedTx}
+                                                setShowTxModal={setShowTxModal}
+                                                setPreviewImage={setPreviewImage}
+                                                setPreviewDate={setPreviewDate}
+                                                setShowPreviewModal={setShowPreviewModal}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'kyc' && (
@@ -742,17 +743,69 @@ const AdminDashboard = () => {
                                     )}
 
                                     {tab === 'inquiries' && (
-                                        <InquiryTable
-                                            inquiries={inquiries}
-                                            fetchInquiries={fetchInquiries}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search by sender or subject..."
+                                                            value={inquirySearch}
+                                                            onChange={(e) => { setInquirySearch(e.target.value); setInquiryPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none', transition: 'all 0.2s ease' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                    <select
+                                                        value={inquiryStatusFilter}
+                                                        onChange={(e) => { setInquiryStatusFilter(e.target.value); setInquiryPage(1); }}
+                                                        style={{ flex: 0.3, padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)', cursor: 'pointer', outline: 'none' }}
+                                                    >
+                                                        <option value="all">All Statuses</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="replied">Replied</option>
+                                                        <option value="closed">Closed</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <InquiryTable
+                                                inquiries={inquiries}
+                                                fetchInquiries={fetchInquiries}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'complaints' && (
-                                        <ComplaintTable
-                                            complaints={complaints}
-                                            updateComplaintStatus={updateComplaintStatus}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search complaints by subject or user..."
+                                                            value={complaintSearch}
+                                                            onChange={(e) => { setComplaintSearch(e.target.value); setComplaintPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none', transition: 'all 0.2s ease' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                    <select
+                                                        value={complaintStatusFilter}
+                                                        onChange={(e) => { setComplaintStatusFilter(e.target.value); setComplaintPage(1); }}
+                                                        style={{ flex: 0.3, padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)', cursor: 'pointer', outline: 'none' }}
+                                                    >
+                                                        <option value="all">All Statuses</option>
+                                                        <option value="open">Open</option>
+                                                        <option value="resolved">Resolved</option>
+                                                        <option value="closed">Closed</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <ComplaintTable
+                                                complaints={complaints}
+                                                updateComplaintStatus={updateComplaintStatus}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'announcements' && (
@@ -990,7 +1043,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
+                            <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Recipient Details</label>
                                     <span style={{ fontSize: '0.65rem', fontWeight: 800, background: 'var(--text-deep-brown)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
@@ -1769,23 +1822,33 @@ const AdminDashboard = () => {
 
             {showPreviewModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
-                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="fade-in">
                         <button
-                            onClick={() => setShowPreviewModal(false)}
-                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => { setShowPreviewModal(false); setImageLoading(true); }}
+                            style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
                         >
                             <span className="material-symbols-outlined" style={{ color: 'var(--text-deep-brown)' }}>close</span>
                         </button>
+                        
                         {previewImage.endsWith('.pdf') ? (
-                            <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
+                            <iframe src={previewImage} onLoad={() => setImageLoading(false)} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px', opacity: imageLoading ? 0 : 1, transition: 'opacity 0.3s' }} title="Proof PDF"></iframe>
                         ) : (
                             <img
                                 src={previewImage}
                                 alt="Preview"
-                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                                onLoad={() => setImageLoading(false)}
+                                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', opacity: imageLoading ? 0 : 1, transition: 'opacity 0.3s' }}
                             />
                         )}
-                        {previewDate && (
+
+                        {imageLoading && (
+                            <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                <div className="spinner" style={{ width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                <div style={{ color: '#fff', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.8rem' }}>Loading Proof...</div>
+                            </div>
+                        )}
+
+                        {previewDate && !imageLoading && (
                             <div style={{ position: 'absolute', bottom: '-40px', left: 0, width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>
                                 Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
                                     month: 'long',
