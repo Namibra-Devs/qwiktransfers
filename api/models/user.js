@@ -101,7 +101,8 @@ module.exports = (sequelize, DataTypes) => {
     sub_role: {
       type: DataTypes.STRING,
       defaultValue: 'super'
-    }
+    },
+    last_login: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'User',

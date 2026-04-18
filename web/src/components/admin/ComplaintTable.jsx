@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getImageUrl } from '../../services/api';
 import Button from '../Button';
 import Input from '../Input';
 import { toast } from 'react-hot-toast';
 
-const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint }) => {
+const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint, setPreviewImage, setPreviewDate, setShowPreviewModal }) => {
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [statusOption, setStatusOption] = useState('');
@@ -57,14 +58,14 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                 </thead>
                 <tbody>
                     {complaints.map(complaint => (
-                        <tr key={complaint.id}>
-                            <td style={{ fontSize: '0.85rem' }}>{new Date(complaint.createdAt).toLocaleDateString()}</td>
+                        <tr key={complaint.id} style={{ background: 'var(--card-bg)' }}>
+                            <td style={{ fontSize: '0.85rem', color: 'var(--text-deep-brown)' }}>{new Date(complaint.createdAt).toLocaleDateString()}</td>
                             <td>
-                                <div style={{ fontWeight: 700 }}>{complaint.user?.full_name}</div>
+                                <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{complaint.user?.full_name}</div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{complaint.user?.email}</div>
                             </td>
                             <td>
-                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{complaint.subject}</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-deep-brown)' }}>{complaint.subject}</div>
                                 {complaint.transaction && (
                                     <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>TX: {complaint.transaction.transaction_id}</div>
                                 )}
@@ -86,8 +87,20 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                             <td>
                                 <button
                                     onClick={() => handleOpenModal(complaint)}
-                                    className="btn-outline"
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '50px' }}
+                                    style={{ 
+                                        display: 'inline-flex', 
+                                        alignItems: 'center', 
+                                        gap: '4px', 
+                                        padding: '8px 16px', 
+                                        fontSize: '0.75rem', 
+                                        borderRadius: '50px',
+                                        background: 'var(--primary)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 10px rgba(183, 71, 42, 0.15)'
+                                    }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>rate_review</span>
                                     Respond
@@ -105,7 +118,7 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
             </div>
 
             {showModal && selectedComplaint && createPortal(
-                <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
                     <div className="modal-content scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', borderRadius: '16px', overflow: 'hidden', background: 'var(--card-bg)' }}>
                         <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)' }}>
                             <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-deep-brown)' }}>Review Complaint</h3>
@@ -123,10 +136,17 @@ const ComplaintTable = ({ complaints, updateComplaintStatus, replyToComplaint })
                                 
                                 {selectedComplaint.attachment_url && (
                                     <div style={{ marginTop: '12px' }}>
-                                        <a href={selectedComplaint.attachment_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                                        <button 
+                                            onClick={() => {
+                                                setPreviewImage(getImageUrl(selectedComplaint.attachment_url));
+                                                setPreviewDate(selectedComplaint.createdAt);
+                                                setShowPreviewModal(true);
+                                            }}
+                                            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+                                        >
                                             <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>attachment</span>
                                             View Attached File
-                                        </a>
+                                        </button>
                                     </div>
                                 )}
                             </div>

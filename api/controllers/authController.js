@@ -244,6 +244,10 @@ const login = async (req, res) => {
             ipAddress: req.ip
         });
 
+        // Update last login
+        user.last_login = new Date();
+        await user.save();
+
         res.json({ user, token });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -605,9 +609,20 @@ const updateUserRegion = async (req, res) => {
 
 const toggleUserStatus = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const { userId, pin } = req.body;
         const user = await User.findByPk(userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // If disabling (current state is active), require PIN verification
+        if (user.is_active) {
+            if (!pin) return res.status(400).json({ error: 'Admin PIN is required to disable account' });
+            
+            const admin = await User.findByPk(req.user.id);
+            if (!admin.transaction_pin) return res.status(400).json({ error: 'You have not set a transaction PIN. Please set one in profile settings.' });
+            
+            const isMatch = await bcrypt.compare(pin, admin.transaction_pin);
+            if (!isMatch) return res.status(403).json({ error: 'Invalid Admin PIN' });
+        }
 
         user.is_active = !user.is_active;
         await user.save();

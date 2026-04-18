@@ -99,6 +99,9 @@ const AdminDashboard = () => {
     // Individual User/Vendor Transaction History & Stats
     const [userTransactions, setUserTransactions] = useState([]);
     const [userTransactionsLoading, setUserTransactionsLoading] = useState(false);
+    const [showDisablePinModal, setShowDisablePinModal] = useState(false);
+    const [disablePin, setDisablePin] = useState('');
+    const [disableLoading, setDisableLoading] = useState(false);
     const [vendorStats, setVendorStats] = useState({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
 
     useEffect(() => {
@@ -117,7 +120,7 @@ const AdminDashboard = () => {
         } else if (tab === 'kyc') {
             fetchUsersServerSide('pending');
         } else if (tab === 'users') {
-            fetchUsersServerSide('');
+            fetchUsersServerSide(statusFilter === 'all' ? '' : statusFilter);
         } else if (tab === 'vendors') {
             fetchVendors();
         } else if (tab === 'admins') {
@@ -385,18 +388,56 @@ const AdminDashboard = () => {
     };
 
     const toggleStatus = async (userId) => {
+        // If the user we are toggling is currently active, we are DISABLING them.
+        // This requires an Admin PIN.
+        const userToToggle = users.find(u => u.id === userId) || selectedUser;
+        
+        if (userToToggle && userToToggle.is_active) {
+            setDisablePin('');
+            setShowDisablePinModal(true);
+            return;
+        }
+
+        // If enabling, we don't need a PIN (per instruction)
         try {
             const res = await api.patch('/auth/toggle-status', { userId });
             toast.success(res.data.message);
-            if (tab === 'users') fetchUsersServerSide();
-            if (tab === 'vendors') fetchVendors();
-            if (tab === 'admins') fetchAdmins();
+            refreshCurrentTab();
             if (selectedUser && selectedUser.id === userId) {
                 setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
             }
         } catch (error) {
-            toast.error('Failed to toggle status');
+            toast.error('Failed to enable account');
         }
+    };
+
+    const handleDisableConfirm = async (e) => {
+        e.preventDefault();
+        if (disablePin.length !== 4) return toast.error('4-digit PIN required');
+        
+        setDisableLoading(true);
+        try {
+            const res = await api.patch('/auth/toggle-status', { 
+                userId: selectedUser.id, 
+                pin: disablePin 
+            });
+            toast.success(res.data.message);
+            setShowDisablePinModal(false);
+            refreshCurrentTab();
+            if (selectedUser) {
+                setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Verification failed');
+        } finally {
+            setDisableLoading(false);
+        }
+    };
+
+    const refreshCurrentTab = () => {
+        if (tab === 'users') fetchUsersServerSide();
+        if (tab === 'vendors') fetchVendors();
+        if (tab === 'admins') fetchAdmins();
     };
 
 
@@ -624,7 +665,7 @@ const AdminDashboard = () => {
                                                         </button>
                                                     </>
                                                 )}
-                                                {!['audit', 'transactions', 'inquiries'].includes(tab) && (
+                                                {!['audit', 'transactions', 'inquiries', 'complaints', 'users', 'kyc'].includes(tab) && (
                                                     <div style={{ position: 'relative' }}>
                                                         <input
                                                             type="text"
@@ -706,21 +747,64 @@ const AdminDashboard = () => {
                                     )}
 
                                     {tab === 'kyc' && (
-                                        <KYCTable
-                                            users={users}
-                                            updateKYC={updateKYC}
-                                            setPreviewImage={setPreviewImage}
-                                            setPreviewDate={setPreviewDate}
-                                            setShowPreviewModal={setShowPreviewModal}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search pending KYC by name or email..."
+                                                            value={userSearch}
+                                                            onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <KYCTable
+                                                users={users}
+                                                updateKYC={updateKYC}
+                                                setPreviewImage={setPreviewImage}
+                                                setPreviewDate={setPreviewDate}
+                                                setShowPreviewModal={setShowPreviewModal}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'users' && (
-                                        <UserTable
-                                            users={users}
-                                            setSelectedUser={setSelectedUser}
-                                            setShowUserModal={setShowUserModal}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search users by name, email, or phone..."
+                                                            value={userSearch}
+                                                            onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                    <select
+                                                        value={statusFilter} // Reusing statusFilter state for KYC status on this tab
+                                                        onChange={(e) => { setStatusFilter(e.target.value); setUserPage(1); }}
+                                                        style={{ flex: 0.3, padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)', cursor: 'pointer', outline: 'none' }}
+                                                    >
+                                                        <option value="">All Verification Tiers</option>
+                                                        <option value="unverified">Unverified</option>
+                                                        <option value="pending">Pending Review</option>
+                                                        <option value="verified">KYC Verified</option>
+                                                        <option value="rejected">Rejected</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <UserTable
+                                                users={users}
+                                                setSelectedUser={setSelectedUser}
+                                                setShowUserModal={setShowUserModal}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'vendors' && (
@@ -804,6 +888,9 @@ const AdminDashboard = () => {
                                             <ComplaintTable
                                                 complaints={complaints}
                                                 updateComplaintStatus={updateComplaintStatus}
+                                                setPreviewImage={setPreviewImage}
+                                                setPreviewDate={setPreviewDate}
+                                                setShowPreviewModal={setShowPreviewModal}
                                             />
                                         </div>
                                     )}
@@ -1159,39 +1246,47 @@ const AdminDashboard = () => {
                                     {selectedUser.full_name?.charAt(0)}
                                 </div>
                                 <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.2rem' }}>{selectedUser.full_name}</h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-deep-brown)' }}>{selectedUser.full_name}</h4>
+                                        {selectedUser.is_email_verified ? (
+                                            <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '50px', background: 'rgba(40, 167, 69, 0.1)', color: '#28a745', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>verified</span> Verified
+                                            </span>
+                                        ) : (
+                                            <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '50px', background: 'rgba(216, 59, 1, 0.1)', color: 'var(--danger)', fontWeight: 800 }}>Unverified</span>
+                                        )}
+                                    </div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, margin: '4px 0' }}>{selectedUser.account_number || 'N/A'}</div>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{selectedUser.email}</div>
                                     <div style={{ marginTop: '4px' }}><span className={`badge badge-${selectedUser.kyc_status}`}>{selectedUser.kyc_status.toUpperCase()}</span></div>
                                 </div>
                             </div>
 
-                            <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ background: 'rgba(183,71,42,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', border: '1px solid rgba(183,71,42,0.1)' }}>
                                 <div>
                                     <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Lifetime Transfers (GHS)</label>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_ghs).toLocaleString()} GHS</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{parseFloat(selectedUser.balance_ghs).toLocaleString()} GHS</div>
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Lifetime Transfers (CAD)</label>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{parseFloat(selectedUser.balance_cad).toLocaleString()} CAD</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{parseFloat(selectedUser.balance_cad).toLocaleString()} CAD</div>
                                 </div>
                             </div>
 
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>KYC Actions</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={() => { updateKYC(selectedUser.id, 'verified'); setShowUserModal(false); }}
-                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Verify User
-                                    </button>
-                                    <button
-                                        onClick={() => { updateKYC(selectedUser.id, 'rejected'); setShowUserModal(false); }}
-                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--danger)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        Reject KYC
-                                    </button>
+                            <div style={{ padding: '20px', background: 'var(--input-bg)', borderRadius: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Registration Date</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>calendar_today</span>
+                                        {new Date(selectedUser.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Last Activity</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>history</span>
+                                        {selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Never'}
+                                    </div>
                                 </div>
                             </div>
 
@@ -1200,14 +1295,15 @@ const AdminDashboard = () => {
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button
                                         onClick={() => toggleStatus(selectedUser.id)}
-                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                     >
+                                        <span className="material-symbols-outlined">{selectedUser.is_active ? 'block' : 'check_circle'}</span>
                                         {selectedUser.is_active ? 'Disable Account' : 'Enable Account'}
                                     </button>
                                 </div>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
                                     {selectedUser.is_active
-                                        ? 'Disabling this account will prevent the user from logging in or performing any transactions.'
+                                        ? 'Disabling this account will prevent the user from logging in or performing any transactions. Admin PIN required.'
                                         : 'Enabling this account will restore full access to the platform.'}
                                 </p>
                             </div>
@@ -1218,7 +1314,7 @@ const AdminDashboard = () => {
                                     <select
                                         value={selectedUser.country || 'All'}
                                         onChange={(e) => updateRegion(selectedUser.id, e.target.value)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                     >
                                         <option value="Canada">Canada</option>
                                         <option value="Ghana">Ghana</option>
@@ -1231,17 +1327,17 @@ const AdminDashboard = () => {
                                 <div style={{ marginBottom: '32px' }}>
                                     <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '16px' }}>Performance Overview</label>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                        <div style={{ padding: '12px', background: 'rgba(183, 71, 42, 0.08)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(183, 71, 42, 0.1)' }}>
                                             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Handled</div>
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{vendorStats.totalCount}</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{vendorStats.totalCount}</div>
                                         </div>
-                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                        <div style={{ padding: '12px', background: 'rgba(183, 71, 42, 0.08)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(183, 71, 42, 0.1)' }}>
                                             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>CAD Volume</div>
-                                            <div style={{ fontSize: '1rem', fontWeight: 800 }}>${vendorStats.totalVolumeCAD.toLocaleString()}</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>${vendorStats.totalVolumeCAD.toLocaleString()}</div>
                                         </div>
-                                        <div style={{ padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', textAlign: 'center' }}>
+                                        <div style={{ padding: '12px', background: 'rgba(183, 71, 42, 0.08)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(183, 71, 42, 0.1)' }}>
                                             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>GHS Volume</div>
-                                            <div style={{ fontSize: '1rem', fontWeight: 800 }}>{vendorStats.totalVolumeGHS.toLocaleString()}₵</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-deep-brown)' }}>{vendorStats.totalVolumeGHS.toLocaleString()}₵</div>
                                         </div>
                                         <div style={{ padding: '12px', background: 'var(--success)', color: '#fff', borderRadius: '8px', textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.65rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Success Rate</div>
@@ -1261,8 +1357,8 @@ const AdminDashboard = () => {
                                                 padding: '12px',
                                                 borderRadius: '8px',
                                                 border: selectedUser.sub_role === 'super' ? '2px solid #4A154B' : '1px solid var(--border-color)',
-                                                background: selectedUser.sub_role === 'super' ? 'rgba(74, 21, 75, 0.05)' : '#fff',
-                                                color: '#4A154B',
+                                                background: selectedUser.sub_role === 'super' ? 'rgba(74, 21, 75, 0.1)' : 'var(--card-bg)',
+                                                color: selectedUser.sub_role === 'super' ? '#8a3ab9' : 'var(--text-deep-brown)',
                                                 fontWeight: 800,
                                                 cursor: 'pointer',
                                                 display: 'flex',
@@ -1280,7 +1376,7 @@ const AdminDashboard = () => {
                                                 padding: '12px',
                                                 borderRadius: '8px',
                                                 border: selectedUser.sub_role === 'support' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                                                background: selectedUser.sub_role === 'support' ? 'rgba(183, 71, 42, 0.05)' : '#fff',
+                                                background: selectedUser.sub_role === 'support' ? 'rgba(183, 71, 42, 0.1)' : 'var(--card-bg)',
                                                 color: 'var(--primary)',
                                                 fontWeight: 800,
                                                 cursor: 'pointer',
@@ -1328,14 +1424,14 @@ const AdminDashboard = () => {
                                 <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
                                     {selectedUser.role === 'vendor' ? 'Service History' : 'Transaction History'}
                                 </label>
-                                <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
                                     <table style={{ margin: 0, fontSize: '0.8rem' }}>
-                                        <thead style={{ background: '#f9f9f9' }}>
+                                        <thead style={{ background: 'var(--input-bg)' }}>
                                             <tr>
-                                                <th style={{ padding: '10px' }}>ID/Type</th>
-                                                <th style={{ padding: '10px' }}>Amount</th>
-                                                <th style={{ padding: '10px' }}>Status</th>
-                                                <th style={{ padding: '10px' }}>Date</th>
+                                                <th style={{ padding: '10px', color: 'var(--text-deep-brown)' }}>ID/Type</th>
+                                                <th style={{ padding: '10px', color: 'var(--text-deep-brown)' }}>Amount</th>
+                                                <th style={{ padding: '10px', color: 'var(--text-deep-brown)' }}>Status</th>
+                                                <th style={{ padding: '10px', color: 'var(--text-deep-brown)' }}>Date</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1368,12 +1464,55 @@ const AdminDashboard = () => {
                             <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '24px' }}>
                                 <button
                                     onClick={() => setShowUserModal(false)}
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     Close
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showDisablePinModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, backdropFilter: 'blur(5px)' }}>
+                    <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', p: 0, borderRadius: '24px', overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)' }}>
+                                <span className="material-symbols-outlined">security</span>
+                                Secure Account Disable
+                            </h3>
+                            <button onClick={() => setShowDisablePinModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleDisableConfirm} style={{ padding: '24px' }}>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                                You are about to disable this account. This action will prevent all platform access for this user. Please enter your <strong>Admin Security PIN</strong> to authorize.
+                            </p>
+                            <div className="form-group" style={{ marginBottom: '32px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Admin PIN</label>
+                                <input
+                                    type="password"
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    autoFocus
+                                    required
+                                    placeholder="••••"
+                                    value={disablePin}
+                                    onChange={(e) => setDisablePin(e.target.value.replace(/\D/g, ''))}
+                                    style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.5rem', letterSpacing: '12px', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={disableLoading}
+                                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--danger)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(216, 59, 1, 0.2)' }}
+                            >
+                                {disableLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">lock_open</span>}
+                                {disableLoading ? 'Verifying...' : 'Authorize Disable'}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
@@ -1821,7 +1960,7 @@ const AdminDashboard = () => {
             )}
 
             {showPreviewModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, backdropFilter: 'blur(10px)' }}>
                     <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="fade-in">
                         <button
                             onClick={() => { setShowPreviewModal(false); setImageLoading(true); }}
