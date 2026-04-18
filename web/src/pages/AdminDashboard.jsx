@@ -68,6 +68,12 @@ const AdminDashboard = () => {
     const [userTotalPages, setUserTotalPages] = useState(1);
     const [userSearch, setUserSearch] = useState('');
 
+    // Admin Pagination & Search
+    const [adminPage, setAdminPage] = useState(1);
+    const [adminTotalPages, setAdminTotalPages] = useState(1);
+    const [adminSearch, setAdminSearch] = useState('');
+    const [adminCount, setAdminCount] = useState(0);
+
 
     // Selected items for Modals
     const [selectedTx, setSelectedTx] = useState(null);
@@ -103,9 +109,14 @@ const AdminDashboard = () => {
     // Individual User/Vendor Transaction History & Stats
     const [userTransactions, setUserTransactions] = useState([]);
     const [userTransactionsLoading, setUserTransactionsLoading] = useState(false);
-    const [showDisablePinModal, setShowDisablePinModal] = useState(false);
-    const [disablePin, setDisablePin] = useState('');
-    const [disableLoading, setDisableLoading] = useState(false);
+    
+    // Universal Secure Action PIN states
+    const [showSecureActionModal, setShowSecureActionModal] = useState(false);
+    const [secureAction, setSecureAction] = useState(null); // 'TOGGLE_STATUS', 'UPDATE_ADMIN_ROLE', 'REVOKE_ADMIN'
+    const [secureActionData, setSecureActionData] = useState(null);
+    const [secureActionPin, setSecureActionPin] = useState('');
+    const [secureActionLoading, setSecureActionLoading] = useState(false);
+
     const [vendorStats, setVendorStats] = useState({ totalCount: 0, totalVolumeCAD: 0, totalVolumeGHS: 0, successRate: 0 });
 
     useEffect(() => {
@@ -138,7 +149,7 @@ const AdminDashboard = () => {
         } else if (tab === 'announcements') {
             fetchAnnouncements();
         }
-    }, [page, search, statusFilter, userPage, userSearch, vendorPage, vendorSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, vendorPage, vendorSearch, adminPage, adminSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -266,8 +277,17 @@ const AdminDashboard = () => {
 
     const fetchAdmins = async () => {
         try {
-            const res = await api.get('/auth/users', { params: { role: 'admin' } });
+            const res = await api.get('/auth/users', { 
+                params: { 
+                    role: 'admin',
+                    page: adminPage,
+                    limit: 10,
+                    search: adminSearch
+                } 
+            });
             setAdmins(res.data.users || []);
+            setAdminTotalPages(res.data.pages || 1);
+            setAdminCount(res.data.total || (res.data.users ? res.data.users.length : 0));
         } catch (error) {
             console.error('Fetch admins error:', error);
         }
@@ -401,49 +421,65 @@ const AdminDashboard = () => {
     };
 
     const toggleStatus = async (userId) => {
-        // If the user we are toggling is currently active, we are DISABLING them.
-        // This requires an Admin PIN.
         const userToToggle = users.find(u => u.id === userId) || selectedUser;
         
-        if (userToToggle && userToToggle.is_active) {
-            setDisablePin('');
-            setShowDisablePinModal(true);
-            return;
+        // Enabling accounts is considered low-risk and doesn't require a PIN
+        if (userToToggle && !userToToggle.is_active) {
+            try {
+                const res = await api.patch('/auth/toggle-status', { userId });
+                toast.success(res.data.message);
+                refreshCurrentTab();
+                if (selectedUser && selectedUser.id === userId) {
+                    setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
+                }
+                return;
+            } catch (error) {
+                return toast.error('Failed to enable account');
+            }
         }
 
-        // If enabling, we don't need a PIN (per instruction)
-        try {
-            const res = await api.patch('/auth/toggle-status', { userId });
-            toast.success(res.data.message);
-            refreshCurrentTab();
-            if (selectedUser && selectedUser.id === userId) {
-                setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
-            }
-        } catch (error) {
-            toast.error('Failed to enable account');
-        }
+        // Disabling requires PIN
+        setSecureActionPin('');
+        setSecureAction('TOGGLE_STATUS');
+        setSecureActionData({ userId });
+        setShowSecureActionModal(true);
     };
 
-    const handleDisableConfirm = async (e) => {
+    const handleSecureActionSubmit = async (e) => {
         e.preventDefault();
-        if (disablePin.length !== 4) return toast.error('4-digit PIN required');
+        if (secureActionPin.length !== 4) return toast.error('4-digit PIN required');
         
-        setDisableLoading(true);
+        setSecureActionLoading(true);
         try {
-            const res = await api.patch('/auth/toggle-status', { 
-                userId: selectedUser.id, 
-                pin: disablePin 
-            });
-            toast.success(res.data.message);
-            setShowDisablePinModal(false);
-            refreshCurrentTab();
-            if (selectedUser) {
-                setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
+            if (secureAction === 'TOGGLE_STATUS') {
+                const res = await api.patch('/auth/toggle-status', { 
+                    userId: secureActionData.userId, 
+                    pin: secureActionPin 
+                });
+                toast.success(res.data.message);
+                if (selectedUser && selectedUser.id === secureActionData.userId) {
+                    setSelectedUser({ ...selectedUser, is_active: res.data.is_active });
+                }
+            } else if (secureAction === 'UPDATE_ADMIN_ROLE') {
+                const { userId, subRole } = secureActionData;
+                await api.patch('/auth/update-role', { userId, sub_role: subRole, pin: secureActionPin });
+                toast.success(`Admin permissions updated to ${subRole.toUpperCase()}`);
+                if (selectedUser && selectedUser.id === userId) {
+                    setSelectedUser({ ...selectedUser, sub_role: subRole });
+                }
+            } else if (secureAction === 'REVOKE_ADMIN') {
+                const { userId } = secureActionData;
+                await api.patch('/auth/update-role', { userId, role: 'user', pin: secureActionPin });
+                toast.success('Admin privileges revoked');
+                setShowUserModal(false);
             }
+            
+            refreshCurrentTab();
+            setShowSecureActionModal(false);
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Verification failed');
+            toast.error(error.response?.data?.error || 'Authorization failed');
         } finally {
-            setDisableLoading(false);
+            setSecureActionLoading(false);
         }
     };
 
@@ -456,16 +492,10 @@ const AdminDashboard = () => {
 
 
     const updateAdminRole = async (userId, subRole) => {
-        try {
-            await api.patch('/auth/update-role', { userId, sub_role: subRole });
-            toast.success(`Admin permissions updated to ${subRole.toUpperCase()}`);
-            fetchAdmins();
-            if (selectedUser && selectedUser.id === userId) {
-                setSelectedUser({ ...selectedUser, sub_role: subRole });
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.error || 'Failed to update admin role');
-        }
+        setSecureActionPin('');
+        setSecureAction('UPDATE_ADMIN_ROLE');
+        setSecureActionData({ userId, subRole });
+        setShowSecureActionModal(true);
     };
 
     const updateRegion = async (userId, country) => {
@@ -851,12 +881,32 @@ const AdminDashboard = () => {
                                     )}
 
                                     {tab === 'admins' && (
-                                        <AdminTable
-                                            admins={admins}
-                                            toggleStatus={toggleStatus}
-                                            setSelectedUser={setSelectedUser}
-                                            setShowAdminModal={setShowUserModal}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search staff members..."
+                                                            value={adminSearch}
+                                                            onChange={(e) => { setAdminSearch(e.target.value); setAdminPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none', transition: 'all 0.2s ease' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(74, 21, 75, 0.05)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(74, 21, 75, 0.1)', whiteSpace: 'nowrap' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: '#4A154B' }}>badge</span>
+                                                    <span style={{ fontSize: '0.85rem', color: '#4A154B', fontWeight: 800 }}>{adminCount} Internal Staff</span>
+                                                </div>
+                                            </div>
+                                            <AdminTable
+                                                admins={admins}
+                                                toggleStatus={toggleStatus}
+                                                setSelectedUser={setSelectedUser}
+                                                setShowAdminModal={setShowUserModal}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'inquiries' && (
@@ -1084,6 +1134,24 @@ const AdminDashboard = () => {
                                                     border: '1px solid var(--border-color)',
                                                     background: vendorPage === i + 1 ? 'var(--primary)' : '#fff',
                                                     color: vendorPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    ) : tab === 'admins' ? (
+                                        Array.from({ length: adminTotalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setAdminPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: adminPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: adminPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
                                                     fontWeight: 700,
                                                     cursor: 'pointer'
                                                 }}
@@ -1342,21 +1410,35 @@ const AdminDashboard = () => {
                             </div>
 
                             <div style={{ marginBottom: '24px' }}>
-                                <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '8px' }}>Account Access Control</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={() => toggleStatus(selectedUser.id)}
-                                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                    >
-                                        <span className="material-symbols-outlined">{selectedUser.is_active ? 'block' : 'check_circle'}</span>
-                                        {selectedUser.is_active ? 'Disable Account' : 'Enable Account'}
-                                    </button>
-                                </div>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                                    {selectedUser.is_active
-                                        ? 'Disabling this account will prevent the user from logging in or performing any transactions. Admin PIN required.'
-                                        : 'Enabling this account will restore full access to the platform.'}
-                                </p>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '12px' }}>Account Access Control</label>
+                                {selectedUser.id === user?.id ? (
+                                    <div style={{ padding: '16px', background: 'rgba(183, 71, 42, 0.05)', borderRadius: '12px', border: '1px solid rgba(183,71,42,0.1)', textAlign: 'center' }}>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>
+                                            <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '6px', fontSize: '1.2rem' }}>info</span>
+                                            Self-management Restricted
+                                        </p>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            You cannot disable your own administrative account.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => toggleStatus(selectedUser.id)}
+                                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: selectedUser.is_active ? 'var(--danger)' : 'var(--success)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                            >
+                                                <span className="material-symbols-outlined">{selectedUser.is_active ? 'block' : 'check_circle'}</span>
+                                                {selectedUser.is_active ? 'Disable Account' : 'Enable Account'}
+                                            </button>
+                                        </div>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                            {selectedUser.is_active
+                                                ? 'Disabling this account will prevent the user from logging in or performing any transactions. Admin PIN required.'
+                                                : 'Enabling this account will restore full access to the platform.'}
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
                             {selectedUser.role === 'vendor' && (
@@ -1455,13 +1537,10 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={async () => {
                                             if (window.confirm('Are you sure you want to REVOKE admin privileges? This user will become a regular user and lose dashboard access.')) {
-                                                try {
-                                                    await api.patch('/auth/update-role', { userId: selectedUser.id, role: 'user' });
-                                                    toast.success('Admin privileges revoked');
-                                                    setShowUserModal(false);
-                                                    fetchAdmins();
-                                                    fetchUsersServerSide();
-                                                } catch (err) { toast.error('Revocation failed'); }
+                                                setSecureActionPin('');
+                                                setSecureAction('REVOKE_ADMIN');
+                                                setSecureActionData({ userId: selectedUser.id });
+                                                setShowSecureActionModal(true);
                                             }
                                         }}
                                         style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--danger)', background: 'rgba(216, 59, 1, 0.05)', color: 'var(--danger)', fontWeight: 800, cursor: 'pointer' }}
@@ -1525,24 +1604,34 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {showDisablePinModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, backdropFilter: 'blur(5px)' }}>
-                    <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', p: 0, borderRadius: '24px', overflow: 'hidden' }}>
-                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)' }}>
-                                <span className="material-symbols-outlined">security</span>
-                                Secure Account Disable
-                            </h3>
-                            <button onClick={() => setShowDisablePinModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)' }}>
+            {/* Universal Secure Action PIN Modal */}
+            {showSecureActionModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, backdropFilter: 'blur(10px)' }}>
+                    <div className="glass-card scale-in" style={{ width: '90%', maxWidth: '400px', p: 0, borderRadius: '28px', overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(216, 59, 1, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined" style={{ color: 'var(--danger)', fontSize: '1.5rem' }}>security</span>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-deep-brown)' }}>Authorization Required</h3>
+                                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Confirm administrative action</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowSecureActionModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)' }}>
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        <form onSubmit={handleDisableConfirm} style={{ padding: '24px' }}>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                                You are about to disable this account. This action will prevent all platform access for this user. Please enter your <strong>Admin Security PIN</strong> to authorize.
-                            </p>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>4-Digit Admin PIN</label>
+                        <form onSubmit={handleSecureActionSubmit} style={{ padding: '32px 24px' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-deep-brown)', fontWeight: 700, marginBottom: '8px' }}>
+                                    {secureAction === 'TOGGLE_STATUS' ? 'Authorize Account Suspension' : 
+                                     secureAction === 'UPDATE_ADMIN_ROLE' ? 'Authorize Permission Change' : 
+                                     secureAction === 'REVOKE_ADMIN' ? 'Authorize Privilege Revocation' : 'Authorize Action'}
+                                </div>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Please enter your 4-digit security PIN to proceed.</p>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '24px' }}>
                                 <input
                                     type="password"
                                     maxLength="4"
@@ -1550,18 +1639,18 @@ const AdminDashboard = () => {
                                     autoFocus
                                     required
                                     placeholder="••••"
-                                    value={disablePin}
-                                    onChange={(e) => setDisablePin(e.target.value.replace(/\D/g, ''))}
+                                    value={secureActionPin}
+                                    onChange={(e) => setSecureActionPin(e.target.value.replace(/\D/g, ''))}
                                     style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '1.5rem', letterSpacing: '12px', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                 />
                             </div>
                             <button
                                 type="submit"
-                                disabled={disableLoading}
-                                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--danger)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(216, 59, 1, 0.2)' }}
-                            >
-                                {disableLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">lock_open</span>}
-                                {disableLoading ? 'Verifying...' : 'Authorize Disable'}
+                                disabled={secureActionLoading}
+                                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--text-deep-brown)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}
+                             >
+                                {secureActionLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">verified</span>}
+                                {secureActionLoading ? 'Authorizing...' : 'Verify & Execute'}
                             </button>
                         </form>
                     </div>
@@ -1570,10 +1659,10 @@ const AdminDashboard = () => {
 
             {/* Add Vendor Modal (Registration Form) */}
             {showAddVendorModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                    <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', backdropFilter: 'blur(8px)' }}>
+                    <div className="glass-card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0 }}>Register New Workforce (Vendor)</h3>
+                            <h3 style={{ margin: 0, color: 'var(--text-deep-brown)' }}>Register New Workforce (Vendor)</h3>
                             <button onClick={() => setShowAddVendorModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
                             </button>
@@ -1591,7 +1680,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newVendor.firstName}
                                                 onChange={(e) => setNewVendor({ ...newVendor, firstName: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="John"
                                             />
                                         </div>
@@ -1602,7 +1691,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newVendor.lastName}
                                                 onChange={(e) => setNewVendor({ ...newVendor, lastName: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="Doe"
                                             />
                                         </div>
@@ -1613,7 +1702,7 @@ const AdminDashboard = () => {
                                             type="text"
                                             value={newVendor.middleName}
                                             onChange={(e) => setNewVendor({ ...newVendor, middleName: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             placeholder="Moro"
                                         />
                                     </div>
@@ -1624,7 +1713,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newVendor.email}
                                             onChange={(e) => setNewVendor({ ...newVendor, email: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             placeholder="vendor@qwiktransfers.com"
                                         />
                                     </div>
@@ -1636,7 +1725,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newVendor.phone}
                                                 onChange={(e) => setNewVendor({ ...newVendor, phone: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="+233..."
                                             />
                                         </div>
@@ -1647,7 +1736,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newVendor.password}
                                                 onChange={(e) => setNewVendor({ ...newVendor, password: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -1658,7 +1747,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newVendor.country}
                                             onChange={(e) => setNewVendor({ ...newVendor, country: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                         >
                                             <option value="Canada">Canada (CAD Transactions)</option>
                                             <option value="Ghana">Ghana (GHS Transactions)</option>
@@ -1670,17 +1759,17 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)', display: 'flex', gap: '12px' }}>
                                 <button
                                     type="button"
                                     onClick={() => setShowAddVendorModal(false)}
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--text-deep-brown)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)' }}
                                 >
                                     Create Vendor
                                 </button>
@@ -1692,10 +1781,10 @@ const AdminDashboard = () => {
 
             {/* Add Administrative Staff Modal */}
             {showAddAdminModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                    <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', backdropFilter: 'blur(8px)' }}>
+                    <div className="glass-card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0 }}>Register Administrative Staff</h3>
+                            <h3 style={{ margin: 0, color: 'var(--text-deep-brown)' }}>Register Administrative Staff</h3>
                             <button onClick={() => setShowAddAdminModal(false)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>close</span>
                             </button>
@@ -1748,7 +1837,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newAdmin.phone}
                                                 onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             />
                                         </div>
                                         <div>
@@ -1758,7 +1847,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newAdmin.password}
                                                 onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             />
                                         </div>
                                     </div>
@@ -1768,7 +1857,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newAdmin.sub_role}
                                             onChange={(e) => setNewAdmin({ ...newAdmin, sub_role: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                         >
                                             <option value="support">Support Agent (Restricted Financials)</option>
                                             <option value="super">Super Admin (Full Platform Access)</option>
@@ -1776,17 +1865,17 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)', display: 'flex', gap: '12px' }}>
                                 <button
                                     type="button"
                                     onClick={() => setShowAddAdminModal(false)}
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#4A154B', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--text-deep-brown)', color: '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)' }}
                                 >
                                     Create Admin
                                 </button>

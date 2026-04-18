@@ -15,7 +15,7 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                 </thead>
                 <tbody>
                     {admins.map((admin) => (
-                        <tr key={admin.id} className="admin-row" style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <tr key={admin.id} className="admin-row" style={{ background: 'var(--card-bg)', borderRadius: '12px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <div style={{ 
@@ -63,8 +63,8 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                             <td style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: admin.is_online ? '#107c10' : '#ccc' }}></div>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: admin.is_online ? '#107c10' : 'var(--text-muted)' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: admin.is_online ? 'var(--success)' : 'var(--border-color)' }}></div>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: admin.is_online ? 'var(--success)' : 'var(--text-muted)' }}>
                                             {admin.is_online ? 'ONLINE' : 'OFFLINE'}
                                         </span>
                                     </div>
@@ -82,7 +82,7 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                                             alignItems: 'center',
                                             gap: '6px',
                                             padding: '8px 16px', 
-                                            background: '#fff', 
+                                            background: 'var(--card-bg)', 
                                             color: 'var(--text-deep-brown)', 
                                             border: '1.5px solid var(--border-color)', 
                                             borderRadius: '50px', 
@@ -108,8 +108,8 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                 </tbody>
             </table>
             <style>{`
-                .admin-row { transition: all 0.2s ease; }
-                .admin-row:hover { transform: translateX(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important; }
+                .admin-row { transition: all 0.2s ease; border: 1px solid var(--border-color); }
+                .admin-row:hover { transform: translateX(4px); box-shadow: var(--shadow-md) !important; border-color: var(--primary); }
                 .badge-super { background: rgba(74, 21, 75, 0.1); color: #4A154B; border: 1px solid rgba(74, 21, 75, 0.2); }
                 .badge-support { background: rgba(183, 71, 42, 0.1); color: var(--primary); border: 1px solid rgba(183, 71, 42, 0.2); }
             `}</style>

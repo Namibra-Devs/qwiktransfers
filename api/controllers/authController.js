@@ -517,9 +517,18 @@ const verifyPin = async (req, res) => {
 
 const updateUserRole = async (req, res) => {
     try {
-        const { userId, role } = req.body;
+        const { userId, role, pin } = req.body;
         const user = await User.findByPk(userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Sensitive actions require PIN verification
+        if (!pin) return res.status(400).json({ error: 'Admin PIN is required for role modifications' });
+        
+        const admin = await User.findByPk(req.user.id);
+        if (!admin.transaction_pin) return res.status(400).json({ error: 'Please set a transaction PIN in profile settings first' });
+        
+        const isMatch = await bcrypt.compare(pin, admin.transaction_pin);
+        if (!isMatch) return res.status(403).json({ error: 'Invalid PIN' });
 
         user.role = role;
         if (req.body.sub_role) {
