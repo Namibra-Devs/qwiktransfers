@@ -15,7 +15,7 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                 </thead>
                 <tbody>
                     {vendors.map((v) => (
-                        <tr key={v.id} className={`vendor-row ${!v.is_active ? 'pending-approval' : ''}`} style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <tr key={v.id} className={`vendor-row ${!v.is_active ? 'pending-approval' : ''}`} style={{ background: 'var(--card-bg)', borderRadius: '12px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <div style={{ 
@@ -45,10 +45,10 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                                         width: '10px', 
                                         height: '10px', 
                                         borderRadius: '50%', 
-                                        background: v.is_online ? '#107c10' : '#ccc',
-                                        boxShadow: v.is_online ? '0 0 8px rgba(16, 124, 16, 0.4)' : 'none'
+                                        background: v.is_online ? 'var(--success)' : 'var(--border-color)',
+                                        boxShadow: v.is_online ? '0 0 8px rgba(40, 167, 69, 0.4)' : 'none'
                                     }}></div>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: v.is_online ? '#107c10' : 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: v.is_online ? 'var(--success)' : 'var(--text-muted)' }}>
                                         {v.is_online ? 'ACTIVE NOW' : 'OFFLINE'}
                                     </span>
                                 </div>
@@ -75,7 +75,9 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                                     fontWeight: 900, 
                                     padding: '6px 12px',
                                     borderRadius: '100px',
-                                    letterSpacing: '0.05em'
+                                    letterSpacing: '0.05em',
+                                    background: v.is_active ? 'rgba(40, 167, 69, 0.1)' : 'rgba(224, 161, 46, 0.1)',
+                                    color: v.is_active ? 'var(--success)' : '#e0a12e'
                                 }}>
                                     {v.is_active ? 'APPROVED' : 'PENDING REVIEW'}
                                 </span>
@@ -97,7 +99,7 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                                                     fontWeight: 800, 
                                                     fontSize: '0.75rem',
                                                     cursor: 'pointer',
-                                                    boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.2)'
+                                                    boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)'
                                                 }}
                                             >
                                                 <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>verified_user</span>
@@ -131,7 +133,7 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                                             alignItems: 'center',
                                             gap: '6px',
                                             padding: '8px 16px', 
-                                            background: '#fff', 
+                                            background: 'var(--card-bg)', 
                                             color: 'var(--text-deep-brown)', 
                                             border: '1.5px solid var(--border-color)', 
                                             borderRadius: '50px', 
@@ -166,12 +168,11 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                 .vendor-row:hover {
                     box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
                     transform: translateX(4px);
+                    border-color: var(--primary) !important;
                 }
                 .pending-approval {
-                    border-left: 4px solid var(--primary);
+                    border-left: 4px solid var(--primary) !important;
                 }
-                .badge-verified { background: rgba(16, 124, 16, 0.1); color: #107c10; }
-                .badge-pending { background: rgba(224, 161, 46, 0.1); color: #e0a12e; }
             `}</style>
         </div>
     );

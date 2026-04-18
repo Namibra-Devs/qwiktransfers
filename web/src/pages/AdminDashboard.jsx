@@ -58,6 +58,10 @@ const AdminDashboard = () => {
     const [totalTransactions, setTotalTransactions] = useState(0);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [vendorSearch, setVendorSearch] = useState('');
+    const [vendorPage, setVendorPage] = useState(1);
+    const [vendorTotalPages, setVendorTotalPages] = useState(1);
+    const [vendorCount, setVendorCount] = useState(0);
 
     // User/KYC Pagination & Search
     const [userPage, setUserPage] = useState(1);
@@ -134,7 +138,7 @@ const AdminDashboard = () => {
         } else if (tab === 'announcements') {
             fetchAnnouncements();
         }
-    }, [page, search, statusFilter, userPage, userSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, vendorPage, vendorSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -293,8 +297,17 @@ const AdminDashboard = () => {
 
     const fetchVendors = async () => {
         try {
-            const res = await api.get('/auth/users', { params: { role: 'vendor' } });
+            const res = await api.get('/auth/users', { 
+                params: { 
+                    role: 'vendor',
+                    search: vendorSearch,
+                    page: vendorPage,
+                    limit: 10
+                } 
+            });
             setVendors(res.data.users || []);
+            setVendorTotalPages(res.data.pages || 1);
+            setVendorCount(res.data.total || 0);
         } catch (error) {
             console.error('Fetch vendors error:', error);
         }
@@ -665,7 +678,7 @@ const AdminDashboard = () => {
                                                         </button>
                                                     </>
                                                 )}
-                                                {!['audit', 'transactions', 'inquiries', 'complaints', 'users', 'kyc'].includes(tab) && (
+                                                {!['audit', 'transactions', 'inquiries', 'complaints', 'users', 'kyc', 'vendors', 'admins', 'announcements'].includes(tab) && (
                                                     <div style={{ position: 'relative' }}>
                                                         <input
                                                             type="text"
@@ -808,13 +821,33 @@ const AdminDashboard = () => {
                                     )}
 
                                     {tab === 'vendors' && (
-                                        <VendorTable
-                                            vendors={vendors}
-                                            toggleStatus={toggleStatus}
-                                            setSelectedUser={setSelectedUser}
-                                            setShowUserModal={setShowUserModal}
-                                            updateRegion={updateRegion}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 0.7 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search platform vendors..."
+                                                            value={vendorSearch}
+                                                            onChange={(e) => { setVendorSearch(e.target.value); setVendorPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(183, 71, 42, 0.05)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(183, 71, 42, 0.1)', whiteSpace: 'nowrap' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>storefront</span>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800 }}>{vendorCount} Vendors</span>
+                                                </div>
+                                            </div>
+                                            <VendorTable
+                                                vendors={vendors}
+                                                toggleStatus={toggleStatus}
+                                                setSelectedUser={setSelectedUser}
+                                                setShowUserModal={setShowUserModal}
+                                                updateRegion={updateRegion}
+                                            />
+                                        </div>
                                     )}
 
                                     {tab === 'admins' && (
@@ -1033,6 +1066,24 @@ const AdminDashboard = () => {
                                                     border: '1px solid var(--border-color)',
                                                     background: inquiryPage === i + 1 ? 'var(--primary)' : '#fff',
                                                     color: inquiryPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))
+                                    ) : tab === 'vendors' ? (
+                                        Array.from({ length: vendorTotalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setVendorPage(i + 1)}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: vendorPage === i + 1 ? 'var(--primary)' : '#fff',
+                                                    color: vendorPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
                                                     fontWeight: 700,
                                                     cursor: 'pointer'
                                                 }}
