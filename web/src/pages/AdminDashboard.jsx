@@ -496,12 +496,54 @@ const AdminDashboard = () => {
                 link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
                 link.click();
                 toast.success('Audit logs exported!', { id: 'audit-export' });
+            } else if (secureAction === 'UPDATE_PAYMENT_METHOD') {
+                await api.post('/system/payment-methods', { ...secureActionData, pin: secureActionPin });
+                toast.success('Payment Method Updated');
+            } else if (secureAction === 'UPDATE_SYSTEM_CONFIG') {
+                if (secureActionData.multiConfig) {
+                    await Promise.all(secureActionData.multiConfig.map(config => 
+                        api.post('/system/config', { ...config, pin: secureActionPin })
+                    ));
+                } else {
+                    await api.post('/system/config', { ...secureActionData, pin: secureActionPin });
+                }
+                toast.success('System Configuration Updated');
+            } else if (secureAction === 'UPDATE_RATE_SETTINGS') {
+                await api.patch('/rates/settings', { ...secureActionData, pin: secureActionPin });
+                toast.success('Rate Settings Updated');
+                if (secureActionData.compositeConfig) {
+                    await api.post('/system/config', { ...secureActionData.compositeConfig, pin: secureActionPin });
+                }
             }
             
             refreshCurrentTab();
             setShowSecureActionModal(false);
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Authorization failed');
+            let errorMsg = 'Authorization failed';
+            
+            // Handle blob error responses (common in file exports)
+            if (error.response?.data instanceof Blob && error.response.data.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const jsonData = JSON.parse(reader.result);
+                        errorMsg = jsonData.error || errorMsg;
+                        toast.error(errorMsg, { id: 'audit-export' });
+                    } catch (e) {
+                        toast.error(errorMsg, { id: 'audit-export' });
+                    }
+                };
+                reader.readAsText(error.response.data);
+                return; // Error toast will be handled in onload
+            }
+
+            errorMsg = error.response?.data?.error || errorMsg;
+            
+            if (secureAction === 'EXPORT_LOGS') {
+                toast.error(errorMsg, { id: 'audit-export' });
+            } else {
+                toast.error(errorMsg);
+            }
         } finally {
             setSecureActionLoading(false);
         }
@@ -511,6 +553,16 @@ const AdminDashboard = () => {
         if (tab === 'users') fetchUsersServerSide();
         if (tab === 'vendors') fetchVendors();
         if (tab === 'admins') fetchAdmins();
+        if (tab === 'payment-settings') {
+            window.dispatchEvent(new CustomEvent('payment-settings-updated'));
+        }
+    };
+
+    const triggerSecureAction = (action, data) => {
+        setSecureActionPin('');
+        setSecureAction(action);
+        setSecureActionData(data);
+        setShowSecureActionModal(true);
     };
 
 
@@ -1267,11 +1319,11 @@ const AdminDashboard = () => {
                             </>
                         )}
 
-                        {tab === 'payment-settings' && <PaymentSettings />}
+                        {tab === 'payment-settings' && <PaymentSettings triggerSecureAction={triggerSecureAction} />}
                         {tab === 'profile' && <AdminProfile />}
                         {tab === 'analytics' && <AnalyticsContainer stats={adminStats} />}
                         {tab === 'help' && <HelpCenter />}
-                        {tab === 'system-settings' && <SystemSettings />}
+                        {tab === 'system-settings' && <SystemSettings triggerSecureAction={triggerSecureAction} />}
                     </div>
                 </main>
             </div>
@@ -1732,7 +1784,7 @@ const AdminDashboard = () => {
                             <button
                                 type="submit"
                                 disabled={secureActionLoading}
-                                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--text-deep-brown)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}
+                                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(183, 71, 42, 0.2)' }}
                              >
                                 {secureActionLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">verified</span>}
                                 {secureActionLoading ? 'Authorizing...' : 'Verify & Execute'}

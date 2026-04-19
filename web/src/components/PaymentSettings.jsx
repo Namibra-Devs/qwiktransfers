@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 
-const PaymentSettings = () => {
+const PaymentSettings = ({ triggerSecureAction }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -34,6 +34,15 @@ const PaymentSettings = () => {
         fetchPaymentMethods();
         fetchRateSettings();
         fetchSystemConfig();
+
+        const handleRefresh = () => {
+            fetchPaymentMethods();
+            fetchRateSettings();
+            fetchSystemConfig();
+        };
+
+        window.addEventListener('payment-settings-updated', handleRefresh);
+        return () => window.removeEventListener('payment-settings-updated', handleRefresh);
     }, []);
 
     const fetchPaymentMethods = async () => {
@@ -90,80 +99,47 @@ const PaymentSettings = () => {
         }
     };
 
-    const handleSaveGHS = async (e) => {
+    const handleSaveGHS = (e) => {
         e.preventDefault();
-        setSaving(true);
-        try {
-            await api.post('/system/payment-methods', {
-                type: 'momo-ghs',
-                currency: 'GHS',
-                details: JSON.stringify(ghsDetails),
-                is_active: ghsActive
-            });
-            toast.success('GHS Payment Details Updated');
-        } catch (error) {
-            toast.error('Failed to update GHS details');
-        } finally {
-            setSaving(false);
-        }
+        triggerSecureAction('UPDATE_PAYMENT_METHOD', {
+            type: 'momo-ghs',
+            currency: 'GHS',
+            details: JSON.stringify(ghsDetails),
+            is_active: ghsActive
+        });
     };
 
-    const handleSaveCAD = async (e) => {
+    const handleSaveCAD = (e) => {
         e.preventDefault();
-        setSaving(true);
-        try {
-            await api.post('/system/payment-methods', {
-                type: 'interac-cad',
-                currency: 'CAD',
-                details: JSON.stringify(cadDetails),
-                is_active: cadActive
-            });
-            toast.success('CAD Payment Details Updated');
-        } catch (error) {
-            toast.error('Failed to update CAD details');
-        } finally {
-            setSaving(false);
-        }
+        triggerSecureAction('UPDATE_PAYMENT_METHOD', {
+            type: 'interac-cad',
+            currency: 'CAD',
+            details: JSON.stringify(cadDetails),
+            is_active: cadActive
+        });
     };
 
-    const handleSaveRateSettings = async (e) => {
+    const handleSaveRateSettings = (e) => {
         e.preventDefault();
-        setSaving(true);
-        try {
-            // Send as expected by backend
-            await api.patch('/rates/settings', {
-                use_api: rateSettings.use_api,
-                spread: rateSettings.spread,
-                manual_rate: rateSettings.manual_rate_cad_ghs
-            });
-            
-            if (rateSettings.use_api) {
-                await api.post('/system/config', { key: 'rate_lock_time', value: rateLockTime });
-            }
-            
-            toast.success('Exchange Rate Settings Updated');
-            fetchRateSettings();
-        } catch (error) {
-            toast.error('Failed to update rate settings');
-        } finally {
-            setSaving(false);
+        const data = {
+            use_api: rateSettings.use_api,
+            spread: rateSettings.spread,
+            manual_rate: rateSettings.manual_rate_cad_ghs
+        };
+        
+        if (rateSettings.use_api) {
+            data.compositeConfig = { key: 'rate_lock_time', value: rateLockTime };
         }
+        
+        triggerSecureAction('UPDATE_RATE_SETTINGS', data);
     };
 
-    const handleSaveLimits = async (e) => {
+    const handleSaveLimits = (e) => {
         e.preventDefault();
-        setSaving(true);
-        try {
-            await api.post('/system/config', {
-                key: 'tiered_limits',
-                value: limits
-            });
-            toast.success('Tiered Limits Updated');
-        } catch (error) {
-            toast.error('Failed to update tiered limits');
-        } finally {
-            setSaving(false);
-        }
+        triggerSecureAction('UPDATE_SYSTEM_CONFIG', {
+            key: 'tiered_limits',
+            value: limits
+        });
     };
 
     if (loading) return <div className="spinner"></div>;

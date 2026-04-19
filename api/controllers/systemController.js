@@ -1,4 +1,5 @@
-const { PaymentMethod, SystemConfig, sequelize } = require('../models');
+const { PaymentMethod, SystemConfig, sequelize, User } = require('../models');
+const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -21,7 +22,14 @@ const getPaymentMethods = async (req, res) => {
 const updatePaymentMethod = async (req, res) => {
     try {
         // Admin endpoint: Update or Create a payment method
-        const { type, currency, details, is_active } = req.body;
+        const { type, currency, details, is_active, pin } = req.body;
+        
+        if (!pin) return res.status(400).json({ error: 'Administrative PIN required' });
+        
+        const admin = await User.findByPk(req.user.id);
+        if (!admin || !admin.transaction_pin || !(await bcrypt.compare(pin, admin.transaction_pin))) {
+            return res.status(403).json({ error: 'Invalid Administrative PIN' });
+        }
 
         if (!type || !currency) {
             return res.status(400).json({ error: 'Type and Currency are required' });
@@ -81,7 +89,14 @@ const getSystemConfig = async (req, res) => {
 
 const updateSystemConfig = async (req, res) => {
     try {
-        const { key, value } = req.body;
+        const { key, value, pin } = req.body;
+
+        if (!pin) return res.status(400).json({ error: 'Administrative PIN required' });
+        
+        const admin = await User.findByPk(req.user.id);
+        if (!admin || !admin.transaction_pin || !(await bcrypt.compare(pin, admin.transaction_pin))) {
+            return res.status(403).json({ error: 'Invalid Administrative PIN' });
+        }
 
         if (!key) {
             return res.status(400).json({ error: 'Key is required' });

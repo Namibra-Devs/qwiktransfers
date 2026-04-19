@@ -1,4 +1,5 @@
-const { Rate } = require('../models');
+const { Rate, User } = require('../models');
+const bcrypt = require('bcrypt');
 const Big = require('big.js');
 const axios = require('axios');
 const { logAction } = require('../services/auditService');
@@ -46,7 +47,14 @@ const getRates = async (req, res) => {
 
 const updateRateSettings = async (req, res) => {
     try {
-        const { use_api, manual_rate, spread } = req.body;
+        const { use_api, manual_rate, spread, pin } = req.body;
+        
+        if (!pin) return res.status(400).json({ error: 'Administrative PIN required' });
+        
+        const admin = await User.findByPk(req.user.id);
+        if (!admin || !admin.transaction_pin || !(await bcrypt.compare(pin, admin.transaction_pin))) {
+            return res.status(403).json({ error: 'Invalid Administrative PIN' });
+        }
 
         let rateRecord = await Rate.findOne({ where: { pair: 'GHS-CAD' } });
         if (!rateRecord) {
