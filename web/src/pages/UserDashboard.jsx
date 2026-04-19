@@ -1043,24 +1043,24 @@ const UserDashboard = () => {
 
                         {formStep === 3 && (
                             <div className="fade-in">
-                                <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', marginBottom: '24px' }}>
+                                <div style={{ background: 'var(--input-bg)', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                         <h3 style={{ fontSize: '0.9rem', margin: 0, color: 'var(--text-muted)' }}>Transfer Summary</h3>
                                         <RateLockTimer lockedUntil={rateLockedUntil} />
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>
                                         <span>Amount:</span>
                                         <span style={{ fontWeight: 700 }}>{amount} {fromCurrency}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>
                                         <span>Recipient Gets:</span>
                                         <span style={{ fontWeight: 700, color: 'var(--success)' }}>{(amount * rate).toFixed(2)} {toCurrency}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>
                                         <span>To:</span>
                                         <span style={{ fontWeight: 700 }}>{recipientName}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-deep-brown)' }}>
                                         <span>Via:</span>
                                         <span style={{ fontWeight: 700 }}>
                                             {toCurrency === 'CAD'
@@ -1070,8 +1070,8 @@ const UserDashboard = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ background: 'var(--text-deep-brown)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
-                                    <h3 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--accent-peach)' }}>Payment Instructions</h3>
+                                <div style={{ background: 'var(--primary)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '0.9rem', marginBottom: '16px', color: '#fff', opacity: 0.9 }}>Payment Instructions</h3>
                                     <p style={{ fontSize: '0.8rem', opacity: 0.9, marginBottom: '16px' }}>
                                         Please send <strong>{amount} {fromCurrency}</strong> to the following admin account:
                                     </p>
@@ -1098,8 +1098,8 @@ const UserDashboard = () => {
                                             fontSize: '1.25rem',
                                             fontWeight: 800,
                                             letterSpacing: '2px',
-                                            color: 'var(--accent-peach)',
-                                            border: '1px dashed rgba(255,255,255,0.3)'
+                                            color: '#fff',
+                                            border: '1px dashed rgba(255,255,255,0.4)'
                                         }}>
                                             {adminReference}
                                         </div>
@@ -1132,9 +1132,9 @@ const UserDashboard = () => {
                                     </p>
                                 )}
 
-                                <div style={{ background: 'var(--text-deep-brown)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px', textAlign: 'left' }}>
+                                <div style={{ background: 'var(--primary)', color: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '24px', textAlign: 'left' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                        <h3 style={{ fontSize: '0.85rem', margin: 0, color: 'var(--accent-peach)' }}>PAYMENT INSTRUCTIONS</h3>
+                                        <h3 style={{ fontSize: '0.85rem', margin: 0, color: '#fff', opacity: 0.9 }}>PAYMENT INSTRUCTIONS</h3>
                                         <RateLockTimer lockedUntil={rateLockedUntil} />
                                     </div>
                                     <p style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: '20px' }}>
@@ -1157,7 +1157,7 @@ const UserDashboard = () => {
 
                                     <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.3)', textAlign: 'center' }}>
                                         <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.7, display: 'block', marginBottom: '4px' }}>Reference Code</label>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-peach)', letterSpacing: '1px' }}>{adminReference}</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>{adminReference}</div>
                                     </div>
                                 </div>
 

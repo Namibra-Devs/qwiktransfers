@@ -254,9 +254,9 @@ const HelpCenter = () => {
 
     return (
         <div className="help-center-container fade-in">
-            <div className="glass card" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '700px', padding: 0, overflow: 'hidden', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.4)' }}>
+            <div className="glass card" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '700px', padding: 0, overflow: 'hidden', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
                 {/* Sidebar */}
-                <div style={{ background: 'rgba(255, 255, 255, 0.4)', borderRight: '1px solid var(--border-color)', padding: '24px' }}>
+                <div style={{ background: 'var(--card-bg)', borderRight: '1px solid var(--border-color)', padding: '24px', opacity: 0.95 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', color: 'var(--primary)' }}>
                         <span className="material-symbols-outlined">help_center</span>
                         <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Help Center</h2>
@@ -272,7 +272,7 @@ const HelpCenter = () => {
                                     gap: '12px',
                                     padding: '12px 16px',
                                     background: activeSection === section.id ? 'var(--primary)' : 'transparent',
-                                    color: activeSection === section.id ? '#fff' : 'var(--text-deep-brown)',
+                                    color: activeSection === section.id ? '#fff' : 'var(--text-main)',
                                     borderRadius: '12px',
                                     border: 'none',
                                     fontWeight: 700,
@@ -298,7 +298,7 @@ const HelpCenter = () => {
                 .help-content h3 {
                     font-size: 1.5rem;
                     margin-bottom: 16px;
-                    color: var(--text-deep-brown);
+                    color: var(--text-main);
                     font-weight: 900;
                 }
                 .help-content p {
@@ -308,12 +308,13 @@ const HelpCenter = () => {
                     font-size: 1rem;
                 }
                 .help-box {
-                    background: rgba(255,255,255,0.6);
+                    background: var(--input-bg);
                     backdrop-filter: blur(10px);
-                    border: 1px solid rgba(183,71,42,0.1);
+                    border: 1px solid var(--border-color);
                     border-radius: 16px;
                     padding: 24px;
                     margin-bottom: 24px;
+                    opacity: 0.9;
                 }
                 .help-box h4 {
                     margin: 0 0 12px 0;
@@ -326,7 +327,7 @@ const HelpCenter = () => {
                 .help-box p, .help-box li {
                     margin: 0;
                     font-size: 0.95rem;
-                    color: var(--text-deep-brown);
+                    color: var(--text-main);
                     line-height: 1.6;
                 }
                 .help-box ul {
