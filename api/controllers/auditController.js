@@ -1,5 +1,6 @@
 const { AuditLog, User } = require('../models');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
 
 const { exportToExcel } = require('../services/exportService');
 
@@ -43,6 +44,23 @@ const getAuditLogs = async (req, res) => {
 
 const exportAuditLogs = async (req, res) => {
     try {
+        const { pin } = req.body;
+
+        if (!pin) {
+            return res.status(400).json({ error: 'Administrative PIN is required for export' });
+        }
+
+        // Verify Admin PIN
+        const admin = await User.findByPk(req.user.id);
+        if (!admin || !admin.transaction_pin) {
+            return res.status(403).json({ error: 'Security PIN not set. Please configure it in your profile.' });
+        }
+
+        const isMatch = await bcrypt.compare(pin, admin.transaction_pin);
+        if (!isMatch) {
+            return res.status(403).json({ error: 'Invalid Administrative PIN' });
+        }
+
         const logs = await AuditLog.findAll({
             include: [{ model: User, as: 'user', attributes: ['first_name', 'middle_name', 'last_name', 'email'] }],
             order: [['createdAt', 'DESC']],

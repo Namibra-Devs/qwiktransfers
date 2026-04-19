@@ -22,11 +22,31 @@ const createAnnouncement = async (req, res) => {
 
 const getAdminAnnouncements = async (req, res) => {
     try {
-        const announcements = await Announcement.findAll({
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+        if (search) {
+            where[Op.or] = [
+                { title: { [Op.like]: `%${search}%` } },
+                { message: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const { count, rows: announcements } = await Announcement.findAndCountAll({
+            where,
+            include: [{ model: User, as: 'creator', attributes: ['first_name', 'last_name', 'email'] }],
             order: [['createdAt', 'DESC']],
-            include: [{ model: User, as: 'creator', attributes: ['first_name', 'last_name', 'email'] }]
+            limit: parseInt(limit),
+            offset: parseInt(offset)
         });
-        res.json(announcements);
+
+        res.json({
+            announcements,
+            total: count,
+            pages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

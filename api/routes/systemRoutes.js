@@ -35,7 +35,7 @@ router.get('/health', verifyToken, verifySuperAdmin, systemController.getSystemH
 
 // Audit Log Routes (Admin Only)
 router.get('/admin/audit-logs', verifyToken, verifySuperAdmin, auditController.getAuditLogs);
-router.get('/admin/audit-logs/export', verifyToken, verifySuperAdmin, auditController.exportAuditLogs);
+router.post('/admin/audit-logs/export', verifyToken, verifySuperAdmin, auditController.exportAuditLogs);
 router.delete('/admin/audit-logs/cleanup', verifyToken, verifySuperAdmin, auditController.cleanupAuditLogs);
 
 module.exports = router;

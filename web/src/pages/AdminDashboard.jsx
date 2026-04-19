@@ -45,6 +45,10 @@ const AdminDashboard = () => {
     const [complaintSearch, setComplaintSearch] = useState('');
     // Announcements State
     const [announcements, setAnnouncements] = useState([]);
+    const [announcementPage, setAnnouncementPage] = useState(1);
+    const [announcementTotalPages, setAnnouncementTotalPages] = useState(1);
+    const [announcementSearch, setAnnouncementSearch] = useState('');
+    const [announcementCount, setAnnouncementCount] = useState(0);
     const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false);
     const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '', type: 'info', target: 'all', expires_at: '' });
 
@@ -149,7 +153,7 @@ const AdminDashboard = () => {
         } else if (tab === 'announcements') {
             fetchAnnouncements();
         }
-    }, [page, search, statusFilter, userPage, userSearch, vendorPage, vendorSearch, adminPage, adminSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, tab]);
+    }, [page, search, statusFilter, userPage, userSearch, vendorPage, vendorSearch, adminPage, adminSearch, auditPage, auditSearch, auditAction, inquiryPage, inquiryStatusFilter, inquirySearch, complaintPage, complaintStatusFilter, complaintSearch, announcementPage, announcementSearch, tab]);
 
     useEffect(() => {
         if (selectedUser && showUserModal) {
@@ -295,8 +299,16 @@ const AdminDashboard = () => {
 
     const fetchAnnouncements = async () => {
         try {
-            const res = await api.get('/announcements/admin');
-            setAnnouncements(res.data);
+            const res = await api.get('/announcements/admin', {
+                params: {
+                    page: announcementPage,
+                    limit: 10,
+                    search: announcementSearch
+                }
+            });
+            setAnnouncements(res.data.announcements || []);
+            setAnnouncementTotalPages(res.data.pages || 1);
+            setAnnouncementCount(res.data.total || 0);
         } catch (error) {
             console.error('Fetch announcements error:', error);
         }
@@ -472,6 +484,18 @@ const AdminDashboard = () => {
                 await api.patch('/auth/update-role', { userId, role: 'user', pin: secureActionPin });
                 toast.success('Admin privileges revoked');
                 setShowUserModal(false);
+            } else if (secureAction === 'EXPORT_LOGS') {
+                toast.loading('Exporting logs...', { id: 'audit-export' });
+                const response = await api.post('/system/admin/audit-logs/export', 
+                    { pin: secureActionPin }, 
+                    { responseType: 'blob' }
+                );
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
+                link.click();
+                toast.success('Audit logs exported!', { id: 'audit-export' });
             }
             
             refreshCurrentTab();
@@ -637,35 +661,30 @@ const AdminDashboard = () => {
                         {['transactions', 'kyc', 'users', 'vendors', 'admins', 'announcements', 'audit', 'inquiries', 'complaints'].includes(tab) && (
                             <>
                                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                                    <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
-                                                {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'admins' ? 'Administrative Staff' : tab === 'announcements' ? 'System-wide Broadcasts' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
-                                            </h2>
-                                            <button
-                                                onClick={() => setTab('help')}
-                                                style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
-                                                title="How does this page work?"
-                                            >
-                                                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
-                                            </button>
-                                        </div>
-                                        {tab !== 'transactions' && (
-                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                {tab === 'audit' && (
+                                    {tab !== 'announcements' && (
+                                        <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
+                                                    {tab === 'transactions' ? 'Global Transaction Pool' : tab === 'kyc' ? 'Identity Verification Requests' : tab === 'vendors' ? 'Platform Vendors' : tab === 'admins' ? 'Administrative Staff' : tab === 'audit' ? 'System Audit Logs' : tab === 'inquiries' ? 'Support & Inquiries' : tab === 'complaints' ? 'User Complaints' : 'User Management'}
+                                                </h2>
+                                                <button
+                                                    onClick={() => setTab('help')}
+                                                    style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800 }}
+                                                    title="How does this page work?"
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
+                                                </button>
+                                            </div>
+                                            {tab !== 'transactions' && (
+                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                    {tab === 'audit' && (
                                                     <>
                                                         <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    toast.loading('Exporting logs...', { id: 'audit-export' });
-                                                                    const response = await api.get('/system/admin/audit-logs/export', { responseType: 'blob' });
-                                                                    const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                                    const link = document.createElement('a');
-                                                                    link.href = url;
-                                                                    link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xlsx`);
-                                                                    link.click();
-                                                                    toast.success('Audit logs exported!', { id: 'audit-export' });
-                                                                } catch (err) { toast.error('Export failed', { id: 'audit-export' }); }
+                                                            onClick={() => {
+                                                                setSecureActionPin('');
+                                                                setSecureAction('EXPORT_LOGS');
+                                                                setSecureActionData({});
+                                                                setShowSecureActionModal(true);
                                                             }}
                                                             className="btn-primary"
                                                             style={{
@@ -739,6 +758,7 @@ const AdminDashboard = () => {
                                             </div>
                                         )}
                                     </div>
+                                )}
 
                                     {tab === 'transactions' && (
                                         <div className="fade-in">
@@ -979,16 +999,81 @@ const AdminDashboard = () => {
                                     )}
 
                                     {tab === 'announcements' && (
-                                        <AnnouncementManager
-                                            announcements={announcements}
-                                            fetchAnnouncements={fetchAnnouncements}
-                                            setShowAddModal={setShowAddAnnouncementModal}
-                                        />
+                                        <div className="fade-in">
+                                            <div style={{ padding: '24px 32px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--input-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                                        <span className="material-symbols-outlined">campaign</span>
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-deep-brown)', fontWeight: 800 }}>System-wide Broadcasts</h3>
+                                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Manage platform announcements and alerts</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setTab('help')}
+                                                        style={{ background: 'var(--bg-peach)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800, marginTop: '-12px' }}
+                                                        title="How does this page work?"
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
+                                                    </button>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setShowAddAnnouncementModal(true)}
+                                                    className="btn-primary"
+                                                    style={{ padding: '10px 24px', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)' }}
+                                                >
+                                                    <span className="material-symbols-outlined">add</span>
+                                                    New Broadcast
+                                                </button>
+                                            </div>
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                                    <div style={{ position: 'relative', flex: 1 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search broadcasts by title or content..."
+                                                            value={announcementSearch}
+                                                            onChange={(e) => { setAnnouncementSearch(e.target.value); setAnnouncementPage(1); }}
+                                                            style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none', transition: 'all 0.2s ease' }}
+                                                        />
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', pointerEvents: 'none' }}>search</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <AnnouncementManager
+                                                announcements={announcements}
+                                                fetchAnnouncements={fetchAnnouncements}
+                                                setShowAddModal={setShowAddAnnouncementModal}
+                                            />
+                                            {announcementTotalPages > 1 && (
+                                                <div className="pagination-footer" style={{ borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+                                                    <div className="pagination-info" style={{ color: 'var(--text-muted)' }}>
+                                                        Showing page {announcementPage} of {announcementTotalPages} ({announcementCount} broadcasts)
+                                                    </div>
+                                                    <div className="pagination-controls">
+                                                        <button 
+                                                            onClick={() => setAnnouncementPage(p => Math.max(1, p - 1))} 
+                                                            disabled={announcementPage === 1}
+                                                            className="pagination-btn"
+                                                        >
+                                                            <span className="material-symbols-outlined">chevron_left</span>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setAnnouncementPage(p => Math.min(announcementTotalPages, p + 1))} 
+                                                            disabled={announcementPage === announcementTotalPages}
+                                                            className="pagination-btn"
+                                                        >
+                                                            <span className="material-symbols-outlined">chevron_right</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
 
                                     {tab === 'audit' && (
                                         <div className="fade-in">
-                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: '#fcfcfc', borderBottom: '1px solid #eee' }}>
+                                            <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border-color)' }}>
                                                 <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
                                                     <div style={{ position: 'relative', flex: 0.7 }}>
                                                         <input
@@ -996,14 +1081,14 @@ const AdminDashboard = () => {
                                                             placeholder="Search logs..."
                                                             value={auditSearch}
                                                             onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
-                                                            style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                            style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', outline: 'none' }}
                                                         />
-                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
+                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem', color: 'var(--text-muted)', pointerEvents: 'none' }}>search</span>
                                                     </div>
                                                     <select
                                                         value={auditAction}
                                                         onChange={(e) => { setAuditAction(e.target.value); setAuditPage(1); }}
-                                                        style={{ flex: 0.3, padding: '10px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                                        style={{ flex: 0.3, padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 700, background: 'var(--input-bg)', color: 'var(--text-deep-brown)', cursor: 'pointer', outline: 'none' }}
                                                     >
                                                         <option value="">All Actions</option>
                                                         <option value="LOGIN">Login</option>
@@ -1071,37 +1156,37 @@ const AdminDashboard = () => {
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
                                     {tab === 'transactions' ? (
                                         Array.from({ length: totalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: page === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
+                                                    <button
+                                                        key={i + 1}
+                                                        onClick={() => setPage(i + 1)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            borderRadius: '4px',
+                                                            border: '1px solid var(--border-color)',
+                                                            background: page === i + 1 ? 'var(--primary)' : 'var(--input-bg)',
+                                                            color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
                                                 {i + 1}
                                             </button>
                                         ))
                                     ) : tab === 'audit' ? (
                                         Array.from({ length: auditTotalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setAuditPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: auditPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
+                                                    <button
+                                                        key={i + 1}
+                                                        onClick={() => setAuditPage(i + 1)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            borderRadius: '4px',
+                                                            border: '1px solid var(--border-color)',
+                                                            background: auditPage === i + 1 ? 'var(--primary)' : 'var(--input-bg)',
+                                                            color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
                                                 {i + 1}
                                             </button>
                                         ))
@@ -1802,7 +1887,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newAdmin.firstName}
                                                 onChange={(e) => setNewAdmin({ ...newAdmin, firstName: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="Employee First Name"
                                             />
                                         </div>
@@ -1813,7 +1898,7 @@ const AdminDashboard = () => {
                                                 required
                                                 value={newAdmin.lastName}
                                                 onChange={(e) => setNewAdmin({ ...newAdmin, lastName: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 placeholder="Last Name"
                                             />
                                         </div>
@@ -1825,7 +1910,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newAdmin.email}
                                             onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             placeholder="staff@qwiktransfers.com"
                                         />
                                     </div>
@@ -1875,7 +1960,7 @@ const AdminDashboard = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--text-deep-brown)', color: '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)' }}
                                 >
                                     Create Admin
                                 </button>
@@ -2003,10 +2088,10 @@ const AdminDashboard = () => {
             )}
 
             {showAddAnnouncementModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                    <div className="card scale-in" style={{ width: '100%', maxWidth: '600px', padding: 0, overflow: 'hidden' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', backdropFilter: 'blur(8px)' }}>
+                    <div className="glass-card scale-in" style={{ width: '100%', maxWidth: '600px', padding: 0, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-deep-brown)' }}>
                                 <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>campaign</span>
                                 New System-wide Broadcast
                             </h3>
@@ -2024,7 +2109,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newAnnouncement.title}
                                             onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             placeholder="e.g., Weekend Maintenance, New Vendor Policy"
                                         />
                                     </div>
@@ -2034,7 +2119,7 @@ const AdminDashboard = () => {
                                             required
                                             value={newAnnouncement.message}
                                             onChange={(e) => setNewAnnouncement({ ...newAnnouncement, message: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', minHeight: '120px', resize: 'vertical' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', minHeight: '120px', resize: 'vertical' }}
                                             placeholder="Write your detailed message here..."
                                         />
                                     </div>
@@ -2044,7 +2129,7 @@ const AdminDashboard = () => {
                                             <select
                                                 value={newAnnouncement.type}
                                                 onChange={(e) => setNewAnnouncement({ ...newAnnouncement, type: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             >
                                                 <option value="info">Information (Blue)</option>
                                                 <option value="warning">Warning (Orange)</option>
@@ -2057,7 +2142,7 @@ const AdminDashboard = () => {
                                             <select
                                                 value={newAnnouncement.target}
                                                 onChange={(e) => setNewAnnouncement({ ...newAnnouncement, target: e.target.value })}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
+                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             >
                                                 <option value="all">Everyone (Platform-wide)</option>
                                                 <option value="vendors">Vendors Only</option>
@@ -2072,23 +2157,23 @@ const AdminDashboard = () => {
                                             type="date"
                                             value={newAnnouncement.expires_at}
                                             onChange={(e) => setNewAnnouncement({ ...newAnnouncement, expires_at: e.target.value })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                         />
                                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Notice will automatically vanish from user dashboards after this date.</p>
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: '#f9f9f9', display: 'flex', gap: '12px' }}>
+                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)', display: 'flex', gap: '12px' }}>
                                 <button
                                     type="button"
                                     onClick={() => setShowAddAnnouncementModal(false)}
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)' }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>rocket_launch</span>
                                     Broadcast Now
