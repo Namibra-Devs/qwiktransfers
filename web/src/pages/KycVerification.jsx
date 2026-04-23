@@ -30,6 +30,9 @@ const KycVerification = () => {
 
     const currentDocs = documentsByCountry[user?.country] || documentsByCountry['Ghana'];
 
+    // set Document ID Number field placeholder to user country
+    // const placeholder = user?.country === 'Ghana' ? 'Ghana Card (E-ID)' : 'Passport';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!documentType) return toast.error('Please select a document type');
@@ -129,7 +132,7 @@ const KycVerification = () => {
                         <span className="brand-name">{config.system_name}</span>
                     </Link>
                 </div>
-                
+
                 <div className="dashboard-actions">
                     <div className="header-utilities">
                         <ThemeSwitcher />
@@ -161,7 +164,7 @@ const KycVerification = () => {
                             type="text"
                             value={documentId}
                             onChange={(e) => setDocumentId(e.target.value)}
-                            placeholder="GHA-1234567-8"
+                            placeholder="ID or Number"
                             required
                         />
                     </div>

@@ -10,6 +10,7 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                         <th style={{ padding: '12px 20px' }}>Live Status</th>
                         <th style={{ padding: '12px 20px' }}>Region</th>
                         <th style={{ padding: '12px 20px' }}>Approval Status</th>
+                        <th style={{ padding: '12px 20px' }}>Last Activity</th>
                         <th style={{ padding: '12px 20px', textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
@@ -81,6 +82,11 @@ const VendorTable = ({ vendors, toggleStatus, setSelectedUser, setShowUserModal,
                                 }}>
                                     {v.is_active ? 'APPROVED' : 'PENDING REVIEW'}
                                 </span>
+                            </td>
+                            <td style={{ padding: '20px' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-deep-brown)' }}>
+                                    {v.last_login ? new Date(v.last_login).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Never'}
+                                </div>
                             </td>
                             <td style={{ padding: '20px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

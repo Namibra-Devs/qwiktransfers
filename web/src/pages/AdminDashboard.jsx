@@ -1529,7 +1529,21 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ padding: '20px', background: 'var(--input-bg)', borderRadius: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                             <div style={{ padding: '20px', background: 'var(--input-bg)', borderRadius: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Phone Number</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>phone</span>
+                                        {selectedUser.phone || 'N/A'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Registered Country</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>public</span>
+                                        {selectedUser.country || 'N/A'}
+                                    </div>
+                                </div>
                                 <div>
                                     <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Registration Date</label>
                                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>

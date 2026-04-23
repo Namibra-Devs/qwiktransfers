@@ -10,6 +10,7 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                         <th style={{ padding: '12px 20px' }}>Access Level</th>
                         <th style={{ padding: '12px 20px' }}>Security (2FA)</th>
                         <th style={{ padding: '12px 20px' }}>Status</th>
+                        <th style={{ padding: '12px 20px' }}>Last Seen</th>
                         <th style={{ padding: '12px 20px', textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
@@ -71,6 +72,11 @@ const AdminTable = ({ admins, toggleStatus, setSelectedUser, setShowAdminModal }
                                     <div style={{ fontSize: '0.75rem', color: admin.is_active ? 'var(--text-muted)' : 'var(--danger)', fontWeight: 600 }}>
                                         {admin.is_active ? 'Account Active' : 'Account Suspended'}
                                     </div>
+                                </div>
+                            </td>
+                            <td style={{ padding: '20px' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-deep-brown)' }}>
+                                    {admin.last_login ? new Date(admin.last_login).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Never'}
                                 </div>
                             </td>
                             <td style={{ padding: '20px', textAlign: 'right' }}>

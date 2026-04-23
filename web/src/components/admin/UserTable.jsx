@@ -9,6 +9,7 @@ const UserTable = ({ users, setSelectedUser, setShowUserModal }) => {
                     <th>Contact</th>
                     <th>ID Level</th>
                     <th>Lifetime Transfers</th>
+                    <th>Last Activity</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
             </thead>
@@ -28,6 +29,11 @@ const UserTable = ({ users, setSelectedUser, setShowUserModal }) => {
                         <td style={{ fontSize: '0.85rem' }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{parseFloat(u.balance_ghs).toLocaleString()} GHS</div>
                             <div style={{ fontWeight: 700, color: 'var(--text-deep-brown)' }}>{parseFloat(u.balance_cad).toLocaleString()} CAD</div>
+                        </td>
+                        <td>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-deep-brown)' }}>
+                                {u.last_login ? new Date(u.last_login).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Never'}
+                            </div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
                             <button
