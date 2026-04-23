@@ -67,18 +67,6 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
                         {navLinks.filter(link => link.name !== 'Profile').map(link => (
                             <Link key={link.path} to={link.path} className="nav-link">{link.name}</Link>
                         ))}
-                        {user?.kyc_status && (
-                            <Link to="/kyc" className="kyc-badge-link">
-                                {user?.kyc_status === 'verified' ? (
-                                    <span className="kyc-status verified">
-                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem', marginRight: '4px' }}>check_circle</span>
-                                        Verified
-                                    </span>
-                                ) : (
-                                    <span className="kyc-status unverified">Verify ID</span>
-                                )}
-                            </Link>
-                        )}
                     </nav>
 
                     <div className="header-utilities">

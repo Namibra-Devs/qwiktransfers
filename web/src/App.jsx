@@ -26,14 +26,20 @@ import VendorRegister from './pages/VendorRegister';
 import Complaints from './pages/Complaints';
 import Referrals from './pages/Referrals';
 
-const PrivateRoute = ({ children, role }) => {
+const PrivateRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) {
-    if (user.role === 'admin') return <Navigate to="/admin" />;
-    if (user.role === 'vendor') return <Navigate to="/vendor" />;
-    return <Navigate to="/dashboard" />;
+  
+  if (allowedRoles) {
+    const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    if (!rolesArray.includes(user.role)) {
+      // Redirect unauthorized users to their respective home dashboards
+      if (user.role === 'admin') return <Navigate to="/admin" />;
+      if (user.role === 'vendor') return <Navigate to="/vendor" />;
+      return <Navigate to="/dashboard" />;
+    }
   }
+  
   return children;
 };
 
@@ -73,7 +79,7 @@ function App() {
             <Route
               path="/admin"
               element={
-                <PrivateRoute role="admin">
+                <PrivateRoute allowedRoles="admin">
                   <AdminDashboard />
                 </PrivateRoute>
               }
@@ -82,7 +88,7 @@ function App() {
             <Route
               path="/vendor"
               element={
-                <PrivateRoute role="vendor">
+                <PrivateRoute allowedRoles="vendor">
                   <VendorDashboard />
                 </PrivateRoute>
               }
@@ -91,7 +97,7 @@ function App() {
             <Route
               path="/profile"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles={['user', 'vendor', 'admin']}>
                   <Profile />
                 </PrivateRoute>
               }
@@ -100,7 +106,7 @@ function App() {
             <Route
               path="/kyc"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles={['user', 'vendor']}>
                   <KycVerification />
                 </PrivateRoute>
               }
@@ -109,7 +115,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles="user">
                   <UserDashboard />
                 </PrivateRoute>
               }
@@ -118,7 +124,7 @@ function App() {
             <Route
               path="/complaints"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles={['user', 'vendor']}>
                   <Complaints />
                 </PrivateRoute>
               }
@@ -127,7 +133,7 @@ function App() {
             <Route
               path="/referrals"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles="user">
                   <Referrals />
                 </PrivateRoute>
               }
