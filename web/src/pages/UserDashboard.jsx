@@ -272,6 +272,7 @@ const TransactionAnalytics = ({ data, loading }) => {
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
+    const detailsRef = useRef(null);
 
     const [config, setConfig] = useState({
         system_name: 'QWIK',
@@ -814,7 +815,15 @@ const UserDashboard = () => {
 
     const openDetails = (tx) => {
         setSelectedTx(tx);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // On mobile, scrolling to absolute top (0) is annoying as it skips past the details to the Send Money form.
+        // We orient the scroll to the details section specifically on smaller screens.
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                detailsRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     return (
@@ -1402,7 +1411,7 @@ const UserDashboard = () => {
                     <>
                         {/* Transaction Details Modal (Premium Redesign) */}
 
-                        <div className="fade-in" style={{ width: "100%", marginBottom: "40px" }}>
+                        <div ref={detailsRef} className="fade-in" style={{ width: "100%", marginBottom: "40px" }}>
                             <div className="card" style={{ padding: "0", width: "100%", overflow: "hidden" }}>
                                 {/* Modal Header/Upper Section */}
                                 <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
