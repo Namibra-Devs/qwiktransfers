@@ -44,7 +44,7 @@ const DashboardHeader = ({ user, logout, config, type = 'user', extraActions }) 
         <>
             <header className="dashboard-header premium-pill-header">
                 <div className="dashboard-brand nav-segment nav-brand-pill">
-                    <Link to="/" className="brand-link">
+                    <Link to={type === 'vendor' ? '/vendor' : '/dashboard'} className="brand-link">
                         {config.system_logo ? (
                             <img
                                 src={getImageUrl(config.system_logo)}

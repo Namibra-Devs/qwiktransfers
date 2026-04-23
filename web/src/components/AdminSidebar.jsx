@@ -3,6 +3,7 @@ import api from '../services/api';
 import NotificationPanel from './NotificationPanel';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
     const { user } = useAuth();
@@ -74,13 +75,15 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }
 
     return (
         <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{ background: 'var(--card-bg)' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                {systemLogo ? (
-                    <img src={systemLogo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-                ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>language</span>
-                )}
-                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>QWIK Admin</h1>
+            <div style={{ borderBottom: '1px solid var(--border-color)' }}>
+                <Link to="/admin" style={{ padding: '24px', display: 'flex', gap: '12px', alignItems: 'center', textDecoration: 'none' }}>
+                    {systemLogo ? (
+                        <img src={systemLogo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+                    ) : (
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>language</span>
+                    )}
+                    <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>{systemName}</h1>
+                </Link>
             </div>
 
             <nav style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>

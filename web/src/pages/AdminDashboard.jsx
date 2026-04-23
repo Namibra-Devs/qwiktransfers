@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../services/api';
 import { toast } from 'react-hot-toast';
 import AdminSidebar from '../components/AdminSidebar';
@@ -646,7 +647,9 @@ const AdminDashboard = () => {
                         </span>
                     </button>
 
-                    <h1 className="mobile-brand-title">QWIK Admin</h1>
+                    <Link to="/admin" style={{ textDecoration: 'none' }}>
+                        <h1 className="mobile-brand-title">QWIK Admin</h1>
+                    </Link>
 
                     <div className="mobile-header-actions">
                         <NotificationPanel />

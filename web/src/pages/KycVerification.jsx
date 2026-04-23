@@ -54,7 +54,7 @@ const KycVerification = () => {
             });
             toast.success('KYC Documents submitted for review!');
             if (refreshProfile) await refreshProfile();
-            navigate('/');
+            navigate('/dashboard');
         } catch (error) {
             toast.error(error.response?.data?.error || 'Submission failed');
         } finally {
@@ -94,7 +94,7 @@ const KycVerification = () => {
                     </div>
                     <h2>Fully Verified</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Your identity has been verified. You now have access to high-limit transfers.</p>
-                    <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
+                    <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
                 </div>
             </div>
         );
@@ -109,7 +109,7 @@ const KycVerification = () => {
                     </div>
                     <h2>Review in Progress</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Our compliance team is currently reviewing your documents. This usually takes 24-48 hours.</p>
-                    <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
+                    <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
                 </div>
             </div>
         );
@@ -119,7 +119,7 @@ const KycVerification = () => {
         <div className="dashboard-container">
             <header className="dashboard-header">
                 <div className="dashboard-brand">
-                    <Link to="/" className="brand-link">
+                    <Link to="/dashboard" className="brand-link">
                         {config.system_logo ? (
                             <img
                                 src={getImageUrl(`/${config.system_logo}`)}
@@ -136,7 +136,7 @@ const KycVerification = () => {
                 <div className="dashboard-actions">
                     <div className="header-utilities">
                         <ThemeSwitcher />
-                        <Link to="/" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none', marginLeft: '16px' }}>Dashboard</Link>
+                        <Link to="/dashboard" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none', marginLeft: '16px' }}>Dashboard</Link>
                     </div>
                 </div>
             </header>
