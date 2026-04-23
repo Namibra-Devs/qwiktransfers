@@ -1249,10 +1249,10 @@ const UserDashboard = () => {
                     <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
                         <TransactionAnalytics data={userStats} loading={statsLoading} />
 
-                        <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <div style={{ position: 'relative', width: '250px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                                <div style={{ position: 'relative', width: '100%', maxWidth: '250px' }}>
                                     <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem', color: 'var(--text-muted)' }}>search</span>
                                     <input
                                         type="text"
@@ -1284,7 +1284,7 @@ const UserDashboard = () => {
                                 <Button
                                     variant="outline"
                                     onClick={() => setShowExportModal(true)}
-                                    style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto', height: '42px' }}
+                                    style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto', height: '42px', flex: '0 0 auto' }}
                                 >
                                     Export CSV
                                 </Button>
