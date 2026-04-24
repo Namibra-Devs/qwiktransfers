@@ -852,8 +852,14 @@ const UserDashboard = () => {
                                 <Input
                                     label="You send"
                                     type="number"
+                                    min="0"
                                     value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || Number(val) >= 0) {
+                                            setAmount(val);
+                                        }
+                                    }}
                                     placeholder="0.00"
                                     required
                                     style={{ fontSize: '1.25rem', fontWeight: 600 }}
@@ -1056,7 +1062,9 @@ const UserDashboard = () => {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>
                                         <span>Recipient Gets:</span>
-                                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>{(amount * rate).toFixed(2)} {toCurrency}</span>
+                                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>
+                                            {amount ? (fromCurrency === 'CAD' ? new Big(amount).times(rate).toFixed(2) : new Big(amount).div(rate).toFixed(2)) : '0.00'} {toCurrency}
+                                        </span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-deep-brown)' }}>
                                         <span>To:</span>
