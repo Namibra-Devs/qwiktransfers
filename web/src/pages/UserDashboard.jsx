@@ -540,13 +540,8 @@ const UserDashboard = () => {
         try {
             const res = await api.get('/rates');
             const apiRate = res.data.rate; // Base rate is 1 GHS = X CAD
-
-            // If sending from CAD, we want 1 CAD = Y GHS (where Y = 1 / apiRate)
-            if (fromCurrency === 'CAD') {
-                setRate(1 / apiRate);
-            } else {
-                setRate(apiRate);
-            }
+            // Standardize to 1 CAD = Y GHS
+            setRate(1 / apiRate);
         } catch (error) {
             console.error('Failed to fetch rate', error);
         }
@@ -604,15 +599,6 @@ const UserDashboard = () => {
         } catch (error) {
             toast.error('Failed to export transactions');
         }
-    };
-
-    const handleCurrencySwitch = () => {
-        const tempFrom = fromCurrency;
-        const tempTo = toCurrency;
-        setFromCurrency(tempTo);
-        setToCurrency(tempFrom);
-        // Rate will be automatically updated by the useEffect watching fromCurrency
-        setFormStep(1); // Reset step if currency changes
     };
 
     const generateReference = () => {
@@ -854,7 +840,7 @@ const UserDashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <div>
                                 <h2 style={{ fontSize: '1.1rem', marginBottom: '2px' }}>Send Money</h2>
-                                <p style={{ fontSize: '0.75rem', color: 'tomato', fontWeight: 600 }}>Sending {fromCurrency} to {toCurrency}</p>
+                                <p style={{ fontSize: '0.75rem', color: 'tomato', fontWeight: 600 }}>Sending from {user?.country || (fromCurrency === 'CAD' ? 'Canada' : 'Ghana')} to {user?.country === 'Canada' ? 'Ghana' : 'Canada'}</p>
                             </div>
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--accent-peach)', padding: '4px 10px', borderRadius: '20px' }}>
                                 {formStep === 4 ? 'Success' : `Step ${formStep} of 3`}
@@ -874,20 +860,20 @@ const UserDashboard = () => {
                                 />
 
                                 <div style={{ textAlign: 'center', margin: '-10px 0 10px 0' }}>
-                                    <button type="button" onClick={handleCurrencySwitch} style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(180deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}>
-                                        <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>swap_vert</span>
-                                    </button>
+                                    <div style={{ background: 'var(--accent-peach)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>arrow_downward</span>
+                                    </div>
                                 </div>
 
                                 <Input
-                                    label="Recipient gets"
-                                    value={amount ? new Big(amount).times(rate).toFixed(2) : '0.00'}
+                                    label={`Recipient gets (${toCurrency})`}
+                                    value={amount ? (fromCurrency === 'CAD' ? new Big(amount).times(rate).toFixed(2) : new Big(amount).div(rate).toFixed(2)) : '0.00'}
                                     readOnly
                                     style={{ background: 'var(--bg-main)', fontSize: '1.25rem', fontWeight: 600, cursor: 'not-allowed' }}
                                     placeholder="0.00"
                                 />
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-16px', marginBottom: '8px', fontWeight: 500 }}>
-                                    Exchange Rate: 1 {fromCurrency} = {new Big(rate).toFixed(4)} {toCurrency}
+                                    Exchange Rate: 1 CAD = {new Big(rate).toFixed(4)} GHS
                                 </p>
 
                                 <Input
