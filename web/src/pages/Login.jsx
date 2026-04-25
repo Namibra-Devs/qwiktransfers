@@ -29,6 +29,8 @@ const Login = () => {
         } else if (show2FA && timeLeft === 0) {
             setShow2FA(false);
             setOtp('');
+            setEmail('');
+            setPassword('');
             setError('Authentication session expired. Please log in again.');
         }
         return () => clearInterval(timer);
@@ -89,7 +91,16 @@ const Login = () => {
             } else if (!err.response) {
                 setError('Network error. Please check your internet connection and try again.');
             } else {
-                setError(err.response?.data?.error || 'Invalid email or password');
+                const errorMsg = err.response?.data?.error || 'Invalid email or password';
+                setError(errorMsg);
+                
+                // If account is locked out, clear everything and kick back to main form
+                if (errorMsg.includes('locked for 15 minutes') || errorMsg.includes('Account locked')) {
+                    setShow2FA(false);
+                    setOtp('');
+                    setEmail('');
+                    setPassword('');
+                }
             }
         } finally {
             setLoading(false);

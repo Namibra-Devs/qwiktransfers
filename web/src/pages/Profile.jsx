@@ -23,6 +23,11 @@ const Profile = () => {
     const [actionReason, setActionReason] = useState('');
     const [showDangerModal, setShowDangerModal] = useState(false);
 
+    // 2FA State
+    const [qrCode, setQrCode] = useState(null);
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [show2FASetup, setShow2FASetup] = useState(false);
+
     const [config, setConfig] = useState({
         system_name: 'QWIK',
         system_logo: ''
@@ -95,6 +100,49 @@ const Profile = () => {
             setPin('');
         } catch (error) {
             setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGenerate2FA = async () => {
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/2fa/generate');
+            setQrCode(res.data.qr_code);
+            setShow2FASetup(true);
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Failed to generate 2FA' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerify2FA = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.post('/auth/2fa/verify', { token: twoFactorCode });
+            setMsg({ type: 'success', text: '2FA Enabled!' });
+            setShow2FASetup(false);
+            setTwoFactorCode('');
+            if (refreshProfile) await refreshProfile();
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Invalid 2FA Code' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!window.confirm('Are you sure you want to disable 2FA? This makes your account less secure.')) return;
+        setLoading(true);
+        try {
+            await api.post('/auth/2fa/disable');
+            setMsg({ type: 'success', text: '2FA Disabled' });
+            if (refreshProfile) await refreshProfile();
+        } catch (error) {
+            setMsg({ type: 'error', text: 'Failed to disable 2FA' });
         } finally {
             setLoading(false);
         }
@@ -383,6 +431,67 @@ const Profile = () => {
                                 </Button>
                             </form>
                         </section>
+
+                        {/* Two Factor Authentication (Vendors Only) */}
+                        {user?.role === 'vendor' && (
+                            <section className="card" style={{ padding: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <div style={{ background: 'var(--accent-peach)', color: 'var(--primary)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>security</span>
+                                    </div>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Two-Factor Authentication (2FA)</h3>
+                                </div>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px', fontWeight: 500 }}>
+                                    Protect your vendor account with an authenticator app (like Google Authenticator or Authy).
+                                </p>
+                                
+                                {user?.two_factor_enabled ? (
+                                    <div style={{ padding: '16px', background: 'rgba(5, 150, 105, 0.1)', borderRadius: '12px', border: '1px solid rgba(5, 150, 105, 0.3)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <h4 style={{ color: '#059669', margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700 }}>2FA is Currently Enabled</h4>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Your account is highly secure.</p>
+                                            </div>
+                                            <Button onClick={handleDisable2FA} loading={loading} style={{ width: 'auto', padding: '8px 16px', background: 'var(--danger)', borderColor: 'var(--danger)', height: '40px' }}>
+                                                Disable 2FA
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        {!show2FASetup ? (
+                                            <Button onClick={handleGenerate2FA} loading={loading} style={{ width: 'auto', padding: '10px 24px', height: '44px' }}>
+                                                Setup 2FA Now
+                                            </Button>
+                                        ) : (
+                                            <div style={{ border: '2px dashed var(--border-color)', padding: '24px', borderRadius: '16px', textAlign: 'center' }}>
+                                                <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-deep-brown)' }}>Scan this QR Code</h4>
+                                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 24px 0', fontWeight: 500 }}>Open your Authenticator app and scan this code.</p>
+                                                <img src={qrCode} alt="2FA QR Code" style={{ background: '#fff', padding: '8px', borderRadius: '12px', marginBottom: '24px', width: '200px', height: '200px', border: '1px solid var(--border-color)' }} />
+                                                
+                                                <form onSubmit={handleVerify2FA} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', maxWidth: '300px', margin: '0 auto' }}>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter 6-digit code" 
+                                                        maxLength="6"
+                                                        value={twoFactorCode}
+                                                        onChange={(e) => setTwoFactorCode(e.target.value)}
+                                                        style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '4px', padding: '16px', borderRadius: '12px', border: '2px solid var(--border-color)', width: '100%', fontWeight: 700, outline: 'none', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                                        required
+                                                    />
+                                                    <Button type="submit" loading={loading} style={{ width: '100%', height: '52px' }}>
+                                                        Verify & Enable 2FA
+                                                    </Button>
+                                                    <button type="button" onClick={() => setShow2FASetup(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, padding: '8px' }}>
+                                                        Cancel Setup
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </section>
+                        )}
                     </div>
 
                     {/* Danger Zone */}
