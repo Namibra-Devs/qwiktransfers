@@ -620,6 +620,91 @@ const AdminDashboard = () => {
         setVendorStats({ totalCount, totalVolumeCAD, totalVolumeGHS, successRate });
     };
 
+    const getPaginationRange = (currentPage, totalPages) => {
+        const delta = 1;
+        const range = [];
+        for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+            range.push(i);
+        }
+        if (currentPage - delta > 2) range.unshift('...');
+        if (currentPage + delta < totalPages - 1) range.push('...');
+        range.unshift(1);
+        if (totalPages > 1) range.push(totalPages);
+        return range;
+    };
+
+    const renderPaginationButtons = (currentPage, totalPages, setPageFn) => {
+        if (totalPages <= 1) return null;
+        const range = getPaginationRange(currentPage, totalPages);
+        
+        return (
+            <>
+                <button
+                    onClick={() => setPageFn(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--input-bg)',
+                        color: 'var(--text-deep-brown)',
+                        fontWeight: 700,
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === 1 ? 0.5 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>chevron_left</span>
+                    <span style={{ fontSize: '0.85rem' }}>Previous</span>
+                </button>
+
+                {range.map((pageNumber, index) => (
+                    <button
+                        key={`${pageNumber}-${index}`}
+                        onClick={() => pageNumber !== '...' && setPageFn(pageNumber)}
+                        disabled={pageNumber === '...'}
+                        style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            border: pageNumber === '...' ? 'none' : '1px solid var(--border-color)',
+                            background: currentPage === pageNumber ? 'var(--primary)' : (pageNumber === '...' ? 'transparent' : 'var(--input-bg)'),
+                            color: currentPage === pageNumber ? '#fff' : 'var(--text-deep-brown)',
+                            fontWeight: 700,
+                            cursor: pageNumber === '...' ? 'default' : 'pointer'
+                        }}
+                    >
+                        {pageNumber}
+                    </button>
+                ))}
+
+                <button
+                    onClick={() => setPageFn(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--input-bg)',
+                        color: 'var(--text-deep-brown)',
+                        fontWeight: 700,
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === totalPages ? 0.5 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <span style={{ fontSize: '0.85rem' }}>Next</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>chevron_right</span>
+                </button>
+            </>
+        );
+    };
+
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-peach)', transition: 'background-color 0.3s ease' }}>
             {/* Mobile Sidebar Overlay */}
@@ -1215,115 +1300,13 @@ const AdminDashboard = () => {
 
                                 {/* Pagination */}
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
-                                    {tab === 'transactions' ? (
-                                        Array.from({ length: totalPages }, (_, i) => (
-                                                    <button
-                                                        key={i + 1}
-                                                        onClick={() => setPage(i + 1)}
-                                                        style={{
-                                                            padding: '6px 12px',
-                                                            borderRadius: '4px',
-                                                            border: '1px solid var(--border-color)',
-                                                            background: page === i + 1 ? 'var(--primary)' : 'var(--input-bg)',
-                                                            color: page === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    ) : tab === 'audit' ? (
-                                        Array.from({ length: auditTotalPages }, (_, i) => (
-                                                    <button
-                                                        key={i + 1}
-                                                        onClick={() => setAuditPage(i + 1)}
-                                                        style={{
-                                                            padding: '6px 12px',
-                                                            borderRadius: '4px',
-                                                            border: '1px solid var(--border-color)',
-                                                            background: auditPage === i + 1 ? 'var(--primary)' : 'var(--input-bg)',
-                                                            color: auditPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    ) : tab === 'inquiries' ? (
-                                        Array.from({ length: inquiryTotalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setInquiryPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: inquiryPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: inquiryPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    ) : tab === 'vendors' ? (
-                                        Array.from({ length: vendorTotalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setVendorPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: vendorPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: vendorPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    ) : tab === 'admins' ? (
-                                        Array.from({ length: adminTotalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setAdminPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: adminPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: adminPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    ) : (
-                                        Array.from({ length: userTotalPages }, (_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setUserPage(i + 1)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid var(--border-color)',
-                                                    background: userPage === i + 1 ? 'var(--primary)' : '#fff',
-                                                    color: userPage === i + 1 ? '#fff' : 'var(--text-deep-brown)',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))
-                                    )}
+                                    {tab === 'transactions' && renderPaginationButtons(page, totalPages, setPage)}
+                                    {tab === 'audit' && renderPaginationButtons(auditPage, auditTotalPages, setAuditPage)}
+                                    {tab === 'inquiries' && renderPaginationButtons(inquiryPage, inquiryTotalPages, setInquiryPage)}
+                                    {tab === 'vendors' && renderPaginationButtons(vendorPage, vendorTotalPages, setVendorPage)}
+                                    {tab === 'admins' && renderPaginationButtons(adminPage, adminTotalPages, setAdminPage)}
+                                    {(tab === 'users' || tab === 'kyc') && renderPaginationButtons(userPage, userTotalPages, setUserPage)}
+                                    {tab === 'complaints' && renderPaginationButtons(complaintPage, complaintTotalPages, setComplaintPage)}
                                 </div>
                             </>
                         )}
