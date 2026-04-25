@@ -15,8 +15,30 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [show2FA, setShow2FA] = useState(false);
+    const [twoFactorType, setTwoFactorType] = useState('otp');
+    const [timeLeft, setTimeLeft] = useState(180);
     const [otp, setOtp] = useState('');
     const [rate, setRate] = useState(null);
+
+    useEffect(() => {
+        let timer;
+        if (show2FA && timeLeft > 0) {
+            timer = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (show2FA && timeLeft === 0) {
+            setShow2FA(false);
+            setOtp('');
+            setError('Authentication session expired. Please log in again.');
+        }
+        return () => clearInterval(timer);
+    }, [show2FA, timeLeft]);
+
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
 
     useEffect(() => {
         const fetchRate = async () => {
@@ -48,6 +70,8 @@ const Login = () => {
             
             if (res.requires_2fa) {
                 setShow2FA(true);
+                setTwoFactorType(res.type || 'otp');
+                setTimeLeft(180); // 3 minutes timeout
                 setLoading(false);
                 return;
             }
@@ -117,20 +141,26 @@ const Login = () => {
                     <form onSubmit={handleSubmit}>
                         {show2FA ? (
                             <div className="fade-in">
-                                <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
-                                    Enter the 6-digit code from your authenticator app.
-                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                                        {twoFactorType === 'pin' ? 'Enter your 4-digit Transaction PIN.' : 'Enter the 6-digit code from your authenticator app.'}
+                                    </p>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: timeLeft <= 30 ? 'var(--danger)' : 'var(--primary)', background: 'var(--bg-main)', padding: '4px 8px', borderRadius: '4px' }}>
+                                        {formatTime(timeLeft)}
+                                    </span>
+                                </div>
                                 <Input
-                                    label="Authentication Code"
-                                    type="text"
+                                    label={twoFactorType === 'pin' ? "Transaction PIN" : "Authentication Code"}
+                                    type={twoFactorType === 'pin' ? "password" : "text"}
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
-                                    placeholder="123456"
-                                    maxLength={6}
+                                    placeholder={twoFactorType === 'pin' ? "••••" : "123456"}
+                                    maxLength={twoFactorType === 'pin' ? 4 : 6}
+                                    inputMode="numeric"
                                     required
                                 />
                                 <Button type="submit" loading={loading} style={{ width: '100%', height: '56px', fontSize: '1rem', marginTop: '16px' }}>
-                                    Verify Code
+                                    {twoFactorType === 'pin' ? 'Verify PIN' : 'Verify Code'}
                                 </Button>
                                 <button type="button" onClick={() => { setShow2FA(false); setOtp(''); }} style={{ background: 'none', border: 'none', color: 'var(--primary)', marginTop: '16px', cursor: 'pointer', display: 'block', width: '100%', fontWeight: 600 }}>
                                     Back to Login

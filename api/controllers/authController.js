@@ -217,20 +217,58 @@ const login = async (req, res) => {
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
         // 2FA Challenge logic
-        if (user.two_factor_enabled) {
-            if (!otp) {
-                return res.json({ requires_2fa: true, message: 'Two-factor authentication required' });
+        if (user.role === 'admin' || user.role === 'vendor') {
+            if (user.two_factor_enabled) {
+                if (!otp) {
+                    return res.json({ requires_2fa: true, type: 'otp', message: 'Two-factor authentication required' });
+                }
+
+                const speakeasy = require('speakeasy');
+                const verified = speakeasy.totp.verify({
+                    secret: user.two_factor_secret,
+                    encoding: 'base32',
+                    token: otp
+                });
+
+                if (!verified) {
+                    return res.status(401).json({ error: 'Invalid 2FA code' });
+                }
             }
+        } else if (user.role === 'user') {
+            if (user.transaction_pin) {
+                // Check if account is locked due to PIN attempts
+                if (user.pin_locked_until && new Date() < new Date(user.pin_locked_until)) {
+                    const remainingMins = Math.ceil((new Date(user.pin_locked_until) - new Date()) / 60000);
+                    return res.status(403).json({ error: `Account locked due to too many failed PIN attempts. Please try again in ${remainingMins} minutes.` });
+                }
 
-            const speakeasy = require('speakeasy');
-            const verified = speakeasy.totp.verify({
-                secret: user.two_factor_secret,
-                encoding: 'base32',
-                token: otp
-            });
+                if (!otp) {
+                    return res.json({ requires_2fa: true, type: 'pin', message: 'Please enter your 4-digit PIN' });
+                }
 
-            if (!verified) {
-                return res.status(401).json({ error: 'Invalid 2FA code' });
+                const isPinMatch = await bcrypt.compare(otp, user.transaction_pin);
+                if (!isPinMatch) {
+                    user.pin_attempts = (user.pin_attempts || 0) + 1;
+                    let errorMsg = 'Invalid PIN.';
+                    
+                    if (user.pin_attempts >= 3) {
+                        user.pin_locked_until = new Date(Date.now() + 15 * 60000); // 15 mins lock
+                        user.pin_attempts = 0; // Reset attempts after lock
+                        errorMsg = 'Account locked for 15 minutes due to too many failed attempts.';
+                    } else {
+                        errorMsg = `Invalid PIN. You have ${3 - user.pin_attempts} attempts remaining.`;
+                    }
+                    
+                    await user.save();
+                    return res.status(401).json({ error: errorMsg });
+                }
+
+                // PIN is correct, reset attempts
+                if (user.pin_attempts > 0 || user.pin_locked_until) {
+                    user.pin_attempts = 0;
+                    user.pin_locked_until = null;
+                    await user.save();
+                }
             }
         }
 

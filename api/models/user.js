@@ -102,6 +102,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       defaultValue: 'super'
     },
+    pin_attempts: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    pin_locked_until: DataTypes.DATE,
     last_login: DataTypes.DATE
   }, {
     sequelize,
