@@ -675,11 +675,17 @@ const AdminDashboard = () => {
                                 <ThemeSwitcher />
                             </div>
                             <div className="admin-profile-chip" onClick={() => setTab('profile')}>
-                                <img
-                                    src={user?.profile_picture ? getImageUrl(user.profile_picture) : 'https://via.placeholder.com/40'}
-                                    alt="Admin Avatar"
-                                    className="admin-profile-avatar"
-                                />
+                                {user?.profile_picture ? (
+                                    <img
+                                        src={getImageUrl(user.profile_picture)}
+                                        alt="Admin Avatar"
+                                        className="admin-profile-avatar"
+                                    />
+                                ) : (
+                                    <div className="admin-profile-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-peach)', color: 'var(--primary)', fontWeight: 800, fontSize: '1.2rem' }}>
+                                        {(user?.first_name || user?.email || 'A')[0].toUpperCase()}
+                                    </div>
+                                )}
                                 <div className="admin-profile-info">
                                     <span className="admin-profile-name">{user?.full_name || 'Administrator'}</span>
                                     <span className="admin-profile-role">Master Admin</span>

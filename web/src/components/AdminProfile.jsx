@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const AdminProfile = () => {
     const { user, refreshProfile } = useAuth();
@@ -12,7 +13,6 @@ const AdminProfile = () => {
     const [newPassword, setNewPassword] = useState('');
     const [newPin, setNewPin] = useState({ pin: '', confirm: '' });
     const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState({ type: '', text: '' });
 
     const [qrCode, setQrCode] = useState(null);
     const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -37,10 +37,10 @@ const AdminProfile = () => {
                 last_name: lastName, 
                 phone 
             });
-            setMsg({ type: 'success', text: 'Profile updated successfully!' });
+            toast.success('Profile updated successfully!');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to update profile' });
+            toast.error('Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -51,11 +51,11 @@ const AdminProfile = () => {
         setLoading(true);
         try {
             await api.post('/auth/change-password', { currentPassword, newPassword });
-            setMsg({ type: 'success', text: 'Password changed successfully!' });
+            toast.success('Password changed successfully!');
             setCurrentPassword('');
             setNewPassword('');
         } catch (error) {
-            setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to change password' });
+            toast.error(error.response?.data?.error || 'Failed to change password');
         } finally {
             setLoading(false);
         }
@@ -70,10 +70,10 @@ const AdminProfile = () => {
             await api.post('/auth/avatar', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setMsg({ type: 'success', text: 'Avatar updated!' });
+            toast.success('Avatar updated!');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Avatar upload failed' });
+            toast.error('Avatar upload failed');
         } finally {
             setLoading(false);
         }
@@ -82,19 +82,19 @@ const AdminProfile = () => {
     const handleSetPin = async (e) => {
         e.preventDefault();
         if (newPin.pin.length !== 4) {
-            return setMsg({ type: 'error', text: 'PIN must be exactly 4 digits' });
+            return toast.error('PIN must be exactly 4 digits');
         }
         if (newPin.pin !== newPin.confirm) {
-            return setMsg({ type: 'error', text: 'PINs do not match' });
+            return toast.error('PINs do not match');
         }
         setLoading(true);
         try {
             await api.post('/auth/set-pin', { pin: newPin.pin });
-            setMsg({ type: 'success', text: 'Security PIN updated successfully!' });
+            toast.success('Security PIN updated successfully!');
             setNewPin({ pin: '', confirm: '' });
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
+            toast.error(error.response?.data?.error || 'Failed to set PIN');
         } finally {
             setLoading(false);
         }
@@ -107,7 +107,7 @@ const AdminProfile = () => {
             setQrCode(res.data.qr_code);
             setShow2FASetup(true);
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to generate 2FA' });
+            toast.error('Failed to generate 2FA');
         } finally {
             setLoading(false);
         }
@@ -118,12 +118,12 @@ const AdminProfile = () => {
         setLoading(true);
         try {
             await api.post('/auth/2fa/verify', { token: twoFactorCode });
-            setMsg({ type: 'success', text: '2FA Enabled!' });
+            toast.success('2FA Enabled!');
             setShow2FASetup(false);
             setTwoFactorCode('');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Invalid 2FA Code' });
+            toast.error('Invalid 2FA Code');
         } finally {
             setLoading(false);
         }
@@ -134,10 +134,10 @@ const AdminProfile = () => {
         setLoading(true);
         try {
             await api.post('/auth/2fa/disable');
-            setMsg({ type: 'success', text: '2FA Disabled' });
+            toast.success('2FA Disabled');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to disable 2FA' });
+            toast.error('Failed to disable 2FA');
         } finally {
             setLoading(false);
         }
@@ -150,29 +150,39 @@ const AdminProfile = () => {
                 <p style={{ color: 'var(--text-muted)' }}>Manage your administrator account details.</p>
             </div>
 
-            {msg.text && (
-                <div style={{
-                    padding: '16px',
-                    borderRadius: '8px',
-                    marginBottom: '24px',
-                    background: msg.type === 'success' ? 'var(--accent-peach)' : 'var(--danger)',
-                    color: msg.type === 'success' ? 'var(--primary)' : '#fff',
-                    fontWeight: 600,
-                    border: '1px solid var(--border-color)'
-                }}>
-                    {msg.text}
-                </div>
-            )}
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                 {/* Avatar Section */}
                 <section className="card" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                    <div style={{ position: 'relative' }}>
-                        <img
-                            src={user?.profile_picture ? getImageUrl(user.profile_picture) : 'https://via.placeholder.com/100'}
-                            alt="Profile"
-                            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--accent-peach)' }}
-                        />
+                    <div style={{ position: 'relative', cursor: 'pointer' }}>
+                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', overflow: 'hidden', border: '4px solid var(--accent-peach)' }}>
+                            {user?.profile_picture ? (
+                                <img
+                                    src={getImageUrl(user.profile_picture)}
+                                    alt="Profile"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-peach)', color: 'var(--primary)', fontWeight: 900, fontSize: '2.5rem' }}>
+                                    {(user?.first_name || user?.email || 'A')[0].toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '0px',
+                            right: '0px',
+                            background: 'var(--primary)',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '2px solid white',
+                            color: 'white'
+                        }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>add_a_photo</span>
+                        </div>
                         <input
                             type="file"
                             onChange={(e) => handleAvatarUpload(e.target.files[0])}

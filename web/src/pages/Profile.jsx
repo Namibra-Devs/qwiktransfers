@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
+import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import DashboardHeader from '../components/DashboardHeader';
 import Button from '../components/Button';
@@ -16,7 +17,6 @@ const Profile = () => {
     const [newPassword, setNewPassword] = useState('');
     const [pin, setPin] = useState('');
     const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState({ type: '', text: '' });
 
     // Danger Zone State
     const [dangerAction, setDangerAction] = useState(null); // 'disable' or 'delete'
@@ -67,10 +67,10 @@ const Profile = () => {
                 last_name: lastName, 
                 phone 
             });
-            setMsg({ type: 'success', text: 'Profile updated successfully!' });
+            toast.success('Profile updated successfully!');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to update profile' });
+            toast.error('Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -81,11 +81,11 @@ const Profile = () => {
         setLoading(true);
         try {
             await api.post('/auth/change-password', { currentPassword, newPassword });
-            setMsg({ type: 'success', text: 'Password changed successfully!' });
+            toast.success('Password changed successfully!');
             setCurrentPassword('');
             setNewPassword('');
         } catch (error) {
-            setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to change password' });
+            toast.error(error.response?.data?.error || 'Failed to change password');
         } finally {
             setLoading(false);
         }
@@ -96,10 +96,10 @@ const Profile = () => {
         setLoading(true);
         try {
             await api.post('/auth/set-pin', { pin });
-            setMsg({ type: 'success', text: 'Transaction PIN updated successfully!' });
+            toast.success('Transaction PIN updated successfully!');
             setPin('');
         } catch (error) {
-            setMsg({ type: 'error', text: error.response?.data?.error || 'Failed to set PIN' });
+            toast.error(error.response?.data?.error || 'Failed to set PIN');
         } finally {
             setLoading(false);
         }
@@ -112,7 +112,7 @@ const Profile = () => {
             setQrCode(res.data.qr_code);
             setShow2FASetup(true);
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to generate 2FA' });
+            toast.error('Failed to generate 2FA');
         } finally {
             setLoading(false);
         }
@@ -123,12 +123,12 @@ const Profile = () => {
         setLoading(true);
         try {
             await api.post('/auth/2fa/verify', { token: twoFactorCode });
-            setMsg({ type: 'success', text: '2FA Enabled!' });
+            toast.success('2FA Enabled!');
             setShow2FASetup(false);
             setTwoFactorCode('');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Invalid 2FA Code' });
+            toast.error('Invalid 2FA Code');
         } finally {
             setLoading(false);
         }
@@ -139,10 +139,10 @@ const Profile = () => {
         setLoading(true);
         try {
             await api.post('/auth/2fa/disable');
-            setMsg({ type: 'success', text: '2FA Disabled' });
+            toast.success('2FA Disabled');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Failed to disable 2FA' });
+            toast.error('Failed to disable 2FA');
         } finally {
             setLoading(false);
         }
@@ -151,8 +151,7 @@ const Profile = () => {
     const handleDangerAction = async (e) => {
         if (e) e.preventDefault();
         if (!actionReason.trim()) {
-            setMsg({ type: 'error', text: 'Please provide a reason' });
-            return;
+            return toast.error('Please provide a reason');
         }
 
         setLoading(true);
@@ -161,18 +160,17 @@ const Profile = () => {
             await api.post(endpoint, { reason: actionReason });
             
             setShowDangerModal(false);
-            setMsg({ 
-                type: 'success', 
-                text: dangerAction === 'disable' 
+            toast.success(
+                dangerAction === 'disable' 
                     ? 'Account disabled. You will now be signed out.' 
                     : 'Deletion request submitted. You will now be signed out.' 
-            });
+            );
             
             setTimeout(() => {
                 logout();
             }, 3000);
         } catch (error) {
-            setMsg({ type: 'error', text: error.response?.data?.error || 'Action failed' });
+            toast.error(error.response?.data?.error || 'Action failed');
         } finally {
             setLoading(false);
         }
@@ -187,10 +185,10 @@ const Profile = () => {
             await api.post('/auth/avatar', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setMsg({ type: 'success', text: 'Avatar updated!' });
+            toast.success('Avatar updated!');
             if (refreshProfile) await refreshProfile();
         } catch (error) {
-            setMsg({ type: 'error', text: 'Avatar upload failed' });
+            toast.error('Avatar upload failed');
         } finally {
             setLoading(false);
         }
@@ -214,26 +212,6 @@ const Profile = () => {
                         Manage your profile, security, and payment preferences
                     </p>
                 </div>
-
-                {msg.text && (
-                    <div style={{
-                        padding: '16px 24px',
-                        borderRadius: '16px',
-                        marginBottom: '32px',
-                        background: msg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: msg.type === 'success' ? '#16a34a' : '#dc2626',
-                        borderLeft: `6px solid ${msg.type === 'success' ? '#16a34a' : '#dc2626'}`,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        backdropFilter: 'blur(8px)'
-                    }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '1.4rem' }}>{msg.type === 'success' ? 'check_circle' : 'cancel'}</span>
-                        {msg.text}
-                    </div>
-                )}
-
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
                     {/* Avatar & Basic Info */}
                     <section className="card" style={{ 
