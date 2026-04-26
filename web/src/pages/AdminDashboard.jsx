@@ -114,7 +114,7 @@ const AdminDashboard = () => {
     // Individual User/Vendor Transaction History & Stats
     const [userTransactions, setUserTransactions] = useState([]);
     const [userTransactionsLoading, setUserTransactionsLoading] = useState(false);
-    
+
     // Universal Secure Action PIN states
     const [showSecureActionModal, setShowSecureActionModal] = useState(false);
     const [secureAction, setSecureAction] = useState(null); // 'TOGGLE_STATUS', 'UPDATE_ADMIN_ROLE', 'REVOKE_ADMIN'
@@ -282,13 +282,13 @@ const AdminDashboard = () => {
 
     const fetchAdmins = async () => {
         try {
-            const res = await api.get('/auth/users', { 
-                params: { 
+            const res = await api.get('/auth/users', {
+                params: {
                     role: 'admin',
                     page: adminPage,
                     limit: 10,
                     search: adminSearch
-                } 
+                }
             });
             setAdmins(res.data.users || []);
             setAdminTotalPages(res.data.pages || 1);
@@ -330,13 +330,13 @@ const AdminDashboard = () => {
 
     const fetchVendors = async () => {
         try {
-            const res = await api.get('/auth/users', { 
-                params: { 
+            const res = await api.get('/auth/users', {
+                params: {
                     role: 'vendor',
                     search: vendorSearch,
                     page: vendorPage,
                     limit: 10
-                } 
+                }
             });
             setVendors(res.data.users || []);
             setVendorTotalPages(res.data.pages || 1);
@@ -435,7 +435,7 @@ const AdminDashboard = () => {
 
     const toggleStatus = async (userId) => {
         const userToToggle = users.find(u => u.id === userId) || selectedUser;
-        
+
         // Enabling accounts is considered low-risk and doesn't require a PIN
         if (userToToggle && !userToToggle.is_active) {
             try {
@@ -461,13 +461,13 @@ const AdminDashboard = () => {
     const handleSecureActionSubmit = async (e) => {
         e.preventDefault();
         if (secureActionPin.length !== 4) return toast.error('4-digit PIN required');
-        
+
         setSecureActionLoading(true);
         try {
             if (secureAction === 'TOGGLE_STATUS') {
-                const res = await api.patch('/auth/toggle-status', { 
-                    userId: secureActionData.userId, 
-                    pin: secureActionPin 
+                const res = await api.patch('/auth/toggle-status', {
+                    userId: secureActionData.userId,
+                    pin: secureActionPin
                 });
                 toast.success(res.data.message);
                 if (selectedUser && selectedUser.id === secureActionData.userId) {
@@ -487,8 +487,8 @@ const AdminDashboard = () => {
                 setShowUserModal(false);
             } else if (secureAction === 'EXPORT_LOGS') {
                 toast.loading('Exporting logs...', { id: 'audit-export' });
-                const response = await api.post('/system/admin/audit-logs/export', 
-                    { pin: secureActionPin }, 
+                const response = await api.post('/system/admin/audit-logs/export',
+                    { pin: secureActionPin },
                     { responseType: 'blob' }
                 );
                 const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -502,7 +502,7 @@ const AdminDashboard = () => {
                 toast.success('Payment Method Updated');
             } else if (secureAction === 'UPDATE_SYSTEM_CONFIG') {
                 if (secureActionData.multiConfig) {
-                    await Promise.all(secureActionData.multiConfig.map(config => 
+                    await Promise.all(secureActionData.multiConfig.map(config =>
                         api.post('/system/config', { ...config, pin: secureActionPin })
                     ));
                 } else {
@@ -516,12 +516,12 @@ const AdminDashboard = () => {
                     await api.post('/system/config', { ...secureActionData.compositeConfig, pin: secureActionPin });
                 }
             }
-            
+
             refreshCurrentTab();
             setShowSecureActionModal(false);
         } catch (error) {
             let errorMsg = 'Authorization failed';
-            
+
             // Handle blob error responses (common in file exports)
             if (error.response?.data instanceof Blob && error.response.data.type === 'application/json') {
                 const reader = new FileReader();
@@ -539,7 +539,7 @@ const AdminDashboard = () => {
             }
 
             errorMsg = error.response?.data?.error || errorMsg;
-            
+
             if (secureAction === 'EXPORT_LOGS') {
                 toast.error(errorMsg, { id: 'audit-export' });
             } else {
@@ -636,7 +636,7 @@ const AdminDashboard = () => {
     const renderPaginationButtons = (currentPage, totalPages, setPageFn) => {
         if (totalPages <= 1) return null;
         const range = getPaginationRange(currentPage, totalPages);
-        
+
         return (
             <>
                 <button
@@ -824,87 +824,87 @@ const AdminDashboard = () => {
                                             {tab !== 'transactions' && (
                                                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                                     {tab === 'audit' && (
-                                                    <>
+                                                        <>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSecureActionPin('');
+                                                                    setSecureAction('EXPORT_LOGS');
+                                                                    setSecureActionData({});
+                                                                    setShowSecureActionModal(true);
+                                                                }}
+                                                                className="btn-primary"
+                                                                style={{
+                                                                    padding: '10px 20px',
+                                                                    borderRadius: '50px',
+                                                                    fontSize: '0.8rem',
+                                                                    width: 'auto'
+                                                                }}
+                                                            >
+                                                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>file_export</span>
+                                                                Export Logs
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
+                                                                        const tid = toast.loading('Cleaning platform logs...');
+                                                                        try {
+                                                                            const res = await api.delete('/system/admin/audit-logs/cleanup');
+                                                                            toast.success(res.data.message, { id: tid });
+                                                                            fetchAuditLogs();
+                                                                        } catch (err) { toast.error('Cleanup failed', { id: tid }); }
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    padding: '10px 20px',
+                                                                    background: 'rgba(216, 59, 1, 0.1)',
+                                                                    color: '#d83b01',
+                                                                    border: '1.5px solid #d83b01',
+                                                                    borderRadius: '50px',
+                                                                    fontWeight: 700,
+                                                                    fontSize: '0.8rem',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s ease'
+                                                                }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)'}
+                                                            >
+                                                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>cleaning_services</span>
+                                                                Clean (90d)
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {!['audit', 'transactions', 'inquiries', 'complaints', 'users', 'kyc', 'vendors', 'admins', 'announcements'].includes(tab) && (
+                                                        <div style={{ position: 'relative' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search Users..."
+                                                                value={userSearch}
+                                                                onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                                                                style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
+                                                            />
+                                                            <span className="material-symbols-outlined" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
+                                                        </div>
+                                                    )}
+                                                    {tab === 'vendors' && (
                                                         <button
-                                                            onClick={() => {
-                                                                setSecureActionPin('');
-                                                                setSecureAction('EXPORT_LOGS');
-                                                                setSecureActionData({});
-                                                                setShowSecureActionModal(true);
-                                                            }}
-                                                            className="btn-primary"
-                                                            style={{
-                                                                padding: '10px 20px',
-                                                                borderRadius: '50px',
-                                                                fontSize: '0.8rem',
-                                                                width: 'auto'
-                                                            }}
+                                                            onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
+                                                            style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                         >
-                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>file_export</span>
-                                                            Export Logs
+                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>person_add</span> Add Vendor
                                                         </button>
+                                                    )}
+                                                    {tab === 'admins' && (
                                                         <button
-                                                            onClick={async () => {
-                                                                if (window.confirm('Are you sure you want to delete audit logs older than 90 days?')) {
-                                                                    const tid = toast.loading('Cleaning platform logs...');
-                                                                    try {
-                                                                        const res = await api.delete('/system/admin/audit-logs/cleanup');
-                                                                        toast.success(res.data.message, { id: tid });
-                                                                        fetchAuditLogs();
-                                                                    } catch (err) { toast.error('Cleanup failed', { id: tid }); }
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                padding: '10px 20px',
-                                                                background: 'rgba(216, 59, 1, 0.1)',
-                                                                color: '#d83b01',
-                                                                border: '1.5px solid #d83b01',
-                                                                borderRadius: '50px',
-                                                                fontWeight: 700,
-                                                                fontSize: '0.8rem',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s ease'
-                                                            }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.15)'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(216, 59, 1, 0.1)'}
+                                                            onClick={() => setShowAddAdminModal(true)}
+                                                            style={{ padding: '8px 16px', borderRadius: '8px', background: '#4A154B', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(74, 21, 75, 0.2)' }}
                                                         >
-                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', marginRight: '6px' }}>cleaning_services</span>
-                                                            Clean (90d)
+                                                            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>admin_panel_settings</span> Add Staff
                                                         </button>
-                                                    </>
-                                                )}
-                                                {!['audit', 'transactions', 'inquiries', 'complaints', 'users', 'kyc', 'vendors', 'admins', 'announcements'].includes(tab) && (
-                                                    <div style={{ position: 'relative' }}>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Search Users..."
-                                                            value={userSearch}
-                                                            onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
-                                                            style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                        />
-                                                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '1.1rem' }}>search</span>
-                                                    </div>
-                                                )}
-                                                {tab === 'vendors' && (
-                                                    <button
-                                                        onClick={() => { fetchAvailableUsers(); setShowAddVendorModal(true); }}
-                                                        style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>person_add</span> Add Vendor
-                                                    </button>
-                                                )}
-                                                {tab === 'admins' && (
-                                                    <button
-                                                        onClick={() => setShowAddAdminModal(true)}
-                                                        style={{ padding: '8px 16px', borderRadius: '8px', background: '#4A154B', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(74, 21, 75, 0.2)' }}
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>admin_panel_settings</span> Add Staff
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {tab === 'transactions' && (
                                         <div className="fade-in">
@@ -1163,7 +1163,7 @@ const AdminDashboard = () => {
                                                         <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>help_outline</span>
                                                     </button>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={() => setShowAddAnnouncementModal(true)}
                                                     className="btn-primary"
                                                     style={{ padding: '10px 24px', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, boxShadow: '0 4px 12px rgba(183, 71, 42, 0.2)' }}
@@ -1197,15 +1197,15 @@ const AdminDashboard = () => {
                                                         Showing page {announcementPage} of {announcementTotalPages} ({announcementCount} broadcasts)
                                                     </div>
                                                     <div className="pagination-controls">
-                                                        <button 
-                                                            onClick={() => setAnnouncementPage(p => Math.max(1, p - 1))} 
+                                                        <button
+                                                            onClick={() => setAnnouncementPage(p => Math.max(1, p - 1))}
                                                             disabled={announcementPage === 1}
                                                             className="pagination-btn"
                                                         >
                                                             <span className="material-symbols-outlined">chevron_left</span>
                                                         </button>
-                                                        <button 
-                                                            onClick={() => setAnnouncementPage(p => Math.min(announcementTotalPages, p + 1))} 
+                                                        <button
+                                                            onClick={() => setAnnouncementPage(p => Math.min(announcementTotalPages, p + 1))}
                                                             disabled={announcementPage === announcementTotalPages}
                                                             className="pagination-btn"
                                                         >
@@ -1521,7 +1521,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                             <div style={{ padding: '20px', background: 'var(--input-bg)', borderRadius: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div style={{ padding: '20px', background: 'var(--input-bg)', borderRadius: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                 <div>
                                     <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '6px' }}>Phone Number</label>
                                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1767,9 +1767,9 @@ const AdminDashboard = () => {
                         <form onSubmit={handleSecureActionSubmit} style={{ padding: '32px 24px' }}>
                             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                                 <div style={{ fontSize: '0.9rem', color: 'var(--text-deep-brown)', fontWeight: 700, marginBottom: '8px' }}>
-                                    {secureAction === 'TOGGLE_STATUS' ? 'Authorize Account Suspension' : 
-                                     secureAction === 'UPDATE_ADMIN_ROLE' ? 'Authorize Permission Change' : 
-                                     secureAction === 'REVOKE_ADMIN' ? 'Authorize Privilege Revocation' : 'Authorize Action'}
+                                    {secureAction === 'TOGGLE_STATUS' ? 'Authorize Account Suspension' :
+                                        secureAction === 'UPDATE_ADMIN_ROLE' ? 'Authorize Permission Change' :
+                                            secureAction === 'REVOKE_ADMIN' ? 'Authorize Privilege Revocation' : 'Authorize Action'}
                                 </div>
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Please enter your 4-digit security PIN to proceed.</p>
                             </div>
@@ -1790,7 +1790,7 @@ const AdminDashboard = () => {
                                 type="submit"
                                 disabled={secureActionLoading}
                                 style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(183, 71, 42, 0.2)' }}
-                             >
+                            >
                                 {secureActionLoading ? <span className="material-symbols-outlined spin">sync</span> : <span className="material-symbols-outlined">verified</span>}
                                 {secureActionLoading ? 'Authorizing...' : 'Verify & Execute'}
                             </button>
@@ -1823,7 +1823,7 @@ const AdminDashboard = () => {
                                                 value={newVendor.firstName}
                                                 onChange={(e) => setNewVendor({ ...newVendor, firstName: e.target.value })}
                                                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                placeholder="John"
+                                                placeholder="Jeffery"
                                             />
                                         </div>
                                         <div>
@@ -1834,7 +1834,7 @@ const AdminDashboard = () => {
                                                 value={newVendor.lastName}
                                                 onChange={(e) => setNewVendor({ ...newVendor, lastName: e.target.value })}
                                                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
-                                                placeholder="Doe"
+                                                placeholder="Owusu"
                                             />
                                         </div>
                                     </div>
@@ -2249,7 +2249,7 @@ const AdminDashboard = () => {
                         >
                             <span className="material-symbols-outlined" style={{ color: 'var(--text-deep-brown)' }}>close</span>
                         </button>
-                        
+
                         {previewImage.endsWith('.pdf') ? (
                             <iframe src={previewImage} onLoad={() => setImageLoading(false)} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px', opacity: imageLoading ? 0 : 1, transition: 'opacity 0.3s' }} title="Proof PDF"></iframe>
                         ) : (

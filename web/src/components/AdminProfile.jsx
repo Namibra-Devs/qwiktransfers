@@ -31,11 +31,11 @@ const AdminProfile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.patch('/auth/profile', { 
-                first_name: firstName, 
-                middle_name: middleName, 
-                last_name: lastName, 
-                phone 
+            await api.patch('/auth/profile', {
+                first_name: firstName,
+                middle_name: middleName,
+                last_name: lastName,
+                phone
             });
             toast.success('Profile updated successfully!');
             if (refreshProfile) await refreshProfile();
@@ -206,11 +206,11 @@ const AdminProfile = () => {
                         <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div>
                                 <label>First Name</label>
-                                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" />
+                                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Hamza" />
                             </div>
                             <div>
                                 <label>Last Name</label>
-                                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
+                                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Vali" />
                             </div>
                         </div>
                         <div className="form-group">
@@ -251,7 +251,7 @@ const AdminProfile = () => {
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
                         Protect your admin account with an authenticator app (like Google Authenticator or Authy).
                     </p>
-                    
+
                     {user?.two_factor_enabled ? (
                         <div style={{ padding: '16px', background: 'rgba(5, 150, 105, 0.1)', borderRadius: '8px', border: '1px solid var(--success)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -275,11 +275,11 @@ const AdminProfile = () => {
                                     <h4 style={{ margin: '0 0 16px 0' }}>Scan this QR Code</h4>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>Open your Authenticator app and scan this code.</p>
                                     <img src={qrCode} alt="2FA QR Code" style={{ background: '#fff', padding: '8px', borderRadius: '8px', marginBottom: '24px', width: '200px', height: '200px' }} />
-                                    
+
                                     <form onSubmit={handleVerify2FA} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', maxWidth: '300px', margin: '0 auto' }}>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Enter 6-digit code" 
+                                        <input
+                                            type="text"
+                                            placeholder="Enter 6-digit code"
                                             maxLength="6"
                                             value={twoFactorCode}
                                             onChange={(e) => setTwoFactorCode(e.target.value)}
@@ -309,26 +309,26 @@ const AdminProfile = () => {
                         <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
                             <div>
                                 <label>New 4-Digit PIN</label>
-                                <input 
-                                    type="password" 
-                                    maxLength="4" 
-                                    pattern="\d{4}" 
-                                    value={newPin.pin} 
-                                    onChange={(e) => setNewPin({ ...newPin, pin: e.target.value.replace(/\D/g, '') })} 
-                                    placeholder="••••" 
-                                    required 
+                                <input
+                                    type="password"
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    value={newPin.pin}
+                                    onChange={(e) => setNewPin({ ...newPin, pin: e.target.value.replace(/\D/g, '') })}
+                                    placeholder="••••"
+                                    required
                                 />
                             </div>
                             <div>
                                 <label>Confirm PIN</label>
-                                <input 
-                                    type="password" 
-                                    maxLength="4" 
-                                    pattern="\d{4}" 
-                                    value={newPin.confirm} 
-                                    onChange={(e) => setNewPin({ ...newPin, confirm: e.target.value.replace(/\D/g, '') })} 
-                                    placeholder="••••" 
-                                    required 
+                                <input
+                                    type="password"
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    value={newPin.confirm}
+                                    onChange={(e) => setNewPin({ ...newPin, confirm: e.target.value.replace(/\D/g, '') })}
+                                    placeholder="••••"
+                                    required
                                 />
                             </div>
                         </div>
