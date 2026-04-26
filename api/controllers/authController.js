@@ -91,7 +91,7 @@ const register = async (req, res) => {
             middle_name,
             last_name,
             phone,
-            country: country || 'Ghana',
+            country: country || 'Canada',
             role: role || 'user',
             account_number: accountNumber,
             kyc_status: 'unverified',

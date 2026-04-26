@@ -86,7 +86,7 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
-    const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
+    const [newVendor, setNewVendor] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'Canada' });
     const [showAddAdminModal, setShowAddAdminModal] = useState(false);
     const [newAdmin, setNewAdmin] = useState({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', sub_role: 'support' });
 
@@ -427,7 +427,7 @@ const AdminDashboard = () => {
             toast.success('Vendor created successfully');
             fetchVendors();
             setShowAddVendorModal(false);
-            setNewVendor({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'All' });
+            setNewVendor({ email: '', firstName: '', middleName: '', lastName: '', phone: '', password: '', country: 'Canada' });
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to create vendor');
         }
@@ -1593,7 +1593,6 @@ const AdminDashboard = () => {
                                         style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                     >
                                         <option value="Canada">Canada</option>
-                                        <option value="Ghana">Ghana</option>
                                         <option value="All">All Countries</option>
                                     </select>
                                 </div>
@@ -1893,7 +1892,6 @@ const AdminDashboard = () => {
                                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                         >
                                             <option value="Canada">Canada (CAD Transactions)</option>
-                                            <option value="Ghana">Ghana (GHS Transactions)</option>
                                             <option value="All">All Countries (Global)</option>
                                         </select>
                                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>

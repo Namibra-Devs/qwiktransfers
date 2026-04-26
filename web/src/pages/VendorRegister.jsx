@@ -8,7 +8,6 @@ import api from '../services/api';
 import loginBg from '../assets/login_bg.png';
 
 const countryCodes = {
-    'Ghana': '+233',
     'Canada': '+1',
 };
 
@@ -18,7 +17,7 @@ const VendorRegister = () => {
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
-    const [country, setCountry] = useState('Ghana');
+    const [country, setCountry] = useState('Canada');
     const [pin, setPin] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
