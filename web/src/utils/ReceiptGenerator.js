@@ -20,40 +20,25 @@ export const generateReceiptPDF = async (transaction, systemName = 'QWIK TRANSFE
 
     // --- Header ---
     doc.setFillColor(...secondaryColor);
-    doc.rect(0, 0, 210, 70, 'F'); // Increased height for both logo and name
+    doc.rect(0, 0, 210, 45, 'F'); // Reduced height
 
     if (base64Logo) {
         try {
-            // Center Logo: (210/2) - (40/2) = 85
-            doc.addImage(base64Logo, 'PNG', 85, 5, 40, 40);
-            
-            // Restore System Name display
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.text(systemName.toUpperCase(), 105, 52, { align: 'center' });
+            // Logo at top left with landscape aspect ratio
+            doc.addImage(base64Logo, 'PNG', 15, 10, 60, 25);
         } catch (e) {
             console.error("Logo failed to load:", e);
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.text(systemName.toUpperCase(), 105, 35, { align: 'center' });
         }
-    } else {
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text(systemName.toUpperCase(), 105, 35, { align: 'center' });
     }
 
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('OFFICIAL TRANSACTION RECEIPT', 105, 60, { align: 'center' });
+    doc.text('RECEIPT', 105, 32, { align: 'center' });
 
     // Right-aligned receipt header info
-    doc.setFontSize(12);
-    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
     doc.text('Receipt No:', 150, 15);
     doc.setFont('helvetica', 'bold');
     doc.text(`#${transaction.transaction_id || transaction.id}`, 150, 21);
@@ -72,18 +57,18 @@ export const generateReceiptPDF = async (transaction, systemName = 'QWIK TRANSFE
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('BILLING TO:', 20, 85);
+    doc.text('BILLING TO:', 20, 60);
     doc.setFont('helvetica', 'normal');
-    doc.text(transaction.user?.full_name || 'Valued Customer', 20, 90);
-    doc.text(transaction.user?.email || '', 20, 95);
+    doc.text(transaction.user?.full_name || 'Valued Customer', 20, 65);
+    doc.text(transaction.user?.email || '', 20, 70);
 
     const isSent = status === 'SENT';
     doc.setFont('helvetica', 'bold');
-    doc.text('INITIATED AT:', 140, 85);
+    doc.text('INITIATED AT:', 140, 60);
     doc.setFont('helvetica', 'normal');
     const initiatedDate = transaction.createdAt;
-    doc.text(new Date(initiatedDate).toLocaleDateString(), 140, 90);
-    doc.text(new Date(initiatedDate).toLocaleTimeString(), 140, 95);
+    doc.text(new Date(initiatedDate).toLocaleDateString(), 140, 65);
+    doc.text(new Date(initiatedDate).toLocaleTimeString(), 140, 70);
 
     // --- Transaction Breakdown Table ---
     const tableData = [
@@ -96,7 +81,7 @@ export const generateReceiptPDF = async (transaction, systemName = 'QWIK TRANSFE
     ];
 
     doc.autoTable({
-        startY: 110,
+        startY: 85,
         head: [tableData[0]],
         body: tableData.slice(1),
         theme: 'plain', 
