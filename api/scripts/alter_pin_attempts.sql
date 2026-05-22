@@ -1,2 +1,0 @@
-ALTER TABLE Users ADD COLUMN pin_attempts INT DEFAULT 0;
-ALTER TABLE Users ADD COLUMN pin_locked_until DATETIME;
