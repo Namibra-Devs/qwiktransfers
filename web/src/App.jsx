@@ -17,7 +17,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import VendorDashboard from './pages/VendorDashboard';
 import Profile from './pages/Profile';
 import KycVerification from './pages/KycVerification';
-import Home from './pages/Home';
 import DownloadRedirect from './pages/DownloadRedirect';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AboutVendor from './pages/AboutVendor';
@@ -144,7 +143,7 @@ function App() {
             <Route path="/about-vendor" element={<AboutVendor />} />
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/vendor-register" element={<VendorRegister />} />
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </AuthProvider>
       </ThemeProvider>
