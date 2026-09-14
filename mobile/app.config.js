@@ -25,8 +25,8 @@ export default {
             backgroundColor: "#ffffff"
         },
         edgeToEdgeEnabled: true,
-        package: "com.namibra.qwiktransfers",
-        versionCode: 3,
+        package: "com.namibra.qwiktransfersapp",
+        versionCode: 1,
         usesCleartextTraffic: true,
         permissions: ["INTERNET"]
     },
