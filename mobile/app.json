@@ -28,7 +28,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.namibra.qwiktransfersapp",
-      "versionCode": 1
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/icon.png"
