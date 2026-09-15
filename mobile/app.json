@@ -19,7 +19,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.namibra.qwiktransfersapp"
+      "bundleIdentifier": "com.namibra.qwiktransfer"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,8 +27,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.namibra.qwiktransfersapp",
-      "versionCode": 1
+      "package": "com.namibra.qwiktransfer",
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/icon.png"
